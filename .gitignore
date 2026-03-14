@@ -6,3 +6,4 @@ coverage
 .prisma
 .DS_Store
 uploads
+.env.example

@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Karel POS</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --ink:#0C0D0F;--ink2:#141518;--ink3:#1C1E22;--ink4:#242629;--ink5:#2E3035;
+  --rule:#2A2C31;--rule2:#363840;
+  --text:#F0EDE8;--mid:#8C8880;--dim:#4A4845;
+  --rose:#CF6B60;--rose-l:#E08070;--rose-dim:rgba(207,107,96,.12);
+  --sage:#6B9469;--sage-l:#80AE7E;--sage-dim:rgba(107,148,105,.12);
+  --amber:#C89840;--amber-dim:rgba(200,152,64,.12);
+  --blue:#5B89C4;--blue-dim:rgba(91,137,196,.12);
+  --purple:#8B70C4;--purple-dim:rgba(139,112,196,.12);
+  --red:#C05050;--red-dim:rgba(192,80,80,.12);
+  --r6:6px;--r8:8px;--r10:10px;--r12:12px;--r16:16px;
+  --fd:'Syne',sans-serif;--fb:'Instrument Sans',sans-serif;
+}
+body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14px;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--rule2);border-radius:2px;}
+
+/* ─── LOGIN SCREEN ─── */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--ink);position:fixed;inset:0;z-index:9000;transition:opacity .3s;}
+#login-screen.hidden{opacity:0;pointer-events:none;}
+.login-box{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r16);padding:36px 32px;width:340px;box-shadow:0 40px 100px rgba(0,0,0,.7);}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo .lname{font-family:var(--fd);font-size:22px;font-weight:800;color:var(--text);}
+.login-logo .lname em{color:var(--rose);font-style:normal;}
+.login-logo .lsub{font-size:10px;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;margin-top:3px;}
+.staff-select{margin-bottom:16px;}
+.staff-select label{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:4px;}
+.staff-select select{width:100%;padding:9px 10px;background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r8);font-family:var(--fb);font-size:13px;color:var(--text);outline:none;}
+.staff-select select:focus{border-color:var(--rose);}
+.pdisp{background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r8);padding:12px;text-align:center;font-size:22px;letter-spacing:.6em;margin-bottom:14px;min-height:52px;transition:color .2s;}
+.ppad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.pk{padding:13px;border-radius:var(--r8);border:1px solid var(--rule);background:var(--ink3);color:var(--text);font-family:var(--fd);font-size:15px;font-weight:800;cursor:pointer;transition:all .12s;text-align:center;}
+.pk:hover{background:var(--ink4);}
+.pk.sp{font-size:11px;}
+.pk.ok{background:var(--rose);color:white;border-color:var(--rose);}
+.pk.ok:hover{background:var(--rose-l);}
+.login-err{background:var(--red-dim);border:1px solid rgba(192,80,80,.2);border-radius:var(--r8);padding:8px 12px;font-size:11.5px;color:#E07070;text-align:center;margin-top:10px;display:none;}
+
+/* ─── APP LAYOUT ─── */
+#app{display:none;height:100vh;overflow:hidden;}
+#app.visible{display:flex;}
+#sb{width:210px;flex-shrink:0;background:var(--ink2);border-right:1px solid var(--rule);display:flex;flex-direction:column;overflow-y:auto;}
+.sb-logo{padding:18px 16px 12px;border-bottom:1px solid var(--rule);}
+.sb-lname{font-family:var(--fd);font-size:15px;font-weight:800;color:var(--text);}
+.sb-lname em{color:var(--rose);font-style:normal;}
+.sb-lsub{font-size:9px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-top:2px;}
+.sb-user{padding:11px 16px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:9px;}
+.sb-av{width:28px;height:28px;border-radius:50%;background:var(--rose);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:10px;font-weight:800;color:white;flex-shrink:0;}
+.sb-un{font-size:11.5px;font-weight:600;color:var(--text);}
+.sb-ur{font-size:10px;color:var(--dim);}
+.sb-sec{padding:14px 16px 4px;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);}
+.nav{padding:0 8px;display:flex;flex-direction:column;gap:1px;}
+.ni{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:var(--r8);cursor:pointer;font-size:12px;font-weight:500;color:var(--mid);transition:all .12s;position:relative;}
+.ni:hover{background:var(--ink3);color:var(--text);}
+.ni.on{background:var(--ink4);color:var(--text);}
+.ni.on::after{content:'';position:absolute;left:0;top:20%;bottom:20%;width:2px;background:var(--rose);border-radius:0 2px 2px 0;}
+.ni-ic{width:15px;text-align:center;font-size:12px;flex-shrink:0;}
+.nb{margin-left:auto;background:var(--rose);color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:100px;min-width:16px;text-align:center;}
+.nb.g{background:var(--sage);}.nb.a{background:var(--amber);}
+.sb-foot{margin-top:auto;padding:12px;border-top:1px solid var(--rule);}
+.clk{background:var(--ink3);border-radius:var(--r10);padding:9px 12px;text-align:center;}
+.clk-t{font-family:var(--fd);font-size:19px;font-weight:800;color:var(--text);}
+.clk-d{font-size:10px;color:var(--dim);margin-top:1px;}
+.logout-btn{display:flex;align-items:center;gap:6px;width:100%;padding:7px 9px;border-radius:var(--r8);border:none;background:transparent;color:var(--dim);font-family:var(--fb);font-size:11px;cursor:pointer;margin-bottom:7px;transition:all .12s;}
+.logout-btn:hover{background:var(--red-dim);color:#E07070;}
+
+/* ─── MAIN ─── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{height:48px;background:var(--ink2);border-bottom:1px solid var(--rule);display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0;}
+.tb-t{font-family:var(--fd);font-size:14px;font-weight:800;}
+.tb-r{margin-left:auto;display:flex;gap:7px;}
+.content{flex:1;overflow-y:auto;padding:20px;}
+
+/* ─── LOADING ─── */
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;flex-direction:column;gap:12px;}
+.spinner{width:28px;height:28px;border:2.5px solid var(--rule2);border-top-color:var(--rose);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:12px;color:var(--dim);}
+.err-state{background:var(--red-dim);border:1px solid rgba(192,80,80,.2);border-radius:var(--r12);padding:16px;display:flex;align-items:center;gap:10px;font-size:12px;color:#E07070;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--dim);font-size:12px;}
+
+/* ─── BUTTONS ─── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:var(--r8);border:none;font-family:var(--fb);font-size:12px;font-weight:600;cursor:pointer;transition:all .12s;}
+.bp{background:var(--rose);color:white;}.bp:hover{background:var(--rose-l);}
+.bs{background:var(--sage);color:white;}.bs:hover{background:var(--sage-l);}
+.bg{background:var(--ink3);color:var(--mid);border:1px solid var(--rule);}.bg:hover{background:var(--ink4);color:var(--text);}
+.ba{background:var(--amber);color:var(--ink);}
+.br{background:var(--red);color:white;}
+.bsm{padding:4px 9px;font-size:11px;}
+.blg{padding:9px 20px;font-size:13px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ─── CARD ─── */
+.card{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r12);padding:16px;}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.ct{font-family:var(--fd);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);}
+.sc{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r12);padding:16px 18px;}
+.sv{font-family:var(--fd);font-size:26px;font-weight:800;color:var(--text);}
+.sl{font-size:11px;color:var(--dim);margin-top:2px;}
+.sn{font-size:11px;color:var(--sage);margin-top:4px;}
+
+/* ─── BADGE ─── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;}
+.bg2{background:var(--sage-dim);color:var(--sage-l);}
+.ba2{background:var(--amber-dim);color:var(--amber);}
+.br2{background:var(--red-dim);color:#E07070;}
+.bb{background:var(--blue-dim);color:var(--blue);}
+.bp2{background:var(--purple-dim);color:var(--purple);}
+.bm{background:var(--ink4);color:var(--mid);}
+.brose{background:var(--rose-dim);color:var(--rose-l);}
+
+/* ─── TABLE ─── */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{padding:7px 11px;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);text-align:left;border-bottom:1px solid var(--rule);}
+.tbl td{padding:10px 11px;font-size:12px;border-bottom:1px solid var(--rule);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:rgba(255,255,255,.016);}
+.tlink{color:var(--rose-l);cursor:pointer;font-weight:600;}
+
+/* ─── FORM ─── */
+.fg{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;}
+.fl{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);}
+.fi,.fs,.fta{padding:7px 10px;background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r8);font-family:var(--fb);font-size:12.5px;color:var(--text);outline:none;transition:border-color .12s;width:100%;}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--rose);}
+.fs option{background:var(--ink3);}
+.fta{resize:vertical;min-height:64px;}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;}
+.fsec{background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r10);padding:13px;margin-bottom:11px;}
+.fst{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--rose-l);margin-bottom:11px;}
+.tog{width:32px;height:17px;background:var(--ink5);border:1px solid var(--rule2);border-radius:100px;cursor:pointer;position:relative;transition:background .18s;flex-shrink:0;}
+.tog.on{background:var(--sage);}
+.tk{position:absolute;width:11px;height:11px;background:white;border-radius:50%;top:2px;left:2px;transition:left .18s;}
+.tog.on .tk{left:17px;}
+.tw{display:flex;align-items:center;gap:7px;}
+.tl{font-size:11.5px;color:var(--mid);}
+
+/* ─── RADIO CARDS ─── */
+.rcs{display:flex;gap:6px;flex-wrap:wrap;}
+.rc{padding:6px 12px;border-radius:var(--r8);border:1.5px solid var(--rule);font-size:11.5px;font-weight:600;color:var(--mid);cursor:pointer;transition:all .12s;}
+.rc:hover{border-color:var(--rule2);color:var(--text);}
+.rc.sel{border-color:var(--rose);color:var(--rose-l);background:var(--rose-dim);}
+
+/* ─── SEARCH ─── */
+.sb2{display:flex;align-items:center;gap:7px;background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r8);padding:6px 10px;}
+.sb2 input{flex:1;background:transparent;border:none;font-family:var(--fb);font-size:12.5px;color:var(--text);outline:none;}
+.sb2 input::placeholder{color:var(--dim);}
+
+/* ─── FILTER PILLS ─── */
+.fps{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
+.fp{padding:4px 12px;border-radius:100px;font-size:11px;font-weight:600;border:1px solid var(--rule);color:var(--mid);cursor:pointer;transition:all .12s;}
+.fp:hover{border-color:var(--rule2);color:var(--text);}
+.fp.act{background:var(--rose);color:white;border-color:var(--rose);}
+
+/* ─── DELIVERY CARD ─── */
+.dc{background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r10);padding:11px;display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+.dc-img{width:40px;height:40px;border-radius:var(--r8);background:var(--ink4);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden;}
+.dc-img img{width:100%;height:100%;object-fit:cover;}
+.dc-info{flex:1;min-width:0;}
+.dc-id{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);}
+.dc-name{font-size:12.5px;font-weight:600;color:var(--text);}
+.dc-time{font-size:11px;color:var(--amber);margin-top:1px;}
+
+/* ─── TASK ─── */
+.task{display:flex;align-items:flex-start;gap:9px;padding:10px 0;border-bottom:1px solid var(--rule);}
+.task:last-child{border-bottom:none;}
+.tchk{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--rule2);cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .12s;}
+.tchk.done{background:var(--sage);border-color:var(--sage);}
+.ttxt{font-size:12px;color:var(--text);line-height:1.4;}
+.ttxt.done{text-decoration:line-through;color:var(--dim);}
+.tdue{font-size:10px;color:var(--dim);margin-top:2px;}
+.tdue.late{color:var(--red);}
+
+/* ─── PRODUCT CARD ─── */
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.pc{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r12);overflow:hidden;transition:border-color .12s;}
+.pc:hover{border-color:var(--rule2);}
+.pc-img{height:100px;background:var(--ink4);display:flex;align-items:center;justify-content:center;font-size:40px;overflow:hidden;}
+.pc-img img{width:100%;height:100%;object-fit:cover;}
+.pc-b{padding:11px;}
+.pc-n{font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.pc-c{font-size:10px;color:var(--dim);margin-bottom:7px;}
+.pc-pp{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;}
+.pch{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:var(--ink4);}
+.pch.s{color:var(--blue);}.pch.d{color:var(--amber);}.pch.p{color:var(--purple);}
+
+/* ─── CHAT ─── */
+.cwrap{display:grid;grid-template-columns:230px 1fr;height:calc(100vh - 108px);gap:12px;}
+.clist{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r12);overflow-y:auto;}
+.clh{padding:12px 13px 9px;border-bottom:1px solid var(--rule);font-family:var(--fd);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);}
+.cconv{padding:10px 13px;cursor:pointer;border-bottom:1px solid var(--rule);transition:background .1s;}
+.cconv:hover{background:var(--ink3);}
+.cconv.on{background:var(--ink3);}
+.ccn{font-size:12px;font-weight:600;color:var(--text);}
+.ccm{font-size:11px;color:var(--dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cmain{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r12);display:flex;flex-direction:column;overflow:hidden;}
+.cmh{padding:11px 15px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:9px;flex-shrink:0;}
+.cmsgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px;}
+.cmsg{max-width:70%;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.5;}
+.cmsg.in{background:var(--ink3);color:var(--text);align-self:flex-start;border-bottom-left-radius:2px;}
+.cmsg.out{background:var(--rose);color:white;align-self:flex-end;border-bottom-right-radius:2px;}
+.cmt{font-size:10px;color:var(--dim);margin-top:2px;}
+.cmsg.out .cmt{color:rgba(255,255,255,.4);text-align:right;}
+.cinp{border-top:1px solid var(--rule);padding:10px 13px;display:flex;gap:8px;flex-shrink:0;}
+.cinp input{flex:1;padding:7px 10px;background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r8);font-family:var(--fb);font-size:12.5px;color:var(--text);outline:none;}
+.cinp input:focus{border-color:var(--rose);}
+
+/* ─── ELAB ─── */
+.ec{background:var(--ink2);border:2px solid var(--amber);border-radius:var(--r12);padding:16px;transition:all .2s;}
+.ec.done{border-color:var(--sage);opacity:.5;}
+.ec-p{display:inline-flex;align-items:center;gap:4px;background:var(--amber-dim);color:var(--amber);padding:2px 9px;border-radius:100px;font-size:10px;font-weight:700;margin-bottom:9px;}
+.ec-img{width:100%;height:130px;background:var(--ink3);border-radius:var(--r8);display:flex;align-items:center;justify-content:center;font-size:55px;margin-bottom:10px;overflow:hidden;}
+.ec-img img{width:100%;height:100%;object-fit:cover;}
+.ec-name{font-family:var(--fd);font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.ec-desc{font-size:12px;color:var(--mid);line-height:1.5;margin-bottom:4px;}
+.ec-note{font-size:11px;font-style:italic;color:var(--rose-l);margin-bottom:11px;padding:7px 9px;background:var(--rose-dim);border-radius:var(--r6);}
+
+/* ─── REPARTIDOR ─── */
+.repc{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r12);margin-bottom:12px;overflow:hidden;}
+.reph{padding:12px 15px;background:var(--ink3);border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;}
+.repb{padding:15px;}
+.repg{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:12px;}
+.rpl{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:2px;}
+.rpv{font-size:12px;color:var(--text);}
+
+/* ─── BAR ─── */
+.brow{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.blbl{font-size:11px;color:var(--mid);width:100px;flex-shrink:0;}
+.btrack{flex:1;height:5px;background:var(--ink4);border-radius:3px;overflow:hidden;}
+.bfill{height:100%;background:var(--rose);border-radius:3px;transition:width .4s;}
+.bval{font-size:11px;font-weight:700;color:var(--text);width:60px;text-align:right;flex-shrink:0;}
+
+/* ─── PIN MODAL ─── */
+.pdisp-m{background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r8);padding:12px;text-align:center;font-size:20px;letter-spacing:.5em;margin-bottom:14px;min-height:48px;}
+.ppad-m{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;max-width:190px;margin:0 auto;}
+
+/* ─── MODAL ─── */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;padding:18px;}
+.ov.open{display:flex;}
+.modal{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r16);width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,.7);}
+.msm{max-width:380px;}.mmd{max-width:600px;}.mlg{max-width:700px;}.mxl{max-width:1020px;}
+.mh{padding:16px 20px 13px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--ink2);z-index:5;}
+.mt{font-family:var(--fd);font-size:15px;font-weight:800;}
+.mx{width:24px;height:24px;border-radius:var(--r6);background:var(--ink3);border:1px solid var(--rule);color:var(--mid);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .12s;}
+.mx:hover{background:var(--ink4);color:var(--text);}
+.mb{padding:16px 20px;}
+.mf{padding:11px 20px;border-top:1px solid var(--rule);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:var(--ink2);z-index:5;}
+
+/* ─── TOAST ─── */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--ink4);color:var(--text);padding:10px 15px;border-radius:var(--r10);border:1px solid var(--rule2);font-size:12px;z-index:9999;opacity:0;transform:translateY(8px);transition:all .22s;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,.5);}
+#toast.show{opacity:1;transform:none;}
+#toast.err{border-color:rgba(192,80,80,.3);background:var(--red-dim);color:#E07070;}
+
+/* ─── PENDING BANNER ─── */
+.pbanner{background:var(--amber-dim);border:1px solid rgba(200,152,64,.22);border-radius:var(--r10);padding:9px 13px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+
+/* ─── CLIENT RESULT ─── */
+.client-result{background:var(--ink4);border-radius:var(--r8);padding:9px;margin-bottom:8px;cursor:pointer;transition:background .12s;}
+.client-result:hover{background:var(--ink5);}
+.client-result.selected{background:var(--rose-dim);border:1px solid var(--rose);}
+
+/* ─── ORDER ITEM ─── */
+.order-item{background:var(--ink4);border-radius:var(--r8);padding:9px;margin-bottom:7px;position:relative;}
+.remove-item{position:absolute;top:7px;right:7px;background:transparent;border:none;color:var(--dim);cursor:pointer;font-size:13px;padding:2px;}
+.remove-item:hover{color:var(--red);}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════ LOGIN ════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="lname">Florería <em>Karel</em></div>
+      <div class="lsub">Sistema POS</div>
+    </div>
+    <div class="staff-select">
+      <label>¿Quién eres?</label>
+      <select id="staff-sel" onchange="onStaffChange()">
+        <option value="">Cargando…</option>
+      </select>
+    </div>
+    <div class="pdisp" id="login-pdisp">· · · ·</div>
+    <div class="ppad">
+      <button class="pk" onclick="lpk('1')">1</button><button class="pk" onclick="lpk('2')">2</button><button class="pk" onclick="lpk('3')">3</button>
+      <button class="pk" onclick="lpk('4')">4</button><button class="pk" onclick="lpk('5')">5</button><button class="pk" onclick="lpk('6')">6</button>
+      <button class="pk" onclick="lpk('7')">7</button><button class="pk" onclick="lpk('8')">8</button><button class="pk" onclick="lpk('9')">9</button>
+      <button class="pk sp" onclick="lpk('c')">⌫</button><button class="pk" onclick="lpk('0')">0</button>
+      <button class="pk ok" onclick="lpk('ok')">OK</button>
+    </div>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ APP ════════════════════════════════════ -->
+<div id="app">
+<nav id="sb">
+  <div class="sb-logo">
+    <div class="sb-lname">Florería <em>Karel</em></div>
+    <div class="sb-lsub">Sistema POS</div>
+  </div>
+  <div class="sb-user">
+    <div class="sb-av" id="sb-av">KA</div>
+    <div><div class="sb-un" id="sb-name">—</div><div class="sb-ur" id="sb-role">—</div></div>
+  </div>
+  <div class="sb-sec">Principal</div>
+  <div class="nav">
+    <div class="ni on" data-v="dashboard"><span class="ni-ic">⌂</span>Dashboard</div>
+    <div class="ni" data-v="pedidos"><span class="ni-ic">📦</span>Pedidos<span class="nb" id="nb-p" style="display:none;"></span></div>
+    <div class="ni" data-v="nuevo"><span class="ni-ic">＋</span>Nuevo Pedido</div>
+  </div>
+  <div class="sb-sec">Operaciones</div>
+  <div class="nav">
+    <div class="ni" data-v="elaboracion"><span class="ni-ic">🌸</span>Elaboración<span class="nb a" id="nb-e" style="display:none;"></span></div>
+    <div class="ni" data-v="entregas"><span class="ni-ic">🚐</span>Entregas<span class="nb g" id="nb-d" style="display:none;"></span></div>
+    <div class="ni" data-v="tareas"><span class="ni-ic">✓</span>Tareas</div>
+    <div class="ni" data-v="chat"><span class="ni-ic">💬</span>Chat Web<span class="nb g" id="nb-c" style="display:none;"></span></div>
+  </div>
+  <div class="sb-sec">Catálogo</div>
+  <div class="nav">
+    <div class="ni" data-v="productos"><span class="ni-ic">🌺</span>Productos</div>
+    <div class="ni" data-v="categorias"><span class="ni-ic">▦</span>Categorías</div>
+  </div>
+  <div class="sb-sec">Admin</div>
+  <div class="nav">
+    <div class="ni" data-v="admin-gate"><span class="ni-ic">🔐</span>Administración</div>
+    <div class="ni" data-v="repartidor"><span class="ni-ic">📍</span>Vista Repartidor</div>
+  </div>
+  <div class="sb-foot">
+    <button class="logout-btn" onclick="logout()">⎋ Cerrar sesión</button>
+    <div class="clk">
+      <div class="clk-t" id="clk">--:--</div>
+      <div class="clk-d" id="clkd">—</div>
+    </div>
+  </div>
+</nav>
+
+<div id="main">
+  <div class="topbar">
+    <span class="tb-t" id="vt">Dashboard</span>
+    <div class="tb-r">
+      <button class="btn bg bsm" onclick="syncAll()">⟳ Sincronizar</button>
+      <button class="btn bp" onclick="showView('nuevo')">＋ Nuevo Pedido</button>
+    </div>
+  </div>
+  <div class="content" id="vc"></div>
+</div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ════ MODAL: NUEVO PEDIDO ════ -->
+<div class="ov" id="m-order">
+  <div class="modal mxl">
+    <div class="mh"><div class="mt">Nuevo Pedido</div><button class="mx" onclick="cm('m-order')">✕</button></div>
+    <div class="mb">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+        <!-- Left column -->
+        <div>
+          <div class="fsec"><div class="fst">📅 Fecha de Entrega</div>
+            <div class="fr">
+              <div class="fg"><label class="fl">Fecha *</label><input class="fi" type="date" id="o-date"/></div>
+              <div class="fg"><label class="fl">Ventana horaria</label>
+                <select class="fs" id="o-window">
+                  <option value="antes_12">Antes de las 12:00 PM</option>
+                  <option value="despues_12">Después de las 12:00 PM</option>
+                  <option value="9-12">9:30 – 12:30 PM</option>
+                  <option value="12-15">12:00 – 3:00 PM</option>
+                  <option value="15-18">3:00 – 6:00 PM</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="fsec"><div class="fst">👤 Cliente</div>
+            <div class="sb2" style="margin-bottom:8px;"><span style="color:var(--dim);">⌕</span><input id="client-search" placeholder="Buscar por nombre o teléfono…" oninput="searchClients(this.value)"/></div>
+            <div id="client-results"></div>
+            <div id="client-selected" style="display:none;"></div>
+            <button class="btn bg bsm" onclick="om('m-client')">＋ Cliente nuevo</button>
+          </div>
+
+          <div class="fsec"><div class="fst">🌺 Productos</div>
+            <div class="sb2" style="margin-bottom:8px;"><span style="color:var(--dim);">⌕</span><input id="product-search" placeholder="Buscar por nombre o código…" oninput="searchProducts(this.value)"/></div>
+            <div id="product-results" style="display:none;"></div>
+            <div id="order-items"></div>
+            <div style="background:var(--ink3);border-radius:var(--r8);padding:9px;margin-top:7px;font-size:12px;">
+              <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Subtotal</span><span id="o-subtotal" style="color:var(--text);">$0.00</span></div>
+              <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Envío</span><span id="o-fee-display" style="color:var(--text);">$0.00</span></div>
+              <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Anticipo</span><span id="o-adv-display" style="color:var(--amber);">-$0.00</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding:7px 0 0;border-top:1px solid var(--rule);margin-top:4px;"><span>Total</span><span id="o-total" style="color:var(--sage);">$0.00</span></div>
+            </div>
+          </div>
+
+          <div class="fsec"><div class="fst">🎉 Ocasión</div>
+            <div class="rcs" id="o-occ">
+              <div class="rc sel" onclick="setOcc(this,'CUMPLEANOS')">🎂 Cumpleaños</div>
+              <div class="rc" onclick="setOcc(this,'ANIVERSARIO')">💑 Aniversario</div>
+              <div class="rc" onclick="setOcc(this,'FUNERAL')">⚱️ Funeral</div>
+              <div class="rc" onclick="setOcc(this,'AMOR')">💝 Amor</div>
+              <div class="rc" onclick="setOcc(this,'OTRA')">🎊 Otra</div>
+            </div>
+            <div id="o-banda" style="display:none;margin-top:8px;" class="tw"><div class="tog" id="o-banda-tog" onclick="this.classList.toggle('on')"><div class="tk"></div></div><span class="tl">Incluir banda musical</span></div>
+            <div id="o-reminder" style="display:none;margin-top:8px;font-size:11px;color:var(--amber);background:var(--amber-dim);padding:7px 9px;border-radius:var(--r6);">📅 Se generará recordatorio automático para el año siguiente.</div>
+          </div>
+
+          <div class="fsec"><div class="fst">💌 Mensaje</div>
+            <div class="fr">
+              <div class="fg"><label class="fl">De parte de</label><input class="fi" id="o-msg-from" placeholder="Nombre"/></div>
+              <div class="fg" style="padding-top:14px;justify-content:flex-end;"><div class="tw"><div class="tog" id="o-anon-tog" onclick="this.classList.toggle('on')"><div class="tk"></div></div><span class="tl">Anónimo</span></div></div>
+            </div>
+            <div class="fg"><label class="fl">Mensaje para tarjeta</label><textarea class="fta" id="o-msg-text" placeholder="Mensaje…"></textarea></div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div>
+          <div class="fsec"><div class="fst">🚐 Entrega</div>
+            <div class="rcs" style="margin-bottom:11px;" id="o-del-t">
+              <div class="rc sel" onclick="setDelT(this,'DOMICILIO_CASA')">🏠 A domicilio</div>
+              <div class="rc" onclick="setDelT(this,'DOMICILIO_NEGOCIO')">🏢 Negocio</div>
+              <div class="rc" onclick="setDelT(this,'RECOGER_TIENDA')">🏪 Pasa a recoger</div>
+            </div>
+            <div id="o-del-f">
+              <div class="fr">
+                <div class="fg"><label class="fl">Nombre destinatario</label><input class="fi" id="o-r-name" placeholder="Nombre completo"/></div>
+                <div class="fg"><label class="fl">Teléfono destinatario</label><input class="fi" id="o-r-phone" type="tel" placeholder="656 000 0000"/></div>
+              </div>
+              <div class="fg"><label class="fl">Dirección</label><input class="fi" id="o-r-addr" placeholder="Calle y número"/></div>
+              <div class="fr">
+                <div class="fg"><label class="fl">Colonia / Fracc.</label><input class="fi" id="o-r-col"/></div>
+                <div class="fg"><label class="fl">Notas / Clave acceso</label><input class="fi" id="o-r-notes" placeholder="Opcional"/></div>
+              </div>
+              <div class="fg"><label class="fl">Costo de envío</label><input class="fi" id="o-fee" type="number" value="0" placeholder="$0.00" oninput="recalcTotal()"/></div>
+            </div>
+            <div class="fg" style="margin-top:5px;"><label class="fl">Notificación al cliente</label>
+              <div class="rcs" id="o-notif"><div class="rc sel" onclick="or(this,'o-notif')">💬 WhatsApp</div><div class="rc" onclick="or(this,'o-notif')">📧 Email</div><div class="rc" onclick="or(this,'o-notif')">📱 SMS</div><div class="rc" onclick="or(this,'o-notif')">🚫 No</div></div>
+            </div>
+          </div>
+
+          <div class="fsec"><div class="fst">💰 Forma de Pago</div>
+            <div class="rcs" id="o-pe" style="margin-bottom:10px;">
+              <div class="rc sel" onclick="setPE(this,'RECIBIDO')">✅ Pago recibido</div>
+              <div class="rc" onclick="setPE(this,'CREDITO')">📋 Crédito</div>
+            </div>
+            <div id="o-pr-f">
+              <div class="fg"><label class="fl">Tipo de pago</label>
+                <div class="rcs" id="o-pt" style="gap:5px;">
+                  <div class="rc sel" onclick="or(this,'o-pt')">💵 Efectivo</div><div class="rc" onclick="or(this,'o-pt')">🏦 Transferencia</div><div class="rc" onclick="or(this,'o-pt')">💳 Terminal</div><div class="rc" onclick="or(this,'o-pt')">📱 CashApp</div><div class="rc" onclick="or(this,'o-pt')">🍎 Apple Pay</div><div class="rc" onclick="or(this,'o-pt')">🔗 Link de pago</div><div class="rc" onclick="or(this,'o-pt')">📄 Cheque</div><div class="rc" onclick="or(this,'o-pt')">💱 Zelle</div>
+                </div>
+              </div>
+            </div>
+            <div id="o-pc-f" style="display:none;">
+              <div class="fr"><div class="fg"><label class="fl">Fecha de pago</label><input class="fi" id="o-cred-date" type="date"/></div><div class="fg"><label class="fl">Lugar de pago</label><input class="fi" id="o-cred-loc" placeholder="Tienda, domicilio…"/></div></div>
+              <div class="fg"><label class="fl">Tipo de pago al cobrar</label><select class="fs" id="o-cred-method"><option value="EFECTIVO">Efectivo</option><option value="TRANSFERENCIA">Transferencia</option><option value="TERMINAL">Terminal</option><option value="CHEQUE">Cheque</option></select></div>
+            </div>
+            <div class="fr" style="margin-top:4px;">
+              <div class="fg"><label class="fl">Anticipo</label><input class="fi" id="o-advance" type="number" value="0" placeholder="$0.00" oninput="recalcTotal()"/></div>
+              <div class="fg"><label class="fl">Atendido por</label><select class="fs" id="o-staff"></select></div>
+            </div>
+            <div class="tw" style="margin-top:4px;">
+              <div class="tog" id="o-fac-tog" onclick="this.classList.toggle('on');document.getElementById('o-fac-f').style.display=this.classList.contains('on')?'block':'none'"><div class="tk"></div></div>
+              <span class="tl">Requiere factura</span>
+            </div>
+            <div id="o-fac-f" style="display:none;margin-top:9px;">
+              <div class="fr"><div class="fg"><label class="fl">Razón Social</label><input class="fi" id="o-rfc-name"/></div><div class="fg"><label class="fl">Uso de CFDI</label><select class="fs" id="o-cfdi"><option value="G03">G03 – Gastos en general</option><option value="G01">G01 – Adquisición de mercancias</option><option value="P01">P01 – Por definir</option></select></div></div>
+              <div style="font-size:11px;color:var(--amber);background:var(--amber-dim);padding:7px 9px;border-radius:var(--r6);margin-top:3px;">⚡ Se creará automáticamente tarea "Hacer factura" con número de nota.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn bg" onclick="cm('m-order')">Cancelar</button>
+      <button class="btn bp blg" id="o-submit" onclick="submitOrder()">Crear Pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL: CLIENTE ════ -->
+<div class="ov" id="m-client">
+  <div class="modal mlg">
+    <div class="mh"><div class="mt">Nuevo Cliente</div><button class="mx" onclick="cm('m-client')">✕</button></div>
+    <div class="mb">
+      <div class="fr"><div class="fg"><label class="fl">Nombre *</label><input class="fi" id="c-first"/></div><div class="fg"><label class="fl">Apellido Paterno *</label><input class="fi" id="c-lastp"/></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Apellido Materno</label><input class="fi" id="c-lastm" placeholder="Opcional"/></div><div class="fg"><label class="fl">Teléfono *</label><input class="fi" id="c-phone" type="tel" placeholder="656 000 0000"/></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Teléfono Adicional</label><input class="fi" id="c-phone2" placeholder="Opcional"/></div><div class="fg"><label class="fl">Correo Electrónico</label><input class="fi" id="c-email" type="email" placeholder="Opcional"/></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Dirección</label><input class="fi" id="c-addr" placeholder="Opcional"/></div><div class="fg"><label class="fl">Trabajo</label><input class="fi" id="c-work" placeholder="Opcional"/></div></div>
+      <div class="fg"><label class="fl">¿Cómo se enteró de nosotros?</label><select class="fs" id="c-source"><option value="">Seleccionar…</option><option value="WEB">Página web</option><option value="IN_STORE">En persona / Tienda</option><option value="INSTAGRAM">Instagram</option><option value="GOOGLE">Google</option><option value="FACEBOOK">Facebook</option><option value="REFERRAL">Recomendación</option><option value="OTHER">Otra</option></select></div>
+      <div class="fg"><label class="fl">Notas</label><textarea class="fta" id="c-notes" placeholder="Notas internas…"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn bg" onclick="cm('m-client')">Cancelar</button><button class="btn bp" onclick="saveClient()">Guardar Cliente</button></div>
+  </div>
+</div>
+
+<!-- ════ MODAL: TAREA ════ -->
+<div class="ov" id="m-task">
+  <div class="modal msm">
+    <div class="mh"><div class="mt">Nueva Tarea</div><button class="mx" onclick="cm('m-task')">✕</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Descripción *</label><textarea class="fta" id="t-desc"></textarea></div>
+      <div class="fg"><label class="fl">Fecha límite</label><input class="fi" id="t-due" type="date"/></div>
+    </div>
+    <div class="mf"><button class="btn bg" onclick="cm('m-task')">Cancelar</button><button class="btn bp" onclick="saveTask()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- ════ MODAL: CONFIRMAR ENTREGA ════ -->
+<div class="ov" id="m-deliver">
+  <div class="modal mmd">
+    <div class="mh"><div class="mt">Confirmar Entrega</div><button class="mx" onclick="cm('m-deliver')">✕</button></div>
+    <div class="mb">
+      <input type="hidden" id="d-order-id"/>
+      <div class="fr"><div class="fg"><label class="fl">Quién Recibió *</label><input class="fi" id="d-received" placeholder="Nombre completo"/></div></div>
+      <div class="fg"><label class="fl">Fotografía *</label>
+        <div style="border:1.5px dashed var(--rule2);border-radius:var(--r8);padding:12px;text-align:center;cursor:pointer;color:var(--dim);font-size:12px;" onclick="document.getElementById('d-photo').click()">
+          <div id="d-photo-preview">📷 Click para adjuntar foto de entrega</div>
+          <input type="file" id="d-photo" accept="image/*" style="display:none;" onchange="previewPhoto(this)"/>
+        </div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn bg" onclick="cm('m-deliver')">Cancelar</button><button class="btn bs blg" onclick="confirmDelivery()">Confirmar Entrega</button></div>
+  </div>
+</div>
+
+<!-- ════ MODAL: PRODUCTO ════ -->
+<div class="ov" id="m-product">
+  <div class="modal mlg">
+    <div class="mh"><div class="mt" id="m-product-title">Agregar Producto</div><button class="mx" onclick="cm('m-product')">✕</button></div>
+    <div class="mb">
+      <input type="hidden" id="p-id"/>
+      <div class="fr"><div class="fg"><label class="fl">Nombre *</label><input class="fi" id="p-name" placeholder="Ej: Rosas Clásicas"/></div><div class="fg"><label class="fl">Código *</label><input class="fi" id="p-code" placeholder="Ej: RC-001"/></div></div>
+      <div class="fg"><label class="fl">Categoría</label><select class="fs" id="p-cat"></select></div>
+      <div class="fsec"><div class="fst">💰 Precios por Nivel</div>
+        <div class="fr3"><div class="fg"><label class="fl">Standard *</label><input class="fi" id="p-std" type="number" placeholder="$0.00"/></div><div class="fg"><label class="fl">Deluxe</label><input class="fi" id="p-dlx" type="number" placeholder="$0.00"/></div><div class="fg"><label class="fl">Premium</label><input class="fi" id="p-prm" type="number" placeholder="$0.00"/></div></div>
+      </div>
+      <div class="fg"><label class="fl">Descripción</label><textarea class="fta" id="p-desc" placeholder="Para el florista: materiales, colores, técnica…"></textarea></div>
+      <div class="fg"><label class="fl">Fotos (máx. 2)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
+          <div style="border:1.5px dashed var(--rule2);border-radius:var(--r8);height:80px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);font-size:12px;" onclick="document.getElementById('p-photo1').click()">📷 Foto principal<input type="file" id="p-photo1" accept="image/*" style="display:none;"/></div>
+          <div style="border:1.5px dashed var(--rule2);border-radius:var(--r8);height:80px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);font-size:12px;" onclick="document.getElementById('p-photo2').click()">📷 Foto secundaria<input type="file" id="p-photo2" accept="image/*" style="display:none;"/></div>
+        </div>
+      </div>
+      <div class="tw" style="margin-top:4px;"><div class="tog on" id="p-visible" onclick="this.classList.toggle('on')"><div class="tk"></div></div><span class="tl">Visible en página web</span></div>
+    </div>
+    <div class="mf"><button class="btn bg" onclick="cm('m-product')">Cancelar</button><button class="btn bp" onclick="saveProduct()">Guardar Producto</button></div>
+  </div>
+</div>
+
+<!-- ════ MODAL: PIN ADMIN ════ -->
+<div class="ov" id="m-pin">
+  <div class="modal msm">
+    <div class="mh"><div class="mt">Acceso Administrador</div><button class="mx" onclick="cm('m-pin')">✕</button></div>
+    <div class="mb" style="text-align:center;">
+      <p style="font-size:12px;color:var(--mid);margin-bottom:12px;">Ingresa tu PIN de administrador</p>
+      <div class="pdisp-m" id="m-pdisp">· · · ·</div>
+      <div class="ppad-m">
+        <button class="pk" onclick="mpk('1')">1</button><button class="pk" onclick="mpk('2')">2</button><button class="pk" onclick="mpk('3')">3</button>
+        <button class="pk" onclick="mpk('4')">4</button><button class="pk" onclick="mpk('5')">5</button><button class="pk" onclick="mpk('6')">6</button>
+        <button class="pk" onclick="mpk('7')">7</button><button class="pk" onclick="mpk('8')">8</button><button class="pk" onclick="mpk('9')">9</button>
+        <button class="pk sp" onclick="mpk('c')">⌫</button><button class="pk" onclick="mpk('0')">0</button>
+        <button class="pk ok" onclick="mpk('ok')">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG — change API_BASE to your deployed backend URL
+// ═══════════════════════════════════════════════════════
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:3000'
+  : 'https://karel-backend-production.up.railway.app/'; // ← update after deploying
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let token = null;
+let currentStaff = null;
+let staffList = [];
+let loginPin = '';
+let adminPin = '';
+let cachedProducts = [];
+let cachedCategories = [];
+let orderState = {
+  clientId: null,
+  items: [],        // {productId, name, tier, unitPrice, quantity, notes}
+  occasion: 'CUMPLEANOS',
+  deliveryType: 'DOMICILIO_CASA',
+  paymentType: 'RECIBIDO',
+  paymentMethod: 'EFECTIVO',
+};
+
+// ═══════════════════════════════════════════════════════
+// API CLIENT
+// ═══════════════════════════════════════════════════════
+async function api(method, path, body = null, isFormData = false) {
+  const opts = {
+    method,
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  };
+  if (body) {
+    if (isFormData) {
+      opts.body = body;
+    } else {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+  }
+  const res = await fetch(`${API_BASE}${path}`, opts);
+  if (res.status === 401) { logout(); throw new Error('Sesión expirada'); }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Error ${res.status}`);
+  }
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════════════════
+async function initLogin() {
+  try {
+    const data = await api('GET', '/api/auth/staff');
+    staffList = data;
+    const sel = document.getElementById('staff-sel');
+    sel.innerHTML = '<option value="">Selecciona tu nombre…</option>' +
+      data.map(s => `<option value="${s.id}">${s.name} (${roleLabel(s.role)})</option>`).join('');
+  } catch (e) {
+    document.getElementById('staff-sel').innerHTML = '<option value="">⚠ Sin conexión al servidor</option>';
+  }
+}
+
+function onStaffChange() { loginPin = ''; updLoginPin(); }
+
+function lpk(k) {
+  const err = document.getElementById('login-err');
+  err.style.display = 'none';
+  if (k === 'c') { loginPin = loginPin.slice(0, -1); }
+  else if (k === 'ok') { doLogin(); return; }
+  else if (loginPin.length < 8) { loginPin += k; }
+  updLoginPin();
+}
+
+function updLoginPin() {
+  const d = document.getElementById('login-pdisp');
+  const n = loginPin.length;
+  d.style.color = 'var(--text)';
+  const dots = Array(n).fill('●').concat(Array(Math.max(0, 4-n)).fill('·')).join(' ');
+  d.textContent = dots;
+}
+
+async function doLogin() {
+  const staffId = document.getElementById('staff-sel').value;
+  if (!staffId) { showLoginErr('Selecciona tu nombre'); return; }
+  if (!loginPin) { showLoginErr('Ingresa tu PIN'); return; }
+  try {
+    const data = await api('POST', '/api/auth/login', { pin: loginPin, staffId });
+    token = data.token;
+    currentStaff = data.staff;
+    enterApp();
+  } catch (e) {
+    loginPin = '';
+    updLoginPin();
+    showLoginErr('PIN incorrecto');
+    document.getElementById('login-pdisp').style.color = 'var(--red)';
+    setTimeout(() => { document.getElementById('login-pdisp').style.color = 'var(--text)'; }, 600);
+  }
+}
+
+function showLoginErr(msg) {
+  const e = document.getElementById('login-err');
+  e.textContent = msg;
+  e.style.display = 'block';
+}
+
+function enterApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  setTimeout(() => { document.getElementById('login-screen').style.display = 'none'; }, 300);
+  document.getElementById('app').classList.add('visible');
+  // Update sidebar user info
+  document.getElementById('sb-name').textContent = currentStaff.name;
+  document.getElementById('sb-role').textContent = roleLabel(currentStaff.role);
+  document.getElementById('sb-av').textContent = currentStaff.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  // Hide admin nav if not admin/office
+  if (!['ADMIN','OFFICE'].includes(currentStaff.role)) {
+    document.querySelector('[data-v="admin-gate"]').style.display = 'none';
+  }
+  // Show repartidor view if repartidor
+  if (currentStaff.role === 'REPARTIDOR') {
+    showView('repartidor'); return;
+  }
+  showView('dashboard');
+  loadBadges();
+}
+
+function logout() {
+  token = null; currentStaff = null; loginPin = '';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-err').style.display = 'none';
+  updLoginPin();
+  initLogin();
+}
+
+// ═══════════════════════════════════════════════════════
+// BADGES
+// ═══════════════════════════════════════════════════════
+async function loadBadges() {
+  try {
+    const [pedidos, elab, deliveries] = await Promise.all([
+      api('GET', '/api/orders?orderStatus=EN_PROCESO&limit=1'),
+      api('GET', '/api/orders?orderStatus=EN_PROCESO&limit=1'),
+      api('GET', '/api/deliveries/today'),
+    ]);
+    setBadge('nb-p', pedidos.total);
+    setBadge('nb-e', elab.total);
+    setBadge('nb-d', deliveries.filter(d => d.orderStatus === 'POR_ENTREGAR').length);
+  } catch(e) { /* silent */ }
+}
+function setBadge(id, n) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = n;
+  el.style.display = n > 0 ? 'inline-flex' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+// VIEW ROUTING
+// ═══════════════════════════════════════════════════════
+const VT = {dashboard:'Dashboard',pedidos:'Pedidos',elaboracion:'Elaboración de Arreglos',entregas:'Entregas',tareas:'Tareas',chat:'Chat con Clientes Web',productos:'Productos',categorias:'Categorías',admin:'Administración',repartidor:'Vista Repartidor'};
+
+async function showView(v) {
+  if (v === 'nuevo') { openOrderModal(); return; }
+  if (v === 'admin-gate') { askAdminPin(); return; }
+  document.querySelectorAll('.ni').forEach(n => n.classList.toggle('on', n.dataset.v === v));
+  document.getElementById('vt').textContent = VT[v] || v;
+  const vc = document.getElementById('vc');
+  vc.innerHTML = `<div class="loading"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>`;
+  try {
+    const views = {dashboard:vDash,pedidos:vPeds,elaboracion:vElab,entregas:vEntr,tareas:vTar,chat:vChat,productos:vProds,categorias:vCats,admin:vAdmin,repartidor:vRep};
+    if (views[v]) await views[v]();
+    else vc.innerHTML = `<div style="color:var(--dim);text-align:center;padding:80px;font-size:13px;">Vista en desarrollo</div>`;
+  } catch(e) {
+    vc.innerHTML = `<div class="err-state">⚠ ${e.message}</div>`;
+  }
+}
+
+function syncAll() { showView(document.querySelector('.ni.on')?.dataset.v || 'dashboard'); toast('Sincronizado ✓'); }
+
+// ═══════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════
+async function vDash() {
+  const today = new Date().toISOString().split('T')[0];
+  const [todayDels, tomorrowDels, tasks, pending, todayOrders] = await Promise.all([
+    api('GET', '/api/deliveries/today'),
+    api('GET', '/api/deliveries/tomorrow'),
+    api('GET', '/api/tasks'),
+    api('GET', '/api/reports/pending-payments'),
+    api('GET', `/api/orders?dateFrom=${today}&dateTo=${today}&limit=100`),
+  ]);
+
+  const todTot = todayOrders.orders.reduce((s,o) => s + Number(o.total), 0);
+  const activeOrders = await api('GET', '/api/orders?orderStatus=EN_PROCESO&limit=1');
+  const delPending = todayDels.filter(d => d.orderStatus !== 'COMPLETADA');
+
+  document.getElementById('vc').innerHTML = `
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+  <div class="sc"><div class="sv">${delPending.length}</div><div class="sl">Entregas hoy</div></div>
+  <div class="sc"><div class="sv">${activeOrders.total}</div><div class="sl">Órdenes activas</div></div>
+  <div class="sc"><div class="sv" style="color:var(--amber);">${pending.pending.length}</div><div class="sl">Pagos pendientes</div><div class="sn">$${fmt(pending.pending.total)} MXN</div></div>
+  <div class="sc"><div class="sv" style="color:var(--sage);">$${fmt(todTot)}</div><div class="sl">Ventas de hoy</div></div>
+</div>
+${pending.pending.length > 0 ? `
+<div class="pbanner">
+  <div>
+    <div style="font-size:12px;font-weight:700;color:var(--amber);">💰 Notas Pendientes de Pago — ${pending.pending.length} órdenes · $${fmt(pending.pending.total)} MXN</div>
+    <div style="font-size:11px;color:var(--mid);margin-top:1px;">${pending.pending.orders.slice(0,3).map(o=>`${o.orderNumber} · ${o.client?.firstName||''} · $${fmt(o.total)}`).join(' · ')}</div>
+  </div>
+  <button class="btn ba bsm" onclick="showView('admin')">Ver todas</button>
+</div>` : ''}
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;">
+  <div>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="ch"><span class="ct">Entregas Hoy</span><span class="badge ba2">${delPending.length}</span></div>
+      ${delPending.length === 0 ? '<div class="empty-state">Sin entregas pendientes</div>' :
+        delPending.map(o => `<div class="dc">
+          <div class="dc-img">${o.items?.[0]?.product?.photo1Url ? `<img src="${API_BASE}${o.items[0].product.photo1Url}"/>` : '🌸'}</div>
+          <div class="dc-info"><div class="dc-id">${o.orderNumber}</div><div class="dc-name">${o.recipientName || 'Pasa a recoger'}</div><div class="dc-time">⏰ ${o.deliveryWindow || '—'}</div></div>
+          ${sb(o.orderStatus)}
+        </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Entregas Mañana</span><span class="badge bm">${tomorrowDels.length}</span></div>
+      ${tomorrowDels.length === 0 ? '<div class="empty-state">Sin entregas</div>' :
+        tomorrowDels.map(o => `<div class="dc"><div class="dc-img">🌸</div><div class="dc-info"><div class="dc-id">${o.orderNumber}</div><div class="dc-name">${o.recipientName || 'Pasa a recoger'}</div><div class="dc-time">${o.deliveryWindow || '—'}</div></div></div>`).join('')}
+    </div>
+  </div>
+  <div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="card">
+        <div class="ch"><span class="ct">Tareas Pendientes</span><button class="btn bg bsm" onclick="om('m-task')">＋</button></div>
+        ${tasks.filter(t=>!t.completed).slice(0,4).map(t => `<div class="task">
+          <div class="tchk" onclick="toggleTask('${t.id}',this)"></div>
+          <div style="flex:1;min-width:0;"><div class="ttxt">${t.description}</div><div class="tdue${t.dueDate && new Date(t.dueDate)<new Date()?' late':''}">📅 ${t.dueDate ? t.dueDate.split('T')[0] : 'Sin fecha'}</div></div>
+        </div>`).join('')}
+        <button class="btn bg bsm" style="width:100%;margin-top:7px;" onclick="showView('tareas')">Ver todas →</button>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Chat Web</span></div>
+        <div style="text-align:center;padding:20px;color:var(--dim);font-size:12px;">Conecta Socket.io</div>
+        <button class="btn bg bsm" style="width:100%;" onclick="showView('chat')">Abrir Chat →</button>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// PEDIDOS
+// ═══════════════════════════════════════════════════════
+async function vPeds(filterStatus = '', filterPayment = '') {
+  let url = '/api/orders?limit=100';
+  if (filterStatus) url += `&orderStatus=${filterStatus}`;
+  if (filterPayment) url += `&paymentStatus=${filterPayment}`;
+  const data = await api('GET', url);
+  const counts = await Promise.all([
+    api('GET', '/api/orders?limit=1'),
+    api('GET', '/api/orders?orderStatus=EN_PROCESO&limit=1'),
+    api('GET', '/api/orders?orderStatus=POR_ENTREGAR&limit=1'),
+    api('GET', '/api/orders?orderStatus=COMPLETADA&limit=1'),
+    api('GET', '/api/orders?paymentStatus=PENDIENTE&limit=1'),
+  ]);
+
+  document.getElementById('vc').innerHTML = `
+<div style="display:flex;gap:9px;margin-bottom:12px;flex-wrap:wrap;">
+  <div class="sb2" style="flex:1;min-width:200px;"><span style="color:var(--dim);">⌕</span><input placeholder="Buscar por #orden, cliente, destinatario…" oninput="searchOrders(this.value)"/></div>
+  <button class="btn bp" onclick="openOrderModal()">＋ Nuevo Pedido</button>
+</div>
+<div class="fps">
+  <div class="fp${!filterStatus&&!filterPayment?' act':''}" onclick="vPeds();setVC(this)">Todos (${counts[0].total})</div>
+  <div class="fp${filterStatus==='EN_PROCESO'?' act':''}" onclick="vPeds('EN_PROCESO');setVC(this)">En proceso (${counts[1].total})</div>
+  <div class="fp${filterStatus==='POR_ENTREGAR'?' act':''}" onclick="vPeds('POR_ENTREGAR');setVC(this)">Por entregar (${counts[2].total})</div>
+  <div class="fp${filterStatus==='COMPLETADA'?' act':''}" onclick="vPeds('COMPLETADA');setVC(this)">Completados (${counts[3].total})</div>
+  <div class="fp${filterPayment==='PENDIENTE'?' act':''}" style="margin-left:auto;" onclick="vPeds('','PENDIENTE');setVC(this)">Pendientes de pago (${counts[4].total})</div>
+</div>
+<div class="card">
+<table class="tbl">
+  <thead><tr><th>#</th><th>F. Entrega</th><th>Cliente</th><th>Destinatario</th><th>Total</th><th>Pago</th><th>Estado</th><th>Acciones</th></tr></thead>
+  <tbody>
+  ${data.orders.length === 0 ? '<tr><td colspan="8" style="text-align:center;color:var(--dim);padding:30px;">Sin pedidos</td></tr>' :
+    data.orders.map(o => `<tr>
+    <td><span class="tlink">${o.orderNumber}</span></td>
+    <td style="color:var(--mid);">${o.deliveryDate?.split('T')[0] || '—'}</td>
+    <td>${o.client?.firstName||''} ${o.client?.lastNameP||''}</td>
+    <td>${o.recipientName || 'Pasa a recoger'}</td>
+    <td style="color:var(--sage);font-weight:700;">$${fmt(o.total)}</td>
+    <td>${pb(o.paymentStatus)}</td><td>${sb(o.orderStatus)}</td>
+    <td><div style="display:flex;gap:4px;flex-wrap:nowrap;">
+      ${o.orderStatus !== 'COMPLETADA' && o.orderStatus !== 'CANCELADA' ? `<button class="btn bs bsm" onclick="openDeliverModal('${o.id}')">Entregar</button>` : ''}
+      ${o.paymentStatus === 'PENDIENTE' ? `<button class="btn ba bsm" onclick="markPaid('${o.id}')">$ Cobrar</button>` : ''}
+      <button class="btn bg bsm">Ver</button>
+    </div></td>
+  </tr>`).join('')}
+  </tbody>
+</table>
+</div>`;
+}
+
+function setVC(el) { /* pills handled inline */ }
+
+async function searchOrders(q) {
+  if (!q) { vPeds(); return; }
+  try {
+    const data = await api('GET', `/api/orders?search=${encodeURIComponent(q)}`);
+    // Re-render just the tbody
+    const tbody = document.querySelector('.tbl tbody');
+    if (tbody) tbody.innerHTML = data.orders.map(o => `<tr>
+      <td><span class="tlink">${o.orderNumber}</span></td>
+      <td style="color:var(--mid);">${o.deliveryDate?.split('T')[0]||'—'}</td>
+      <td>${o.client?.firstName||''} ${o.client?.lastNameP||''}</td>
+      <td>${o.recipientName||'Pasa a recoger'}</td>
+      <td style="color:var(--sage);font-weight:700;">$${fmt(o.total)}</td>
+      <td>${pb(o.paymentStatus)}</td><td>${sb(o.orderStatus)}</td>
+      <td><button class="btn bg bsm">Ver</button></td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--dim);">Sin resultados</td></tr>';
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════
+// ELABORACIÓN
+// ═══════════════════════════════════════════════════════
+async function vElab() {
+  const data = await api('GET', '/api/orders?orderStatus=EN_PROCESO&limit=50');
+  const orders = data.orders;
+  document.getElementById('vc').innerHTML = `
+<p style="font-size:12px;color:var(--mid);margin-bottom:14px;">Ordenados por prioridad de entrega. El florista ve foto y descripción del producto (sin precio).</p>
+${orders.length === 0 ? '<div class="empty-state">🌸 Sin arreglos pendientes</div>' :
+`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+${orders.map((o,i) => {
+  const item = o.items?.[0];
+  const prod = item?.product;
+  return `<div class="ec" id="ec-${o.id}">
+  <div class="ec-p">🚨 Prioridad ${i+1}</div>
+  <div style="font-size:9px;color:var(--dim);margin-bottom:5px;">${o.orderNumber} · Entregar ${o.deliveryDate?.split('T')[0]||'—'}</div>
+  <div class="ec-img">${prod?.photo1Url ? `<img src="${API_BASE}${prod.photo1Url}"/>` : '🌸'}</div>
+  <div class="ec-name">${prod?.name||'Arreglo'}</div>
+  <div class="ec-desc">Para: <strong>${o.recipientName||'—'}</strong> · ${o.deliveryWindow||'—'}<br/>Ocasión: ${occLabel(o.occasion)}</div>
+  ${o.messageText ? `<div class="ec-note">💌 "${o.messageText}" — ${o.messageAnon ? 'Anónimo' : o.messageFrom||''}</div>` : ''}
+  ${item?.notes ? `<div class="ec-note" style="background:var(--blue-dim);color:var(--blue);">📝 ${item.notes}</div>` : ''}
+  <div style="display:flex;gap:7px;">
+    <button class="btn bs" style="flex:1;" onclick="markReady('${o.id}',this)">✓ Listo para entregar</button>
+  </div>
+</div>`;
+}).join('')}
+</div>`}`;
+}
+
+async function markReady(orderId, btn) {
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    await api('PATCH', `/api/orders/${orderId}/status`, { orderStatus: 'POR_ENTREGAR' });
+    document.getElementById('ec-'+orderId)?.classList.add('done');
+    btn.textContent = '✓ Elaborado'; toast('Arreglo movido a "Por entregar" ✓');
+  } catch(e) { btn.disabled = false; btn.textContent = '✓ Listo para entregar'; toastErr(e.message); }
+}
+
+// ═══════════════════════════════════════════════════════
+// ENTREGAS
+// ═══════════════════════════════════════════════════════
+async function vEntr() {
+  const [todayDels, staffData] = await Promise.all([
+    api('GET', '/api/deliveries/today'),
+    api('GET', '/api/staff'),
+  ]);
+  const repartidores = staffData.filter(s => s.role === 'REPARTIDOR' && s.active);
+  const pending = todayDels.filter(o => o.orderStatus === 'POR_ENTREGAR');
+
+  document.getElementById('vc').innerHTML = `
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+  <div class="card">
+    <div class="ch"><span class="ct">Entregas del Día</span><span class="badge ba2">${pending.length} pendientes</span></div>
+    ${pending.length === 0 ? '<div class="empty-state">Sin entregas pendientes</div>' :
+      pending.map(o => `<div class="dc" style="margin-bottom:9px;">
+        <div class="dc-img">${o.items?.[0]?.product?.photo1Url ? `<img src="${API_BASE}${o.items[0].product.photo1Url}"/>` : '🌸'}</div>
+        <div class="dc-info"><div class="dc-id">${o.orderNumber}</div><div class="dc-name">${o.recipientName||'—'}</div><div class="dc-time">⏰ ${o.deliveryWindow||'—'}</div><div style="font-size:10px;color:var(--dim);margin-top:1px;">📍 ${o.recipientAddress||'—'} ${o.recipientColonia||''}</div></div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+          <select class="fs" style="font-size:10px;padding:3px 6px;height:auto;border-radius:5px;" onchange="assignDelivery('${o.id}',this.value)">
+            <option value="">Sin asignar</option>
+            ${repartidores.map(r => `<option value="${r.id}" ${o.delivery?.assignedToId===r.id?'selected':''}>${r.name}</option>`).join('')}
+          </select>
+          <button class="btn bs bsm" onclick="openDeliverModal('${o.id}')">Confirmar</button>
+        </div>
+      </div>`).join('')}
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ct">Repartidores</span></div>
+    <table class="tbl"><thead><tr><th>Nombre</th><th>Asignadas</th><th>Estado</th></tr></thead><tbody>
+    ${repartidores.map(r => {
+      const count = pending.filter(o => o.delivery?.assignedToId === r.id).length;
+      return `<tr><td>${r.name}</td><td><span class="badge ba2">${count}</span></td><td><span class="badge bg2">Activo</span></td></tr>`;
+    }).join('')}
+    </tbody></table>
+  </div>
+</div>`;
+}
+
+async function assignDelivery(orderId, staffId) {
+  try {
+    await api('PATCH', `/api/deliveries/${orderId}/assign`, { staffId: staffId || null });
+    toast('Repartidor asignado ✓');
+  } catch(e) { toastErr(e.message); }
+}
+
+// ═══════════════════════════════════════════════════════
+// TAREAS
+// ═══════════════════════════════════════════════════════
+async function vTar() {
+  const tasks = await api('GET', '/api/tasks?completed=false');
+  const allTasks = await api('GET', '/api/tasks?completed=true');
+  const all = [...tasks, ...allTasks];
+
+  document.getElementById('vc').innerHTML = `
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+  <div class="fps" style="margin-bottom:0;">
+    <div class="fp act">Todas (${all.length})</div>
+    <div class="fp">Pendientes (${tasks.length})</div>
+    <div class="fp">Completadas (${allTasks.length})</div>
+  </div>
+  <button class="btn bp bsm" onclick="om('m-task')">＋ Nueva Tarea</button>
+</div>
+<div class="card">
+${all.map(t => `<div class="task" id="tw-${t.id}">
+  <div class="tchk${t.completed?' done':''}" onclick="toggleTask('${t.id}',this)">${t.completed?'<span style="color:white;font-size:8px;">✓</span>':''}</div>
+  <div style="flex:1;min-width:0;"><div class="ttxt${t.completed?' done':''}">${t.description}${t.order?` <span style="color:var(--dim);">· ${t.order.orderNumber}</span>`:''}</div><div class="tdue${!t.completed&&t.dueDate&&new Date(t.dueDate)<new Date()?' late':''}">${t.completed?'✓ Completada':t.dueDate?'📅 '+t.dueDate.split('T')[0]:'Sin fecha'}</div></div>
+  <button class="btn bg bsm" style="color:var(--red);flex-shrink:0;" onclick="deleteTask('${t.id}',this)">✕</button>
+</div>`).join('')}
+</div>`;
+}
+
+async function toggleTask(id, el) {
+  try {
+    await api('PATCH', `/api/tasks/${id}/complete`);
+    el.classList.add('done');
+    el.innerHTML = '<span style="color:white;font-size:8px;">✓</span>';
+    const txt = el.nextElementSibling?.querySelector('.ttxt');
+    if (txt) txt.classList.add('done');
+    toast('Tarea completada ✓');
+  } catch(e) { toastErr(e.message); }
+}
+
+async function deleteTask(id, btn) {
+  btn.disabled = true;
+  try {
+    await api('DELETE', `/api/tasks/${id}`);
+    document.getElementById(`tw-${id}`)?.remove();
+    toast('Tarea eliminada');
+  } catch(e) { btn.disabled = false; toastErr(e.message); }
+}
+
+async function saveTask() {
+  const desc = document.getElementById('t-desc').value.trim();
+  const due  = document.getElementById('t-due').value;
+  if (!desc) { toastErr('Ingresa una descripción'); return; }
+  try {
+    await api('POST', '/api/tasks', { description: desc, dueDate: due || undefined });
+    cm('m-task');
+    document.getElementById('t-desc').value = '';
+    document.getElementById('t-due').value = '';
+    toast('Tarea agregada ✓');
+    if (document.getElementById('vt').textContent === 'Tareas') showView('tareas');
+  } catch(e) { toastErr(e.message); }
+}
+
+// ═══════════════════════════════════════════════════════
+// CHAT (REST only — real-time via Socket.io)
+// ═══════════════════════════════════════════════════════
+async function vChat() {
+  const sessions = await api('GET', '/api/chat/sessions');
+  document.getElementById('vc').innerHTML = `
+<div class="cwrap" style="height:calc(100vh - 110px);">
+  <div class="clist">
+    <div class="clh">Conversaciones${sessions.length > 0 ? ` (${sessions.length})` : ''}</div>
+    ${sessions.length === 0 ? '<div style="padding:20px;text-align:center;color:var(--dim);font-size:12px);">Sin conversaciones activas</div>' :
+      sessions.map((s,i) => `<div class="cconv${i===0?' on':''}" onclick="loadChat('${s.id}',this)">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><span class="ccn">${s.visitorName||'Visitante'}</span><span style="font-size:10px;color:var(--dim);">${new Date(s.updatedAt).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</span></div>
+        <div class="ccm">${s.messages?.[0]?.text || '…'}</div>
+      </div>`).join('')}
+  </div>
+  <div class="cmain">
+    <div class="cmh" id="chat-header"><div style="font-size:13px;font-weight:600;color:var(--dim);">Selecciona una conversación</div></div>
+    <div class="cmsgs" id="cmsgs"></div>
+    <div class="cinp"><input id="cinp" placeholder="Escribe un mensaje…" onkeydown="if(event.key==='Enter')sendChat()"/><button class="btn bp bsm" onclick="sendChat()">Enviar</button></div>
+  </div>
+</div>`;
+
+  if (sessions.length > 0) loadChat(sessions[0].id, document.querySelector('.cconv'));
+}
+
+let activeChatSession = null;
+async function loadChat(sessionId, el) {
+  activeChatSession = sessionId;
+  document.querySelectorAll('.cconv').forEach(c => c.classList.remove('on'));
+  el?.classList.add('on');
+  try {
+    const msgs = await api('GET', `/api/chat/sessions/${sessionId}/messages`);
+    document.getElementById('cmsgs').innerHTML = msgs.map(m => `
+      <div><div class="cmsg ${m.fromStaff?'out':'in'}">${m.text}</div>
+      <div class="cmt">${new Date(m.createdAt).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</div></div>`).join('');
+    const cm = document.getElementById('cmsgs');
+    if (cm) cm.scrollTop = cm.scrollHeight;
+  } catch(e) {}
+}
+
+async function sendChat() {
+  if (!activeChatSession) return;
+  const inp = document.getElementById('cinp');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  try {
+    // In production, this would go through Socket.io; here we call the API directly
+    const msg = await api('POST', `/api/chat/sessions/${activeChatSession}/messages`, {
+      text, fromStaff: true, staffId: currentStaff?.id
+    });
+    const m = document.getElementById('cmsgs');
+    if (m) {
+      const d = document.createElement('div');
+      d.innerHTML = `<div class="cmsg out">${text}</div><div class="cmt" style="text-align:right;">${new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</div>`;
+      m.appendChild(d);
+      m.scrollTop = m.scrollHeight;
+    }
+  } catch(e) { toastErr(e.message); }
+}
+
+// ═══════════════════════════════════════════════════════
+// PRODUCTOS
+// ═══════════════════════════════════════════════════════
+async function vProds() {
+  const [prods, cats] = await Promise.all([
+    api('GET', '/api/products'),
+    api('GET', '/api/categories'),
+  ]);
+  cachedProducts = prods;
+  cachedCategories = cats;
+
+  document.getElementById('vc').innerHTML = `
+<div style="display:flex;gap:9px;margin-bottom:12px;flex-wrap:wrap;">
+  <div class="sb2" style="flex:1;"><span style="color:var(--dim);">⌕</span><input placeholder="Buscar por nombre o código…" oninput="filterProds(this.value)"/></div>
+  <button class="btn bp" onclick="openProductModal()">＋ Agregar Producto</button>
+</div>
+<div class="pgrid" id="prods-grid">
+${prods.map(p => prodCard(p)).join('')}
+</div>`;
+}
+
+function prodCard(p) {
+  return `<div class="pc">
+  <div class="pc-img">${p.photo1Url ? `<img src="${API_BASE}${p.photo1Url}"/>` : '🌸'}</div>
+  <div class="pc-b">
+    <div class="pc-n">${p.name}</div>
+    <div class="pc-c">${p.code} · ${p.category?.name||''}</div>
+    <div class="pc-pp"><span class="pch s">STD $${fmt(p.priceStd)}</span>${p.priceDlx?`<span class="pch d">DLX $${fmt(p.priceDlx)}</span>`:''} ${p.pricePrm?`<span class="pch p">PRM $${fmt(p.pricePrm)}</span>`:''}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div class="tw"><div class="tog${p.visible?' on':''}" onclick="toggleProductVisible('${p.id}',this)"><div class="tk"></div></div><span class="tl" style="font-size:11px;">${p.visible?'Visible':'Oculto'}</span></div>
+    </div>
+    <div style="display:flex;gap:5px;">
+      <button class="btn bg bsm" style="flex:1;" onclick="openProductModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">✏️ Editar</button>
+      <button class="btn bg bsm" style="color:var(--red);" onclick="toast('Usa la visibilidad para ocultar')">🗑</button>
+    </div>
+  </div>
+</div>`;
+}
+
+function filterProds(q) {
+  const grid = document.getElementById('prods-grid');
+  if (!grid) return;
+  const filtered = q ? cachedProducts.filter(p => p.name.toLowerCase().includes(q.toLowerCase()) || p.code.toLowerCase().includes(q.toLowerCase())) : cachedProducts;
+  grid.innerHTML = filtered.map(p => prodCard(p)).join('');
+}
+
+async function toggleProductVisible(id, tog) {
+  const visible = !tog.classList.contains('on');
+  tog.classList.toggle('on', visible);
+  try {
+    await api('PUT', `/api/products/${id}`, { visible });
+    toast(visible ? 'Producto visible ✓' : 'Producto oculto ✓');
+  } catch(e) { tog.classList.toggle('on', !visible); toastErr(e.message); }
+}
+
+async function saveProduct() {
+  const id = document.getElementById('p-id').value;
+  const body = {
+    name: document.getElementById('p-name').value,
+    code: document.getElementById('p-code').value,
+    categoryId: document.getElementById('p-cat').value,
+    priceStd: document.getElementById('p-std').value,
+    priceDlx: document.getElementById('p-dlx').value || undefined,
+    pricePrm: document.getElementById('p-prm').value || undefined,
+    description: document.getElementById('p-desc').value,
+    visible: document.getElementById('p-visible').classList.contains('on'),
+  };
+  if (!body.name || !body.code || !body.priceStd) { toastErr('Nombre, código y precio son requeridos'); return; }
+  try {
+    if (id) {
+      await api('PUT', `/api/products/${id}`, body);
+      toast('Producto actualizado ✓');
+    } else {
+      await api('POST', '/api/products', body);
+      toast('Producto creado ✓');
+    }
+    cm('m-product');
+    showView('productos');
+  } catch(e) { toastErr(e.message); }
+}
+
+// ═══════════════════════════════════════════════════════
+// CATEGORÍAS
+// ═══════════════════════════════════════════════════════
+async function vCats() {
+  const cats = await api('GET', '/api/categories');
+  document.getElementById('vc').innerHTML = `
+<div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+  <button class="btn bp" onclick="toast('Próximamente: formulario de categoría')">＋ Nueva Categoría</button>
+</div>
+<div class="card">
+<table class="tbl"><thead><tr><th>Categoría</th><th>Productos</th><th>Descripción</th><th>Visible</th><th>Acciones</th></tr></thead><tbody>
+${cats.map(c => `<tr>
+  <td><strong>${c.name}</strong></td>
+  <td><span class="badge bm">${c._count?.products||0}</span></td>
+  <td style="color:var(--mid);font-size:11px;">${c.description||'—'}</td>
+  <td><div class="tog${c.visible?' on':''}" onclick="toggleCatVisible('${c.id}',this)"><div class="tk"></div></div></td>
+  <td><button class="btn bg bsm" onclick="toast('Editar categoría')">✏️ Editar</button></td>
+</tr>`).join('')}
+</tbody></table>
+</div>`;
+}
+
+async function toggleCatVisible(id, tog) {
+  const visible = !tog.classList.contains('on');
+  tog.classList.toggle('on', visible);
+  try { await api('PUT', `/api/categories/${id}`, { visible }); toast('Actualizado ✓'); }
+  catch(e) { tog.classList.toggle('on', !visible); toastErr(e.message); }
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN
+// ═══════════════════════════════════════════════════════
+let atab = 'pagos';
+async function vAdmin() {
+  const tabs = [['pagos','💰 Pagos'],['diario','📊 Diario'],['mensual','📅 Mensual'],['rango','🗓 Rango'],['staff','👥 Staff'],['pin','🔑 PIN']];
+  document.getElementById('vc').innerHTML = `
+<div style="display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap;">
+  ${tabs.map(([k,l])=>`<button id="atb-${k}" class="btn ${atab===k?'bp':'bg'} bsm" onclick="aTab('${k}')">${l}</button>`).join('')}
+</div>
+<div id="atc"><div class="loading"><div class="spinner"></div></div></div>`;
+  await aRender(atab);
+}
+
+async function aTab(t) {
+  atab = t;
+  document.querySelectorAll('[id^=atb-]').forEach(b => { const k=b.id.replace('atb-',''); b.className=`btn ${k===t?'bp':'bg'} bsm`; });
+  await aRender(t);
+}
+
+async function aRender(t) {
+  const el = document.getElementById('atc');
+  if (!el) return;
+  el.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    if (t === 'pagos') {
+      const data = await api('GET', '/api/reports/pending-payments');
+      el.innerHTML = `<div class="card"><div class="ch"><span class="ct">Pedidos Pendientes de Pago</span><span style="color:var(--amber);font-weight:700;font-size:13px;">$${fmt(data.total)} MXN</span></div>
+      <table class="tbl"><thead><tr><th>#</th><th>Cliente</th><th>F. Pago</th><th>Total</th><th>Acción</th></tr></thead><tbody>
+      ${data.pending.map(o=>`<tr><td><span class="tlink">${o.orderNumber}</span></td><td>${o.client?.firstName||''} ${o.client?.lastNameP||''}<br/><span style="font-size:10px;color:var(--dim);">${o.client?.phone||''}</span></td><td style="color:var(--mid);">${o.creditDueDate?new Date(o.creditDueDate).toLocaleDateString('es'):'—'}</td><td style="color:var(--amber);font-weight:700;">$${fmt(o.total)}</td><td><button class="btn bs bsm" onclick="markPaid('${o.id}')">✓ Cobrado</button></td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--dim);">Sin pagos pendientes 🎉</td></tr>'}
+      </tbody></table></div>`;
+    } else if (t === 'diario') {
+      const date = new Date().toISOString().split('T')[0];
+      const data = await api('GET', `/api/reports/daily?date=${date}`);
+      el.innerHTML = `<div class="card"><div class="ch"><span class="ct">Reporte de Hoy</span><span style="color:var(--sage);font-weight:700;font-size:13px;">$${fmt(data.total)} MXN</span></div>
+      ${Object.entries(data.byMethod||{}).map(([m,v])=>`<div class="brow"><div class="blbl">${m}</div><div class="btrack"><div class="bfill" style="width:${data.total>0?(v/data.total*100).toFixed(0):0}%"></div></div><div class="bval">$${fmt(v)}</div></div>`).join('')}
+      </div>`;
+    } else if (t === 'mensual') {
+      const now = new Date();
+      const data = await api('GET', `/api/reports/monthly?year=${now.getFullYear()}&month=${now.getMonth()+1}`);
+      el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="card"><div class="ch"><span class="ct">Por Método de Pago</span></div>
+      ${Object.entries(data.byMethod||{}).map(([m,v])=>`<div class="brow"><div class="blbl">${m}</div><div class="btrack"><div class="bfill" style="width:${data.total>0?(v/data.total*100).toFixed(0):0}%"></div></div><div class="bval">$${fmt(v)}</div></div>`).join('')}
+      </div>
+      <div class="card"><div class="ch"><span class="ct">Top Productos</span></div>
+      ${data.topProducts?.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--rule);font-size:11.5px;"><span>#${i+1} ${p.name}</span><span class="badge bm">${p.count}</span></div>`).join('')||'<div class="empty-state">Sin datos</div>'}
+      </div></div>
+      <div class="card" style="margin-top:12px;"><div class="ch"><span class="ct">Total del Mes</span><span style="color:var(--sage);font-weight:800;font-size:20px;">$${fmt(data.total)} MXN</span></div>
+      <div style="display:flex;gap:20px;font-size:12px;color:var(--mid);"><span>Órdenes: <strong style="color:var(--text);">${data.orders?.length||0}</strong></span><span>Clientes nuevos: <strong style="color:var(--text);">${data.newClients?.count||0}</strong></span><span>Pendientes: <strong style="color:var(--amber);">$${fmt(data.pending?.total||0)}</strong></span></div>
+      </div>`;
+    } else if (t === 'rango') {
+      el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="ch"><span class="ct">Rango de Fechas</span></div><div style="display:flex;gap:11px;align-items:flex-end;flex-wrap:wrap;"><div class="fg" style="margin:0;"><label class="fl">Desde</label><input class="fi" type="date" id="r-from" value="${new Date().toISOString().split('T')[0]}"/></div><div class="fg" style="margin:0;"><label class="fl">Hasta</label><input class="fi" type="date" id="r-to" value="${new Date().toISOString().split('T')[0]}"/></div><button class="btn bp" onclick="genReport()">Generar Reporte</button></div></div><div id="report-result"></div>`;
+    } else if (t === 'staff') {
+      const staff = await api('GET', '/api/staff');
+      const rl={ADMIN:'brose',OFFICE:'bb',FLORISTA:'bp2',REPARTIDOR:'ba2'};
+      el.innerHTML = `<div style="display:flex;justify-content:flex-end;margin-bottom:11px;"><button class="btn bp" onclick="toast('Formulario de staff próximamente')">＋ Agregar Staff</button></div>
+      <div class="card"><table class="tbl"><thead><tr><th>Nombre</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+      ${staff.map(s=>`<tr><td><strong>${s.name}</strong></td><td><span class="badge ${rl[s.role]||'bm'}">${roleLabel(s.role)}</span></td><td><span class="badge ${s.active?'bg2':'br2'}">${s.active?'Activo':'Inactivo'}</span></td><td><div class="tog${s.active?' on':''}" onclick="toggleStaff('${s.id}',this)"><div class="tk"></div></div></td></tr>`).join('')}
+      </tbody></table></div>`;
+    } else if (t === 'pin') {
+      el.innerHTML = `<div class="card" style="max-width:320px;"><div class="ch"><span class="ct">Cambiar PIN</span></div><div class="fg"><label class="fl">PIN Actual</label><input class="fi" id="pin-cur" type="password" placeholder="••••"/></div><div class="fg"><label class="fl">Nuevo PIN</label><input class="fi" id="pin-new" type="password" placeholder="••••"/></div><div class="fg"><label class="fl">Confirmar Nuevo PIN</label><input class="fi" id="pin-conf" type="password" placeholder="••••"/></div><button class="btn bp" onclick="changePIN()">Cambiar PIN</button></div>`;
+    }
+  } catch(e) { el.innerHTML = `<div class="err-state">⚠ ${e.message}</div>`; }
+}
+
+async function genReport() {
+  const from = document.getElementById('r-from').value;
+  const to = document.getElementById('r-to').value;
+  const res = document.getElementById('report-result');
+  res.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const data = await api('GET', `/api/reports/range?from=${from}&to=${to}`);
+    res.innerHTML = `<div class="card"><div class="ch"><span class="ct">${from} – ${to}</span><span style="color:var(--sage);font-weight:800;font-size:18px;">$${fmt(data.total)} MXN</span></div>
+    <div style="display:flex;gap:20px;font-size:12px;color:var(--mid);margin-bottom:12px;"><span>Órdenes: <strong style="color:var(--text);">${data.orders?.length||0}</strong></span><span>Pendientes: <strong style="color:var(--amber);">$${fmt(data.pending?.total||0)}</strong></span></div>
+    ${Object.entries(data.byMethod||{}).map(([m,v])=>`<div class="brow"><div class="blbl">${m}</div><div class="btrack"><div class="bfill" style="width:${data.total>0?(v/data.total*100).toFixed(0):0}%"></div></div><div class="bval">$${fmt(v)}</div></div>`).join('')}
+    </div>`;
+  } catch(e) { res.innerHTML = `<div class="err-state">⚠ ${e.message}</div>`; }
+}
+
+async function toggleStaff(id, tog) {
+  const active = !tog.classList.contains('on');
+  tog.classList.toggle('on', active);
+  try { await api('PATCH', `/api/staff/${id}/active`, { active }); toast('Estado actualizado ✓'); }
+  catch(e) { tog.classList.toggle('on', !active); toastErr(e.message); }
+}
+
+async function changePIN() {
+  const cur = document.getElementById('pin-cur').value;
+  const nw = document.getElementById('pin-new').value;
+  const cf = document.getElementById('pin-conf').value;
+  if (!cur||!nw||!cf) { toastErr('Todos los campos son requeridos'); return; }
+  if (nw !== cf) { toastErr('Los PINs no coinciden'); return; }
+  try {
+    await api('PUT', '/api/auth/pin', { currentPin: cur, newPin: nw });
+    toast('PIN actualizado ✓');
+    document.getElementById('pin-cur').value = '';
+    document.getElementById('pin-new').value = '';
+    document.getElementById('pin-conf').value = '';
+  } catch(e) { toastErr(e.message); }
+}
+
+// ═══════════════════════════════════════════════════════
+// REPARTIDOR VIEW
+// ═══════════════════════════════════════════════════════
+async function vRep() {
+  const myId = currentStaff?.id;
+  const orders = myId ? await api('GET', `/api/deliveries/assigned/${myId}`) : [];
+  document.getElementById('vc').innerHTML = `
+<div style="background:var(--amber-dim);border:1px solid rgba(200,152,64,.22);border-radius:var(--r10);padding:11px 14px;display:flex;align-items:center;gap:11px;margin-bottom:14px;">
+  <span style="font-size:20px;">📍</span>
+  <div><div style="font-size:13px;font-weight:700;color:var(--text);">${currentStaff?.name||'Repartidor'}</div><div style="font-size:11px;color:var(--mid);">${orders.length} entregas asignadas para hoy</div></div>
+</div>
+${orders.length === 0 ? '<div class="empty-state">Sin entregas asignadas hoy</div>' :
+  orders.map((o,i) => `<div class="repc">
+  <div class="reph"><div><div style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);">${o.orderNumber} · Entrega ${i+1} de ${orders.length}</div><div style="font-size:14px;font-weight:800;color:var(--text);margin-top:2px;">${o.recipientName||'—'}</div></div><span class="badge ba2">Pendiente</span></div>
+  <div class="repb">
+    <div class="repg">
+      <div><div class="rpl">Cliente</div><div class="rpv">${o.client?.firstName||''} ${o.client?.lastNameP||''}<br/><a href="tel:${o.client?.phone}" style="color:var(--rose-l);font-size:11px;">📱 ${o.client?.phone||'—'}</a></div></div>
+      <div><div class="rpl">Destinatario</div><div class="rpv">${o.recipientName||'—'}<br/><a href="tel:${o.recipientPhone}" style="color:var(--rose-l);font-size:11px;">📱 ${o.recipientPhone||'—'}</a></div></div>
+      <div><div class="rpl">Dirección</div><div class="rpv">${o.recipientAddress||'—'}<br/>${o.recipientColonia||''}</div></div>
+      <div><div class="rpl">Horario</div><div class="rpv" style="color:var(--amber);">⏰ ${o.deliveryWindow||'—'}</div></div>
+    </div>
+    ${o.items?.map(item => `<div style="background:var(--ink3);border-radius:var(--r8);padding:11px;display:flex;gap:11px;align-items:center;margin-bottom:11px;">
+      <div style="width:50px;height:50px;border-radius:var(--r8);background:var(--ink4);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">${item.product?.photo1Url?`<img src="${API_BASE}${item.product.photo1Url}" style="width:100%;height:100%;object-fit:cover;"/>` : '🌸'}</div>
+      <div><div style="font-size:12.5px;font-weight:600;color:var(--text);">${item.product?.name||'—'}</div>${item.notes?`<div style="font-size:11px;color:var(--mid);margin-top:2px;">${item.notes}</div>`:''}</div>
+    </div>`).join('')||''}
+    ${o.messageText ? `<div style="background:var(--rose-dim);border-radius:var(--r8);padding:9px;margin-bottom:11px;font-size:11.5px;color:var(--rose-l);">💌 "${o.messageText}" — ${o.messageAnon?'Anónimo':o.messageFrom||''}</div>` : ''}
+    ${o.recipientNotes ? `<div style="background:var(--amber-dim);border-radius:var(--r8);padding:9px;margin-bottom:11px;font-size:11.5px;color:var(--amber);">⚠️ ${o.recipientNotes}</div>` : ''}
+    <button class="btn bs blg" style="width:100%;" onclick="openDeliverModal('${o.id}')">📷 Confirmar Entrega</button>
+  </div>
+</div>`).join('')}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// NUEVO PEDIDO
+// ═══════════════════════════════════════════════════════
+async function openOrderModal() {
+  // Reset state
+  orderState = { clientId: null, items: [], occasion: 'CUMPLEANOS', deliveryType: 'DOMICILIO_CASA', paymentType: 'RECIBIDO', paymentMethod: 'EFECTIVO' };
+  document.getElementById('client-search').value = '';
+  document.getElementById('client-results').innerHTML = '';
+  document.getElementById('client-selected').style.display = 'none';
+  document.getElementById('order-items').innerHTML = '';
+  document.getElementById('o-date').value = '';
+  recalcTotal();
+
+  // Load staff for dropdown
+  try {
+    const staff = await api('GET', '/api/staff');
+    const sel = document.getElementById('o-staff');
+    sel.innerHTML = '<option value="">—</option>' + staff.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  } catch(e) {}
+
+  om('m-order');
+}
+
+async function searchClients(q) {
+  if (q.length < 2) { document.getElementById('client-results').innerHTML = ''; return; }
+  try {
+    const data = await api('GET', `/api/clients?search=${encodeURIComponent(q)}`);
+    document.getElementById('client-results').innerHTML = data.map(c => `
+      <div class="client-result" onclick="selectClient('${c.id}','${c.firstName} ${c.lastNameP}','${c.phone}','${c.loyaltyTier}','${c.orderCount}')">
+        <div style="display:flex;justify-content:space-between;"><span style="font-weight:600;color:var(--text);">${c.firstName} ${c.lastNameP}</span>${loyaltyBadge(c.loyaltyTier,c.orderCount)}</div>
+        <div style="color:var(--mid);margin-top:2px;font-size:11px;">📱 ${c.phone}</div>
+      </div>`).join('') || '<div style="padding:8px;font-size:11px;color:var(--dim);">Sin resultados</div>';
+  } catch(e) {}
+}
+
+function selectClient(id, name, phone, tier, count) {
+  orderState.clientId = id;
+  document.getElementById('client-results').innerHTML = '';
+  document.getElementById('client-search').value = '';
+  const el = document.getElementById('client-selected');
+  el.style.display = 'block';
+  el.innerHTML = `<div class="client-result selected">
+    <div style="display:flex;justify-content:space-between;"><span style="font-weight:600;color:var(--text);">${name}</span>${loyaltyBadge(tier,count)}</div>
+    <div style="color:var(--mid);margin-top:2px;font-size:11px;">📱 ${phone}</div>
+    <button class="btn bg bsm" style="margin-top:5px;" onclick="clearClient()">Cambiar</button>
+  </div>`;
+}
+
+function clearClient() {
+  orderState.clientId = null;
+  document.getElementById('client-selected').style.display = 'none';
+}
+
+async function searchProducts(q) {
+  const res = document.getElementById('product-results');
+  if (q.length < 1) { res.style.display = 'none'; return; }
+  try {
+    const data = await api('GET', `/api/products?search=${encodeURIComponent(q)}&visible=false`);
+    res.style.display = data.length ? 'block' : 'none';
+    res.innerHTML = data.map(p => `
+      <div class="client-result" onclick="addProductToOrder('${p.id}','${p.name}',${p.priceStd},${p.priceDlx||p.priceStd},${p.pricePrm||p.priceStd})">
+        <span style="font-weight:600;color:var(--text);">${p.name}</span> <span style="color:var(--dim);font-size:11px;">${p.code}</span>
+        <div style="font-size:11px;color:var(--mid);margin-top:2px;">STD $${fmt(p.priceStd)} · DLX $${fmt(p.priceDlx||0)} · PRM $${fmt(p.pricePrm||0)}</div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+function addProductToOrder(id, name, priceStd, priceDlx, pricePrm) {
+  const itemId = `item-${Date.now()}`;
+  orderState.items.push({ itemId, productId: id, name, tier: 'STD', unitPrice: priceStd, quantity: 1, notes: '', priceStd, priceDlx, pricePrm });
+  document.getElementById('product-search').value = '';
+  document.getElementById('product-results').style.display = 'none';
+  renderOrderItems();
+  recalcTotal();
+}
+
+function renderOrderItems() {
+  document.getElementById('order-items').innerHTML = orderState.items.map(item => `
+    <div class="order-item" id="${item.itemId}">
+      <button class="remove-item" onclick="removeItem('${item.itemId}')">✕</button>
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;">${item.name}</div>
+      <div style="display:flex;gap:7px;margin-bottom:5px;">
+        <select class="fs" style="font-size:11px;padding:3px 6px;height:auto;border-radius:5px;flex:1;" onchange="updateItem('${item.itemId}','tier',this.value)">
+          <option value="STD" ${item.tier==='STD'?'selected':''}>Standard — $${fmt(item.priceStd)}</option>
+          <option value="DLX" ${item.tier==='DLX'?'selected':''}>Deluxe — $${fmt(item.priceDlx)}</option>
+          <option value="PRM" ${item.tier==='PRM'?'selected':''}>Premium — $${fmt(item.pricePrm)}</option>
+        </select>
+        <input class="fi" type="number" value="${item.quantity}" min="1" style="width:52px;padding:3px 6px;font-size:11px;" onchange="updateItem('${item.itemId}','quantity',this.value)"/>
+      </div>
+      <input class="fi" style="font-size:11px;padding:4px 8px;" placeholder="Notas del arreglo (opcional)…" value="${item.notes}" oninput="updateItem('${item.itemId}','notes',this.value)"/>
+    </div>`).join('');
+}
+
+function removeItem(itemId) {
+  orderState.items = orderState.items.filter(i => i.itemId !== itemId);
+  renderOrderItems();
+  recalcTotal();
+}
+
+function updateItem(itemId, field, val) {
+  const item = orderState.items.find(i => i.itemId === itemId);
+  if (!item) return;
+  if (field === 'tier') {
+    item.tier = val;
+    item.unitPrice = val==='STD' ? item.priceStd : val==='DLX' ? item.priceDlx : item.pricePrm;
+  } else if (field === 'quantity') {
+    item.quantity = Math.max(1, parseInt(val)||1);
+  } else {
+    item[field] = val;
+  }
+  recalcTotal();
+}
+
+function recalcTotal() {
+  const subtotal = orderState.items.reduce((s,i) => s + (Number(i.unitPrice)||0) * (Number(i.quantity)||1), 0);
+  const fee  = parseFloat(document.getElementById('o-fee')?.value) || 0;
+  const adv  = parseFloat(document.getElementById('o-advance')?.value) || 0;
+  const total = subtotal + fee - adv;
+  if (document.getElementById('o-subtotal'))  document.getElementById('o-subtotal').textContent  = '$'+fmt(subtotal);
+  if (document.getElementById('o-fee-display'))  document.getElementById('o-fee-display').textContent = '$'+fmt(fee);
+  if (document.getElementById('o-adv-display'))  document.getElementById('o-adv-display').textContent = '-$'+fmt(adv);
+  if (document.getElementById('o-total'))     document.getElementById('o-total').textContent     = '$'+fmt(total);
+}
+
+async function submitOrder() {
+  if (!orderState.clientId)    { toastErr('Selecciona un cliente'); return; }
+  if (!orderState.items.length){ toastErr('Agrega al menos un producto'); return; }
+  const date = document.getElementById('o-date').value;
+  if (!date) { toastErr('Selecciona la fecha de entrega'); return; }
+
+  const paymentType = orderState.paymentType;
+  const payMethod   = document.querySelector('#o-pt .sel')?.textContent?.trim().replace(/[^A-Z_]/g,'') || 'EFECTIVO';
+  const payMap = {'Efectivo':'EFECTIVO','Transferencia':'TRANSFERENCIA','Terminal':'TERMINAL','CashApp':'CASHAPP','ApplePay':'APPLE_PAY','Linkdepago':'LINK_PAGO','Cheque':'CHEQUE','Zelle':'ZELLE'};
+
+  const body = {
+    clientId: orderState.clientId,
+    deliveryDate: date,
+    deliveryType: orderState.deliveryType,
+    deliveryWindow: document.getElementById('o-window').value,
+    deliveryFee: parseFloat(document.getElementById('o-fee').value)||0,
+    recipientName: document.getElementById('o-r-name').value,
+    recipientPhone: document.getElementById('o-r-phone').value,
+    recipientAddress: document.getElementById('o-r-addr').value,
+    recipientColonia: document.getElementById('o-r-col').value,
+    recipientNotes: document.getElementById('o-r-notes').value,
+    messageFrom: document.getElementById('o-msg-from').value,
+    messageText: document.getElementById('o-msg-text').value,
+    messageAnon: document.getElementById('o-anon-tog').classList.contains('on'),
+    occasion: orderState.occasion,
+    hasBanda: document.getElementById('o-banda-tog')?.classList.contains('on') || false,
+    items: orderState.items.map(i => ({ productId: i.productId, tier: i.tier, quantity: i.quantity, notes: i.notes })),
+    paymentType,
+    paymentMethod: paymentType === 'CREDITO' ? null : (payMap[payMethod.replace(/[^A-Za-z]/g,'')] || 'EFECTIVO'),
+    creditDueDate: document.getElementById('o-cred-date')?.value || undefined,
+    creditLocation: document.getElementById('o-cred-loc')?.value || undefined,
+    advance: parseFloat(document.getElementById('o-advance').value)||0,
+    needsInvoice: document.getElementById('o-fac-tog').classList.contains('on'),
+    invoiceName: document.getElementById('o-rfc-name')?.value,
+    invoiceCfdi: document.getElementById('o-cfdi')?.value,
+    attendedById: document.getElementById('o-staff')?.value || undefined,
+    notifyVia: document.querySelector('#o-notif .sel')?.textContent?.includes('WhatsApp') ? 'whatsapp' : 'none',
+  };
+
+  const btn = document.getElementById('o-submit');
+  btn.disabled = true; btn.textContent = 'Creando…';
+  try {
+    const order = await api('POST', '/api/orders', body);
+    cm('m-order');
+    toast(`Pedido ${order.orderNumber} creado ✓`);
+    showView('pedidos');
+    loadBadges();
+  } catch(e) {
+    toastErr(e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Crear Pedido';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CLIENTE MODAL
+// ═══════════════════════════════════════════════════════
+async function saveClient() {
+  const body = {
+    firstName: document.getElementById('c-first').value.trim(),
+    lastNameP: document.getElementById('c-lastp').value.trim(),
+    lastNameM: document.getElementById('c-lastm').value,
+    phone: document.getElementById('c-phone').value.trim(),
+    phoneAlt: document.getElementById('c-phone2').value,
+    email: document.getElementById('c-email').value,
+    address: document.getElementById('c-addr').value,
+    workplace: document.getElementById('c-work').value,
+    source: document.getElementById('c-source').value || 'IN_STORE',
+    notes: document.getElementById('c-notes').value,
+  };
+  if (!body.firstName||!body.lastNameP||!body.phone) { toastErr('Nombre, apellido y teléfono son requeridos'); return; }
+  try {
+    const client = await api('POST', '/api/clients', body);
+    cm('m-client');
+    selectClient(client.id, `${client.firstName} ${client.lastNameP}`, client.phone, client.loyaltyTier, 0);
+    toast('Cliente guardado ✓');
+    // Clear form
+    ['c-first','c-lastp','c-lastm','c-phone','c-phone2','c-email','c-addr','c-work','c-notes'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
+  } catch(e) { toastErr(e.message); }
+}
+
+// ═══════════════════════════════════════════════════════
+// DELIVERY MODAL
+// ═══════════════════════════════════════════════════════
+function openDeliverModal(orderId) {
+  document.getElementById('d-order-id').value = orderId;
+  document.getElementById('d-received').value = '';
+  document.getElementById('d-photo-preview').textContent = '📷 Click para adjuntar foto de entrega';
+  document.getElementById('d-photo').value = '';
+  om('m-deliver');
+}
+
+function previewPhoto(input) {
+  const file = input.files[0];
+  if (file) document.getElementById('d-photo-preview').textContent = `✓ ${file.name}`;
+}
+
+async function confirmDelivery() {
+  const orderId    = document.getElementById('d-order-id').value;
+  const receivedBy = document.getElementById('d-received').value.trim();
+  const photoFile  = document.getElementById('d-photo').files[0];
+  if (!receivedBy)  { toastErr('Ingresa el nombre de quien recibió'); return; }
+  if (!photoFile)   { toastErr('La foto de entrega es requerida'); return; }
+
+  const fd = new FormData();
+  fd.append('receivedBy', receivedBy);
+  fd.append('photo', photoFile);
+
+  try {
+    await api('POST', `/api/deliveries/${orderId}/confirm`, fd, true);
+    cm('m-deliver');
+    toast('Entrega confirmada ✓');
+    showView('entregas');
+    loadBadges();
+  } catch(e) { toastErr(e.message); }
+}
+
+async function markPaid(orderId) {
+  try {
+    await api('PATCH', `/api/orders/${orderId}/payment`, { paymentStatus: 'PAGO_RECIBIDO' });
+    toast('Pago confirmado ✓');
+    // Refresh current view
+    const cur = document.querySelector('.ni.on')?.dataset.v;
+    if (cur) showView(cur);
+  } catch(e) { toastErr(e.message); }
+}
+
+// ═══════════════════════════════════════════════════════
+// PRODUCT MODAL
+// ═══════════════════════════════════════════════════════
+async function openProductModal(product = null) {
+  document.getElementById('m-product-title').textContent = product ? 'Editar Producto' : 'Agregar Producto';
+  document.getElementById('p-id').value    = product?.id || '';
+  document.getElementById('p-name').value  = product?.name || '';
+  document.getElementById('p-code').value  = product?.code || '';
+  document.getElementById('p-std').value   = product?.priceStd || '';
+  document.getElementById('p-dlx').value   = product?.priceDlx || '';
+  document.getElementById('p-prm').value   = product?.pricePrm || '';
+  document.getElementById('p-desc').value  = product?.description || '';
+  if (product?.visible !== undefined) {
+    document.getElementById('p-visible').classList.toggle('on', product.visible);
+  }
+  // Load categories into select
+  try {
+    if (!cachedCategories.length) cachedCategories = await api('GET', '/api/categories');
+    const sel = document.getElementById('p-cat');
+    sel.innerHTML = cachedCategories.map(c => `<option value="${c.id}" ${product?.categoryId===c.id?'selected':''}>${c.name}</option>`).join('');
+  } catch(e) {}
+  om('m-product');
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN PIN GATE
+// ═══════════════════════════════════════════════════════
+let adminPinVal = '';
+function askAdminPin() {
+  adminPinVal = '';
+  updMPin();
+  om('m-pin');
+}
+function mpk(k) {
+  if (k === 'c') adminPinVal = adminPinVal.slice(0,-1);
+  else if (k === 'ok') {
+    // Try to enter admin view — the server will reject if not admin role
+    if (currentStaff?.role === 'ADMIN') { cm('m-pin'); showView('admin'); }
+    else { toastErr('Sin permisos de administrador'); cm('m-pin'); }
+    adminPinVal = '';
+  }
+  else if (adminPinVal.length < 8) adminPinVal += k;
+  updMPin();
+}
+function updMPin() {
+  const d = document.getElementById('m-pdisp');
+  if (!d) return;
+  const n = adminPinVal.length;
+  d.textContent = Array(n).fill('●').concat(Array(Math.max(0,4-n)).fill('·')).join(' ');
+}
+
+// ═══════════════════════════════════════════════════════
+// FORM HELPERS
+// ═══════════════════════════════════════════════════════
+function setOcc(el, v) {
+  or(el,'o-occ'); orderState.occasion = v;
+  document.getElementById('o-banda').style.display = v === 'FUNERAL' ? 'block' : 'none';
+  document.getElementById('o-reminder').style.display = (v==='CUMPLEANOS'||v==='ANIVERSARIO') ? 'block' : 'none';
+}
+function setDelT(el, v) {
+  or(el,'o-del-t'); orderState.deliveryType = v;
+  document.getElementById('o-del-f').style.display = v === 'RECOGER_TIENDA' ? 'none' : 'block';
+}
+function setPE(el, v) {
+  or(el,'o-pe'); orderState.paymentType = v;
+  document.getElementById('o-pr-f').style.display = v === 'CREDITO' ? 'none' : 'block';
+  document.getElementById('o-pc-f').style.display = v === 'CREDITO' ? 'block' : 'none';
+}
+function or(el, cid) {
+  const c = document.getElementById(cid) || el.closest('.rcs');
+  if (c) c.querySelectorAll('.rc').forEach(r => r.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+// ═══════════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════════
+function om(id) { document.getElementById(id)?.classList.add('open'); document.body.style.overflow = 'hidden'; }
+function cm(id) { document.getElementById(id)?.classList.remove('open'); document.body.style.overflow = ''; }
+document.querySelectorAll('.ov').forEach(o => o.addEventListener('click', e => { if (e.target === o) cm(o.id); }));
+
+// ═══════════════════════════════════════════════════════
+// BADGES & LABELS
+// ═══════════════════════════════════════════════════════
+const pb = p => ({ PENDIENTE:`<span class="badge ba2">Pendiente</span>`, PAGO_RECIBIDO:`<span class="badge bb">Pago recibido</span>`, PAGADA:`<span class="badge bg2">Pagada</span>` }[p] || `<span class="badge bm">${p||'—'}</span>`);
+const sb = s => ({ EN_PROCESO:`<span class="badge ba2">En proceso</span>`, POR_ENTREGAR:`<span class="badge bb">Por entregar</span>`, COMPLETADA:`<span class="badge bg2">Completada</span>`, CANCELADA:`<span class="badge br2">Cancelada</span>` }[s] || `<span class="badge bm">${s||'—'}</span>`);
+const occLabel = o => ({ CUMPLEANOS:'🎂 Cumpleaños', ANIVERSARIO:'💑 Aniversario', FUNERAL:'⚱️ Funeral', AMOR:'💝 Amor', OTRA:'🎊 Otra' }[o] || o);
+const roleLabel = r => ({ ADMIN:'Administrador', OFFICE:'Oficina', FLORISTA:'Florista', REPARTIDOR:'Repartidor' }[r] || r);
+const loyaltyBadge = (t, n) => {
+  const map = { PLATINUM:`<span class="badge bp2">Platinum ×${n}</span>`, VIP:`<span class="badge brose">VIP ×${n}</span>`, FREQUENT:`<span class="badge bg2">Frecuente ×${n}</span>` };
+  return map[t] || '';
+};
+const fmt = n => Number(n||0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+let _t;
+function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.className = 'show'; clearTimeout(_t); _t = setTimeout(() => t.className = '', 2700); }
+function toastErr(m) { const t = document.getElementById('toast'); t.textContent = '⚠ ' + m; t.className = 'show err'; clearTimeout(_t); _t = setTimeout(() => t.className = '', 3500); }
+
+// ═══════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════
+function tick() {
+  const n = new Date();
+  const clk = document.getElementById('clk'); if (clk) clk.textContent = n.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+  const clkd = document.getElementById('clkd'); if (clkd) clkd.textContent = n.toLocaleDateString('es',{weekday:'short',day:'numeric',month:'short'});
+}
+setInterval(tick, 1000); tick();
+
+// ═══════════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll('.ni').forEach(n => n.addEventListener('click', () => showView(n.dataset.v)));
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+initLogin();
+</script>
+</body>
+</html>

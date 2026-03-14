@@ -49,6 +49,26 @@ router.post('/login', [
   }
 });
 
+// GET /api/auth/staff
+// Public list of active staff for login screen
+router.get('/staff', async (req, res) => {
+  try {
+    const staff = await prisma.staff.findMany({
+      where: { active: true },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    res.json(staff);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load staff' });
+  }
+});
 // GET /api/auth/me
 // Return current staff info
 router.get('/me', requireAuth, (req, res) => {
