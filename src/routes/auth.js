@@ -105,8 +105,10 @@ router.put('/pin', requireAuth, [
 
     res.json({ message: 'PIN updated successfully' });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to update PIN' });
+     console.error('AUTH STAFF ERROR:', err);
+     res.status(500).json({ error: err.message });
   }
+ 
 });
 
 module.exports = router;
