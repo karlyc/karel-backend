@@ -1,5 +1,4 @@
-// prisma/schema.prisma
-// Florería y Regalos Karel — Database Schema
+// prisma/schema.prisma — Florería y Regalos Karel
 
 generator client {
   provider = "prisma-client-js"
@@ -10,35 +9,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─────────────────────────────────────────
-// STAFF
-// ─────────────────────────────────────────
-
-enum StaffRole {
-  ADMIN
-  OFFICE
-  FLORISTA
-  REPARTIDOR
+enum StaffRole { 
+  ADMIN 
+  OFFICE 
+  FLORISTA 
+  REPARTIDOR 
 }
 
 model Staff {
   id        String    @id @default(cuid())
+  username  String    @unique
   name      String
-  pin       String    // bcrypt hashed
+  pin       String
   role      StaffRole @default(OFFICE)
   active    Boolean   @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-
-  ordersAttended Order[]      @relation("AttendedBy")
-  deliveries     Delivery[]   @relation("AssignedTo")
+  ordersAttended Order[]    @relation("AttendedBy")
+  deliveries     Delivery[] @relation("AssignedTo")
 }
 
-// ─────────────────────────────────────────
-// CLIENTS
-// ─────────────────────────────────────────
-
-enum ClientSource {
+enum ClientSource { 
   WEB
   IN_STORE
   INSTAGRAM
@@ -47,43 +38,50 @@ enum ClientSource {
   REFERRAL
   OTHER
 }
-
-enum LoyaltyTier {
+enum LoyaltyTier  { 
   REGULAR
-  FREQUENT   // 10+ orders
-  VIP        // 20+ orders
-  PLATINUM   // 30+ orders
+  FREQUENT
+  VIP
+  PLATINUM
 }
 
 model Client {
-  id              String       @id @default(cuid())
-  phone           String       @unique
-  phoneAlt        String?
-  firstName       String
-  lastNameP       String       // Apellido paterno
-  lastNameM       String?      // Apellido materno
-  email           String?
-  address         String?
-  workplace       String?
-  notes           String?
-  source          ClientSource @default(IN_STORE)
-  orderCount      Int          @default(0)
-  loyaltyTier     LoyaltyTier  @default(REGULAR)
-
-  // Billing
-  billingName     String?      // Razón social
-  billingCfdi     String?      // Uso de CFDI
-  billingRfc      String?
-
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  orders          Order[]
+  id           String       @id @default(cuid())
+  phoneCode    String       @default("+52")
+  phone        String       @unique
+  phoneAlt     String?
+  firstName    String
+  middleName   String?
+  lastNameP    String
+  lastNameM    String?
+  email        String?
+  address      String?
+  business     String?
+  notes        String?
+  source       ClientSource @default(IN_STORE)
+  orderCount   Int          @default(0)
+  loyaltyTier  LoyaltyTier  @default(REGULAR)
+  billingName  String?
+  billingCfdi  String?
+  billingRfc   String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  orders       Order[]
 }
 
-// ─────────────────────────────────────────
-// CATEGORIES & PRODUCTS
-// ─────────────────────────────────────────
+model InventoryItem {
+  id          String       @id @default(cuid())
+  name        String
+  unit        String       @default("pza")
+  quantity    Decimal      @default(0) @db.Decimal(10,3)
+  minStock    Decimal      @default(0) @db.Decimal(10,3)
+  cost        Decimal?     @db.Decimal(10,2)
+  supplier    String?
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  recipeItems RecipeItem[]
+}
 
 model Category {
   id          String    @id @default(cuid())
@@ -94,184 +92,147 @@ model Category {
   sortOrder   Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
   products    Product[]
 }
 
 model Product {
-  id           String    @id @default(cuid())
-  name         String
-  code         String    @unique
-  description  String?
-  photo1Url    String?
-  photo2Url    String?
-  priceStd     Decimal   @db.Decimal(10,2)
-  priceDlx     Decimal?  @db.Decimal(10,2)
-  pricePrm     Decimal?  @db.Decimal(10,2)
-  visible      Boolean   @default(true)
-  categoryId   String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  category     Category     @relation(fields: [categoryId], references: [id])
-  orderItems   OrderItem[]
+  id          String       @id @default(cuid())
+  name        String
+  code        String       @unique
+  description String?
+  photo1Url   String?
+  photo2Url   String?
+  price       Decimal      @db.Decimal(10,2)
+  width       Decimal?     @db.Decimal(6,1)
+  height      Decimal?     @db.Decimal(6,1)
+  visible     Boolean      @default(true)
+  categoryId  String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  category    Category     @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
+  recipe      RecipeItem[]
 }
 
-// ─────────────────────────────────────────
-// ORDERS
-// ─────────────────────────────────────────
-
-enum OrderStatus {
-  EN_PROCESO      // After order is created
-  POR_ENTREGAR    // After florista marks it ready
-  COMPLETADA      // After delivery confirmed
-  CANCELADA
+model RecipeItem {
+  id              String        @id @default(cuid())
+  productId       String
+  inventoryItemId String
+  quantity        Decimal       @db.Decimal(10,3)
+  notes           String?
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
 }
 
-enum PaymentStatus {
-  PENDIENTE       // Credit orders
-  PAGO_RECIBIDO   // Non-credit, non-web orders
-  PAGADA          // Web orders + admin-approved
+enum OrderStatus   {
+   EN_PROCESO
+   POR_ENTREGAR
+   COMPLETADA
+   CANCELADA
 }
-
+enum PaymentStatus { 
+  PENDIENTE 
+  PAGO_RECIBIDO 
+  PAGADA
+   }
 enum PaymentMethod {
-  EFECTIVO
-  TRANSFERENCIA
-  TERMINAL
-  CASHAPP
-  APPLE_PAY
-  LINK_PAGO
-  CHEQUE
-  ZELLE
-  STRIPE         // Website payments
+   EFECTIVO
+   TRANSFERENCIA
+   TERMINAL
+   CASHAPP
+   APPLE_PAY
+   LINK_PAGO
+   CHEQUE
+   ZELLE
+   STRIPE
 }
-
-enum DeliveryType {
-  DOMICILIO_CASA
-  DOMICILIO_NEGOCIO
-  RECOGER_TIENDA
+enum DeliveryType  { 
+   DOMICILIO_CASA
+   DOMICILIO_NEGOCIO
+   RECOGER_TIENDA
 }
-
-enum Occasion {
-  CUMPLEANOS
-  ANIVERSARIO
-  FUNERAL
-  AMOR
-  OTRA
+enum Occasion      { 
+   CUMPLEANOS
+   ANIVERSARIO
+   FUNERAL
+   AMOR
+   OTRA
 }
 
 model Order {
-  id              String        @id @default(cuid())
-  orderNumber     String        @unique // e.g. "KAR-2049"
-  source          String        @default("POS") // "POS" | "WEB"
-
-  // Client
-  clientId        String
-  client          Client        @relation(fields: [clientId], references: [id])
-
-  // Occasion
-  occasion        Occasion      @default(OTRA)
-  hasBanda        Boolean       @default(false) // For funerals
-  generateReminder Boolean      @default(false) // For bday/anniversary
-
-  // Delivery
-  deliveryType    DeliveryType
-  deliveryDate    DateTime
-  deliveryWindow  String        // e.g. "9:00-12:00", "antes_12", "despues_12"
-  deliveryFee     Decimal       @default(0) @db.Decimal(10,2)
-
-  // Recipient (for domicilio)
-  recipientName   String?
-  recipientPhone  String?
+  id               String        @id @default(cuid())
+  orderNumber      String        @unique
+  source           String        @default("POS")
+  clientId         String
+  client           Client        @relation(fields: [clientId], references: [id])
+  occasion         Occasion      @default(OTRA)
+  hasBanda         Boolean       @default(false)
+  generateReminder Boolean       @default(false)
+  deliveryType     DeliveryType
+  deliveryDate     DateTime
+  deliveryWindow   String
+  deliveryFee      Decimal       @default(0) @db.Decimal(10,2)
+  recipientName    String?
+  recipientPhone   String?
   recipientAddress String?
   recipientColonia String?
-  recipientNotes  String?       // Access codes, etc.
-  // Negocio extra fields
-  businessName    String?
-  businessDept    String?
-
-  // Message card
-  messageFrom     String?
-  messageText     String?
-  messageAnon     Boolean       @default(false)
-
-  // Payment
-  paymentStatus   PaymentStatus @default(PAGO_RECIBIDO)
-  paymentMethod   PaymentMethod?
-  // Credit fields
-  creditDueDate   DateTime?
-  creditLocation  String?
-  creditPayMethod PaymentMethod?
-  // Totals
-  subtotal        Decimal       @db.Decimal(10,2)
-  advance         Decimal       @default(0) @db.Decimal(10,2)
-  total           Decimal       @db.Decimal(10,2)
-
-  // Invoice
-  needsInvoice    Boolean       @default(false)
-  invoiceRfc      String?
-  invoiceName     String?
-  invoiceCfdi     String?
-  invoiceEmail    String?
-  invoiceFileUrl  String?       // Uploaded constancia fiscal
-
-  // Notification preference
-  notifyVia       String?       // "whatsapp" | "email" | "sms" | "none"
-
-  // Status
-  orderStatus     OrderStatus   @default(EN_PROCESO)
-
-  // Staff
-  attendedById    String?
-  attendedBy      Staff?        @relation("AttendedBy", fields: [attendedById], references: [id])
-
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  items           OrderItem[]
-  delivery        Delivery?
-  tasks           Task[]        // Invoice tasks linked to order
+  recipientZip     String?
+  recipientNotes   String?
+  businessName     String?
+  businessDept     String?
+  messageFrom      String?
+  messageText      String?
+  messageAnon      Boolean       @default(false)
+  paymentStatus    PaymentStatus @default(PAGO_RECIBIDO)
+  paymentMethod    PaymentMethod?
+  creditDueDate    DateTime?
+  creditLocation   String?
+  creditPayMethod  PaymentMethod?
+  subtotal         Decimal       @db.Decimal(10,2)
+  advance          Decimal       @default(0) @db.Decimal(10,2)
+  total            Decimal       @db.Decimal(10,2)
+  needsInvoice     Boolean       @default(false)
+  invoiceRfc       String?
+  invoiceName      String?
+  invoiceCfdi      String?
+  invoiceEmail     String?
+  invoiceFileUrl   String?
+  notifyVia        String?
+  orderStatus      OrderStatus   @default(EN_PROCESO)
+  attendedById     String?
+  attendedBy       Staff?        @relation("AttendedBy", fields: [attendedById], references: [id])
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  items            OrderItem[]
+  delivery         Delivery?
+  tasks            Task[]
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  productId   String
-  tier        String   // "STD" | "DLX" | "PRM"
-  quantity    Int      @default(1)
-  unitPrice   Decimal  @db.Decimal(10,2)
-  notes       String?  // Per-item arrangement notes
-  createdAt   DateTime @default(now())
-
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product     Product  @relation(fields: [productId], references: [id])
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int      @default(1)
+  unitPrice Decimal  @db.Decimal(10,2)
+  notes     String?
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
 }
-
-// ─────────────────────────────────────────
-// DELIVERIES
-// ─────────────────────────────────────────
 
 model Delivery {
-  id              String    @id @default(cuid())
-  orderId         String    @unique
-  assignedToId    String?
-
-  // Confirmation data
-  receivedBy      String?
-  deliveredAt     DateTime?
-  photoUrl        String?
-  notificationSent Boolean  @default(false)
-
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  order           Order     @relation(fields: [orderId], references: [id])
-  assignedTo      Staff?    @relation("AssignedTo", fields: [assignedToId], references: [id])
+  id               String    @id @default(cuid())
+  orderId          String    @unique
+  assignedToId     String?
+  receivedBy       String?
+  deliveredAt      DateTime?
+  photoUrl         String?
+  notificationSent Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  order            Order     @relation(fields: [orderId], references: [id])
+  assignedTo       Staff?    @relation("AssignedTo", fields: [assignedToId], references: [id])
 }
-
-// ─────────────────────────────────────────
-// TASKS
-// ─────────────────────────────────────────
 
 model Task {
   id          String    @id @default(cuid())
@@ -279,35 +240,58 @@ model Task {
   dueDate     DateTime?
   completed   Boolean   @default(false)
   completedAt DateTime?
-  orderId     String?   // Linked to order (e.g. invoice tasks)
+  orderId     String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
   order       Order?    @relation(fields: [orderId], references: [id])
 }
 
-// ─────────────────────────────────────────
-// CHAT MESSAGES (Web ↔ POS)
-// ─────────────────────────────────────────
+enum ExpenditureType { 
+   MENSUAL
+   MISCELANEA
+}
+
+model Expenditure {
+  id          String          @id @default(cuid())
+  type        ExpenditureType
+  category    String
+  description String
+  amount      Decimal         @db.Decimal(10,2)
+  date        DateTime        @default(now())
+  month       Int
+  year        Int
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Reminder {
+  id         String   @id @default(cuid())
+  clientId   String
+  clientName String
+  clientPhone String  @default("")
+  occasion   String
+  eventDate  DateTime
+  notified   Boolean  @default(false)
+  orderId    String?
+  createdAt  DateTime @default(now())
+}
 
 model ChatSession {
   id          String        @id @default(cuid())
-  visitorId   String        // Browser-generated UUID
+  visitorId   String
   visitorName String?
   resolved    Boolean       @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-
   messages    ChatMessage[]
 }
 
 model ChatMessage {
-  id          String      @id @default(cuid())
-  sessionId   String
-  fromStaff   Boolean     @default(false)
-  staffId     String?
-  text        String
-  createdAt   DateTime    @default(now())
-
-  session     ChatSession @relation(fields: [sessionId], references: [id])
+  id        String      @id @default(cuid())
+  sessionId String
+  fromStaff Boolean     @default(false)
+  staffId   String?
+  text      String
+  createdAt DateTime    @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [id])
 }

@@ -18,6 +18,9 @@ const staffRoutes = require('./routes/staff');
 const reportRoutes = require('./routes/reports');
 const chatRoutes = require('./routes/chat');
 const webhookRoutes = require('./routes/webhooks');
+const inventoryRoutes = require('./routes/inventory');
+const expenditureRoutes = require('./routes/expenditures');
+const reminderRoutes = require('./routes/reminders');
 const { setupChat } = require('./utils/socket');
 
 const app = express();
@@ -49,7 +52,10 @@ app.use('/api/tasks',      taskRoutes);
 app.use('/api/deliveries', deliveryRoutes);
 app.use('/api/staff',      staffRoutes);
 app.use('/api/reports',    reportRoutes);
-app.use('/api/chat',       chatRoutes);
+app.use('/api/chat',         chatRoutes);
+app.use('/api/inventory',    inventoryRoutes);
+app.use('/api/expenditures', expenditureRoutes);
+app.use('/api/reminders',    reminderRoutes);
 
 // ── Health check ──
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date() }));

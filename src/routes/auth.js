@@ -6,69 +6,33 @@ const { body, validationResult } = require('express-validator');
 const { prisma } = require('../db/prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
-// POST /api/auth/login
-// Staff login with PIN
+// POST /api/auth/login — username + 6-digit PIN
 router.post('/login', [
-  body('pin').isLength({ min: 4, max: 8 }).withMessage('PIN must be 4–8 digits'),
+  body('username').notEmpty().withMessage('Username required'),
+  body('pin').isLength({ min: 6, max: 6 }).withMessage('PIN must be exactly 6 digits'),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-  const { pin, staffId } = req.body;
-
+  const { username, pin } = req.body;
   try {
-    // If staffId provided, look up that staff member; otherwise find admin
-    let staff;
-    if (staffId) {
-      staff = await prisma.staff.findUnique({ where: { id: staffId } });
-    } else {
-      // For admin PIN entry on the PIN pad (no staffId)
-      staff = await prisma.staff.findFirst({ where: { role: 'ADMIN', active: true } });
-    }
-
-    if (!staff || !staff.active) {
-      return res.status(401).json({ error: 'Staff not found or inactive' });
-    }
+    const staff = await prisma.staff.findUnique({ where: { username } });
+    if (!staff || !staff.active) return res.status(401).json({ error: 'Usuario no encontrado o inactivo' });
 
     const valid = await bcrypt.compare(pin, staff.pin);
-    if (!valid) return res.status(401).json({ error: 'Incorrect PIN' });
+    if (!valid) return res.status(401).json({ error: 'PIN incorrecto' });
 
     const token = jwt.sign(
       { staffId: staff.id, role: staff.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
     );
-
-    res.json({
-      token,
-      staff: { id: staff.id, name: staff.name, role: staff.role }
-    });
-  } catch (err) {
-    console.error(err);
+    res.json({ token, staff: { id: staff.id, name: staff.name, username: staff.username, role: staff.role } });
+  } catch(err) {
     res.status(500).json({ error: 'Login failed' });
   }
 });
 
-// GET /api/auth/staff
-// Public list of active staff for login screen
-router.get('/staff', async (req, res) => {
-  try {
-    const staff = await prisma.staff.findMany({
-      where: { active: true },
-      select: {
-        id: true,
-        name: true,
-        role: true,
-      },
-      orderBy: { name: 'asc' },
-    });
-
-    res.json(staff);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to load staff' });
-  }
-});
 // GET /api/auth/me
 // Return current staff info
 router.get('/me', requireAuth, (req, res) => {
@@ -105,10 +69,8 @@ router.put('/pin', requireAuth, [
 
     res.json({ message: 'PIN updated successfully' });
   } catch (err) {
-     console.error('AUTH STAFF ERROR:', err);
-     res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to update PIN' });
   }
- 
 });
 
 module.exports = router;
