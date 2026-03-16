@@ -30,7 +30,24 @@ const io = new Server(httpServer, {
 });
 
 // ── Middleware ──
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
+const allowedOrigins = [
+  'https://posfloreriakarel.netlify.app',
+  'https://webfloreriakarel.netlify.app'
+];
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked: ${origin}`));
+  },
+  credentials: true,
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization']
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 // Stripe webhooks need raw body — mount BEFORE json parser
 app.use('/api/webhooks', webhookRoutes);
