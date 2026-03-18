@@ -8,15 +8,15 @@
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --ink:#0C0D0F;--ink2:#141518;--ink3:#1C1E22;--ink4:#242629;--ink5:#2E3035;
-  --rule:#2A2C31;--rule2:#363840;
-  --text:#F0EDE8;--mid:#8C8880;--dim:#4A4845;
-  --rose:#CF6B60;--rose-l:#E08070;--rose-dim:rgba(207,107,96,.12);
-  --sage:#6B9469;--sage-l:#80AE7E;--sage-dim:rgba(107,148,105,.12);
-  --amber:#C89840;--amber-dim:rgba(200,152,64,.12);
-  --blue:#5B89C4;--blue-dim:rgba(91,137,196,.12);
-  --purple:#8B70C4;--purple-dim:rgba(139,112,196,.12);
-  --red:#C05050;--red-dim:rgba(192,80,80,.12);
+  --ink:#F8F7F5;--ink2:#FFFFFF;--ink3:#F1EFEC;--ink4:#E8E5E1;--ink5:#DDD9D4;
+  --rule:#E0DDD8;--rule2:#CCC8C3;
+  --text:#1A1816;--mid:#6B6560;--dim:#9E9890;
+  --rose:#C96E60;--rose-l:#E08070;--rose-dim:rgba(201,110,96,.1);
+  --sage:#6B9469;--sage-l:#5A8058;--sage-dim:rgba(107,148,105,.1);
+  --amber:#B8860B;--amber-dim:rgba(184,134,11,.1);
+  --blue:#3B6FA0;--blue-dim:rgba(59,111,160,.1);
+  --purple:#7059A0;--purple-dim:rgba(112,89,160,.1);
+  --red:#C05050;--red-dim:rgba(192,80,80,.1);
   --r6:6px;--r8:8px;--r10:10px;--r12:12px;--r16:16px;
   --fd:'Syne',sans-serif;--fb:'Instrument Sans',sans-serif;
 }
@@ -533,8 +533,8 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     <input type="hidden" id="d-order-id"/>
     <div class="fg"><label class="fl">Quién Recibió *</label><input class="fi" id="d-received" placeholder="Nombre completo"/></div>
     <div class="fg"><label class="fl">Fotografía *</label>
-      <div style="border:1.5px dashed var(--rule2);border-radius:var(--r8);padding:12px;text-align:center;cursor:pointer;color:var(--dim);font-size:12px;" onclick="document.getElementById('d-photo').click()">
-        <div id="d-photo-preview">📷 Click para adjuntar foto</div>
+      <div style="border:1.5px dashed var(--rule2);border-radius:var(--r8);padding:12px;text-align:center;cursor:pointer;color:var(--dim);font-size:12px;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;" onclick="document.getElementById('d-photo').click()">
+        <div id="d-photo-preview">📷 Click para adjuntar foto de entrega</div>
         <input type="file" id="d-photo" accept="image/*" style="display:none;" onchange="previewPhoto(this)"/>
       </div>
     </div>
@@ -564,8 +564,14 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     <div class="fg"><label class="fl">Descripción</label><textarea class="fta" id="p-desc" placeholder="Para el florista: materiales, colores, técnica…"></textarea></div>
     <div class="fg"><label class="fl">Fotos (máx. 2)</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
-        <div style="border:1.5px dashed var(--rule2);border-radius:var(--r8);height:70px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);font-size:12px;" onclick="document.getElementById('p-photo1').click()">📷 Foto principal<input type="file" id="p-photo1" accept="image/*" style="display:none;"/></div>
-        <div style="border:1.5px dashed var(--rule2);border-radius:var(--r8);height:70px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);font-size:12px;" onclick="document.getElementById('p-photo2').click()">📷 Foto secundaria<input type="file" id="p-photo2" accept="image/*" style="display:none;"/></div>
+        <div id="p-photo1-wrap" style="border:1.5px dashed var(--rule2);border-radius:var(--r8);height:70px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);font-size:12px;overflow:hidden;position:relative;" onclick="document.getElementById('p-photo1').click()">
+          <span id="p-photo1-lbl">📷 Foto principal</span>
+          <input type="file" id="p-photo1" accept="image/*" style="display:none;" onchange="previewProductPhoto(this,'p-photo1-wrap','p-photo1-lbl')"/>
+        </div>
+        <div id="p-photo2-wrap" style="border:1.5px dashed var(--rule2);border-radius:var(--r8);height:70px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);font-size:12px;overflow:hidden;position:relative;" onclick="document.getElementById('p-photo2').click()">
+          <span id="p-photo2-lbl">📷 Foto secundaria</span>
+          <input type="file" id="p-photo2" accept="image/*" style="display:none;" onchange="previewProductPhoto(this,'p-photo2-wrap','p-photo2-lbl')"/>
+        </div>
       </div>
     </div>
     <!-- RECIPE SECTION -->
@@ -1049,12 +1055,22 @@ async function saveTask() {
   const desc = document.getElementById('t-desc').value.trim();
   const due  = document.getElementById('t-due').value;
   if (!desc) { toastErr('Ingresa una descripción'); return; }
+  const btn = document.querySelector('#m-task .btn.bp');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
   try {
-    await api('POST','/api/tasks',{ description:desc, dueDate:due||undefined });
-    cm('m-task'); document.getElementById('t-desc').value=''; document.getElementById('t-due').value='';
-    toast('Tarea agregada ✓');
-    if (document.getElementById('vt').textContent==='Tareas') showView('tareas');
-  } catch(e) { toastErr(e.message); }
+    await api('POST', '/api/tasks', { description: desc, dueDate: due || null });
+    cm('m-task');
+    document.getElementById('t-desc').value = '';
+    document.getElementById('t-due').value = '';
+    toast('Tarea guardada ✓');
+    // Refresh whichever view is active
+    const curView = document.querySelector('.ni.on')?.dataset.v;
+    if (curView === 'tareas' || curView === 'dashboard') showView(curView);
+  } catch(e) {
+    toastErr('Error al guardar: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Guardar'; }
+  }
 }
 
 // ════════════════════════════════════════════
@@ -1207,19 +1223,41 @@ function renderRecipeItems() {
 
 async function saveProduct() {
   const id = document.getElementById('p-id').value;
-  const body = {
-    name:document.getElementById('p-name').value, code:document.getElementById('p-code').value,
-    categoryId:document.getElementById('p-cat').value, price:document.getElementById('p-price').value,
-    width:document.getElementById('p-width').value||undefined, height:document.getElementById('p-height').value||undefined,
-    description:document.getElementById('p-desc').value, visible:document.getElementById('p-visible').classList.contains('on'),
-    recipe: recipeItems.map(r=>({inventoryItemId:r.inventoryItemId,quantity:r.quantity})),
-  };
-  if (!body.name||!body.code||!body.price) { toastErr('Nombre, código y precio son requeridos'); return; }
+  const name  = document.getElementById('p-name').value.trim();
+  const code  = document.getElementById('p-code').value.trim();
+  const price = document.getElementById('p-price').value;
+  if (!name || !code || !price) { toastErr('Nombre, código y precio son requeridos'); return; }
+
+  const fd = new FormData();
+  fd.append('name', name);
+  fd.append('code', code);
+  fd.append('categoryId', document.getElementById('p-cat').value);
+  fd.append('price', price);
+  fd.append('width',  document.getElementById('p-width').value  || '');
+  fd.append('height', document.getElementById('p-height').value || '');
+  fd.append('description', document.getElementById('p-desc').value);
+  fd.append('visible', document.getElementById('p-visible').classList.contains('on') ? 'true' : 'false');
+  fd.append('recipe', JSON.stringify(recipeItems.map(r => ({ inventoryItemId: r.inventoryItemId, quantity: r.quantity }))));
+
+  const photo1 = document.getElementById('p-photo1').files[0];
+  const photo2 = document.getElementById('p-photo2').files[0];
+  if (photo1) fd.append('photo1', photo1);
+  if (photo2) fd.append('photo2', photo2);
+
+  const btn = document.querySelector('#m-product .btn.bp');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
   try {
-    if (id) { await api('PUT',`/api/products/${id}`,body); toast('Producto actualizado ✓'); }
-    else { await api('POST','/api/products',body); toast('Producto creado ✓'); }
-    cm('m-product'); showView('productos');
+    if (id) {
+      await api('PUT', `/api/products/${id}`, fd, true);
+      toast('Producto actualizado ✓');
+    } else {
+      await api('POST', '/api/products', fd, true);
+      toast('Producto creado ✓');
+    }
+    cm('m-product');
+    showView('productos');
   } catch(e) { toastErr(e.message); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Guardar Producto'; } }
 }
 
 // ════════════════════════════════════════════
@@ -1742,41 +1780,103 @@ async function submitOrder() {
 // ════════════════════════════════════════════
 // PRINT / EMAIL / WHATSAPP ORDER
 // ════════════════════════════════════════════
-function buildOrderHTML(order) {
-  const winLabel = fmtWindow(order.deliveryWindow);
-  const items = order.items?.map(i=>`${i.product?.name||'—'} × ${i.quantity} — $${fmt(i.unitPrice)}`).join('\n') || '—';
-  return `
-<div style="font-family:sans-serif;color:#000;padding:20px;max-width:480px;">
-  <div style="text-align:center;margin-bottom:20px;"><div style="font-size:20px;font-weight:800;">Florería y Regalos Karel</div><div style="font-size:12px;color:#666;">Av. de la Raza 5262 · Ciudad Juárez · 656 611 1124</div></div>
-  <div style="border:2px solid #000;border-radius:8px;padding:14px;margin-bottom:14px;">
-    <div style="font-size:18px;font-weight:800;margin-bottom:4px;">${order.orderNumber}</div>
-    <div style="font-size:12px;color:#555;">${new Date(order.createdAt).toLocaleString('es')}</div>
-  </div>
-  <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:12px;">
-    <tr><td style="padding:4px 0;color:#555;">Cliente</td><td style="font-weight:600;">${order.client?.firstName||''} ${order.client?.lastNameP||''} · ${order.client?.phone||''}</td></tr>
-    <tr><td style="padding:4px 0;color:#555;">Entrega</td><td>${order.deliveryDate?.split('T')[0]||'—'} · ${winLabel}</td></tr>
-    <tr><td style="padding:4px 0;color:#555;">Destinatario</td><td>${order.recipientName||'—'} · ${order.recipientPhone||''}</td></tr>
-    ${order.deliveryType!=='RECOGER_TIENDA'?`<tr><td style="padding:4px 0;color:#555;">Dirección</td><td>${order.recipientAddress||''} ${order.recipientColonia||''}</td></tr>`:''}
-    ${order.recipientNotes?`<tr><td style="padding:4px 0;color:#555;">Notas</td><td>${order.recipientNotes}</td></tr>`:''}
-    ${order.businessName?`<tr><td style="padding:4px 0;color:#555;">Negocio</td><td>${order.businessName}</td></tr>`:''}
-    ${order.messageText?`<tr><td style="padding:4px 0;color:#555;">Mensaje</td><td><em>"${order.messageText}"</em> — ${order.messageAnon?'Anónimo':order.messageFrom||''}</td></tr>`:''}
-  </table>
-  <div style="border:1px solid #ddd;border-radius:6px;padding:10px;margin-bottom:12px;">
-    <div style="font-weight:700;margin-bottom:6px;font-size:12px;">PRODUCTOS</div>
-    ${order.items?.map(i=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #eee;">${i.product?.name||'—'} × ${i.quantity}${i.notes?`<span style="color:#888;font-size:10px;"> (${i.notes})</span>`:''}<span style="font-weight:700;">$${fmt(i.unitPrice)}</span></div>`).join('')||'—'}
-    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;padding:8px 0 0;margin-top:4px;border-top:2px solid #000;"><span>TOTAL</span><span>$${fmt(order.total)}</span></div>
-  </div>
-  <div style="text-align:center;font-size:11px;color:#888;">Gracias por su preferencia · Florería y Regalos Karel</div>
-</div>`;
-}
-
 function printOrder() {
   if (!lastCreatedOrder) { toastErr('Sin pedido para imprimir'); return; }
-  const pa = document.getElementById('print-area');
-  pa.style.display = 'block';
-  pa.innerHTML = buildOrderHTML(lastCreatedOrder);
-  window.print();
-  pa.style.display = 'none';
+  const o = lastCreatedOrder;
+  const win = window.open('', '_blank', 'width=660,height=900');
+  if (!win) { toastErr('Permite ventanas emergentes para imprimir'); return; }
+
+  const winLabel = fmtWindow(o.deliveryWindow);
+  const clientName = [o.client?.firstName, o.client?.middleName, o.client?.lastNameP, o.client?.lastNameM].filter(Boolean).join(' ') || '—';
+  const clientPhone = o.client?.phone ? `${o.client.phoneCode||'+52'} ${o.client.phone}` : '';
+  const isPickup = o.deliveryType === 'RECOGER_TIENDA';
+  const deliveryAddr = isPickup
+    ? 'RECOGER EN TIENDA — Av. de la Raza 5262, Villa del Norte, C.P. 32369'
+    : [o.recipientAddress, o.recipientColonia, o.recipientZip].filter(Boolean).join(', ');
+  const payMap = { EFECTIVO:'Efectivo', TRANSFERENCIA:'Transferencia', TERMINAL:'Terminal', CASHAPP:'CashApp', APPLE_PAY:'Apple Pay', LINK_PAGO:'Link de pago', CHEQUE:'Cheque', ZELLE:'Zelle', STRIPE:'Stripe / Web' };
+  const payLabel = o.paymentStatus === 'PENDIENTE' ? 'Crédito (pendiente de pago)' : (payMap[o.paymentMethod] || o.paymentMethod || '—');
+
+  const css = [
+    '*{margin:0;padding:0;box-sizing:border-box;}',
+    'body{font-family:Helvetica Neue,Arial,sans-serif;color:#1a1a1a;background:white;padding:28px;max-width:560px;margin:0 auto;}',
+    '.hdr{text-align:center;border-bottom:3px solid #C96E60;padding-bottom:16px;margin-bottom:18px;}',
+    '.logo-area{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;}',
+    '.flower{font-size:42px;line-height:1;}',
+    '.brand{font-size:18px;font-weight:800;letter-spacing:.04em;color:#1a1a1a;text-transform:uppercase;}',
+    '.brand em{color:#C96E60;font-style:normal;}',
+    '.sub{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:#888;margin-top:2px;}',
+    '.hdr-info{font-size:10.5px;color:#555;line-height:1.8;}',
+    '.hdr-info b{color:#1a1a1a;}',
+    '.badge{display:inline-block;background:#C96E60;color:white;padding:6px 20px;border-radius:100px;font-size:16px;font-weight:800;letter-spacing:.06em;margin:14px 0 4px;}',
+    '.odate{font-size:11px;color:#888;}',
+    '.sec{margin-bottom:16px;}',
+    '.sec-t{font-size:9px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#C96E60;border-bottom:1px solid #f0e8e6;padding-bottom:4px;margin-bottom:8px;}',
+    '.row{display:flex;justify-content:space-between;padding:4px 0;font-size:11.5px;border-bottom:1px solid #f5f5f5;}',
+    '.row:last-child{border:none;}',
+    '.lbl{color:#888;flex-shrink:0;padding-right:12px;min-width:90px;}',
+    '.val{font-weight:600;color:#1a1a1a;text-align:right;}',
+    'table{width:100%;border-collapse:collapse;}',
+    'th{font-size:9px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:#888;text-align:left;padding:5px 6px;border-bottom:2px solid #eee;}',
+    'td{font-size:11.5px;padding:8px 6px;border-bottom:1px solid #f5f5f5;vertical-align:middle;}',
+    'tr:last-child td{border:none;}',
+    '.pimg{width:42px;height:42px;border-radius:6px;object-fit:cover;border:1px solid #eee;}',
+    '.pph{width:42px;height:42px;border-radius:6px;background:#f5f0ee;display:flex;align-items:center;justify-content:center;font-size:20px;}',
+    '.totrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0 4px;border-top:2px solid #1a1a1a;margin-top:6px;}',
+    '.totlbl{font-size:13px;font-weight:800;text-transform:uppercase;}',
+    '.totval{font-size:18px;font-weight:800;color:#C96E60;}',
+    '.subrow{display:flex;justify-content:space-between;font-size:11px;color:#888;padding:2px 0;}',
+    '.pbadge{display:inline-block;background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;}',
+    '.pbadge.pend{background:#fff3e0;color:#e65100;}',
+    '.ftr{text-align:center;margin-top:20px;padding-top:14px;border-top:1px dashed #ddd;font-size:10px;color:#aaa;line-height:1.8;}',
+  ].join('\n');
+
+  const rows = (label, value) => value ? `<div class="row"><span class="lbl">${label}</span><span class="val">${value}</span></div>` : '';
+
+  const productRows = (o.items||[]).map(i => {
+    const imgHTML = i.product?.photo1Url
+      ? `<img class="pimg" src="${API_BASE}${i.product.photo1Url}"/>`
+      : `<div class="pph">🌸</div>`;
+    const noteHTML = i.notes ? `<br/><small style="color:#888">${i.notes}</small>` : '';
+    return `<tr><td style="width:48px">${imgHTML}</td><td><b>${i.product?.name||'—'}</b>${noteHTML}</td><td style="text-align:right">${i.quantity}</td><td style="text-align:right;font-weight:700">$${fmt(i.unitPrice)}</td></tr>`;
+  }).join('') || `<tr><td colspan="4" style="color:#aaa;text-align:center">Sin productos</td></tr>`;
+
+  const html = [
+    '<div class="hdr">',
+      '<div class="logo-area"><div class="flower">🌹</div><div><div class="brand">FLORERÍA Y REGALOS <em>KAREL</em></div><div class="sub">Ciudad Juárez, Chihuahua</div></div></div>',
+      '<div class="hdr-info">AV. DE LA RAZA 5262, C.P. 32369, CIUDAD JUÁREZ<br>RFC: <b>GMB081001TH8</b> &nbsp;|&nbsp; WhatsApp: <b>(656) 130-3595</b></div>',
+      `<div class="badge">${o.orderNumber}</div>`,
+      `<div class="odate">Fecha de orden: ${new Date(o.createdAt).toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>`,
+    '</div>',
+    '<div class="sec"><div class="sec-t">Cliente</div>',
+      rows('Nombre', clientName),
+      rows('Teléfono', clientPhone),
+      rows('Correo', o.client?.email),
+    '</div>',
+    '<div class="sec"><div class="sec-t">Entrega</div>',
+      rows('Fecha', o.deliveryDate?.split('T')[0]||'—'),
+      rows('Horario', winLabel),
+      rows('Tipo', isPickup ? 'Recoger en tienda' : o.deliveryType === 'DOMICILIO_NEGOCIO' ? 'Negocio / Trabajo' : 'A domicilio'),
+      !isPickup ? rows('Destinatario', [o.recipientName, o.recipientPhone].filter(Boolean).join(' · ')) : '',
+      rows('Negocio', o.businessName ? `${o.businessName}${o.businessDept?' — '+o.businessDept:''}` : ''),
+      rows('Dirección', deliveryAddr),
+      rows('Notas', o.recipientNotes),
+      o.messageText ? `<div class="row"><span class="lbl">Mensaje</span><span class="val"><em>"${o.messageText}"</em><br/><small style="color:#888">— ${o.messageAnon?'Anónimo':o.messageFrom||''}</small></span></div>` : '',
+    '</div>',
+    '<div class="sec"><div class="sec-t">Productos</div>',
+      `<table><thead><tr><th></th><th>Producto</th><th style="text-align:right">Cant.</th><th style="text-align:right">Precio</th></tr></thead><tbody>${productRows}</tbody></table>`,
+      `<div class="subrow"><span>Subtotal</span><span>$${fmt(o.subtotal)}</span></div>`,
+      Number(o.deliveryFee)>0 ? `<div class="subrow"><span>Envío</span><span>$${fmt(o.deliveryFee)}</span></div>` : '',
+      Number(o.advance)>0 ? `<div class="subrow"><span>Anticipo</span><span style="color:#C96E60">− $${fmt(o.advance)}</span></div>` : '',
+      `<div class="totrow"><span class="totlbl">TOTAL</span><span class="totval">$${fmt(o.total)} MXN</span></div>`,
+    '</div>',
+    `<div class="sec"><div class="sec-t">Forma de Pago</div><div style="padding:6px 0"><span class="pbadge${o.paymentStatus==='PENDIENTE'?' pend':''}">${payLabel}</span></div></div>`,
+    '<div class="ftr">Gracias por su preferencia · Florería y Regalos Karel<br>Av. de la Raza 5262 · Ciudad Juárez · WhatsApp (656) 130-3595<br>RFC: GMB081001TH8</div>',
+  ].join('');
+
+  win.document.open();
+  win.document.write('<html><head><meta charset="UTF-8"><title>Recibo ' + o.orderNumber + '<\/title><style>' + css + '<\/style><\/head><body>' + html + '<\/body><\/html>');
+  win.document.close();
+  setTimeout(() => { win.focus(); win.print(); }, 800);
 }
 
 function emailOrder() {
@@ -1836,7 +1936,29 @@ function openDeliverModal(id) {
   document.getElementById('d-photo').value='';
   om('m-deliver');
 }
-function previewPhoto(input) { if (input.files[0]) document.getElementById('d-photo-preview').textContent=`✓ ${input.files[0].name}`; }
+function previewPhoto(input) {
+  if (input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('d-photo-preview').innerHTML =
+        `<img src="${e.target.result}" style="max-height:80px;border-radius:6px;"/> <div style="font-size:10px;margin-top:4px;">✓ ${input.files[0].name}</div>`;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function previewProductPhoto(input, wrapId, lblId) {
+  if (input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const wrap = document.getElementById(wrapId);
+      const lbl  = document.getElementById(lblId);
+      if (wrap) wrap.style.background = `url(${e.target.result}) center/cover`;
+      if (lbl)  lbl.style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
 
 async function confirmDelivery() {
   const orderId=document.getElementById('d-order-id').value;

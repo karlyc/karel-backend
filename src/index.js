@@ -25,6 +25,13 @@ const { setupChat } = require('./utils/socket');
 
 const app = express();
 const httpServer = createServer(app);
+
+// Ensure upload directories exist
+const fs = require('fs');
+['uploads/products', 'uploads/deliveries'].forEach(dir => {
+  const full = path.join(__dirname, '..', dir);
+  if (!fs.existsSync(full)) fs.mkdirSync(full, { recursive: true });
+});
 const io = new Server(httpServer, {
   cors: { origin: process.env.CORS_ORIGIN || '*', methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] }
 });
