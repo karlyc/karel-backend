@@ -13,7 +13,7 @@ enum StaffRole {
   ADMIN 
   OFFICE 
   FLORISTA 
-  REPARTIDOR
+  REPARTIDOR 
 }
 
 model Staff {
@@ -128,7 +128,7 @@ enum OrderStatus   {
   EN_PROCESO 
   POR_ENTREGAR 
   COMPLETADA 
-  CANCELADA
+  CANCELADA 
 }
 enum PaymentStatus { 
   PENDIENTE 
@@ -248,8 +248,8 @@ model Task {
 
 enum ExpenditureType { 
   MENSUAL 
-  MISCELANEA
-  }
+  MISCELANEA 
+}
 
 model Expenditure {
   id          String          @id @default(cuid())

@@ -26,11 +26,21 @@ const { setupChat } = require('./utils/socket');
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: { origin: process.env.CORS_ORIGIN || '*', methods: ['GET', 'POST'] }
+  cors: { origin: process.env.CORS_ORIGIN || '*', methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] }
 });
 
 // ── Middleware ──
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+// Must be before all routes — handles preflight
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // explicitly handle preflight for all routes
 
 // Stripe webhooks need raw body — mount BEFORE json parser
 app.use('/api/webhooks', webhookRoutes);
