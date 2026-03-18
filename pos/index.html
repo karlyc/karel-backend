@@ -561,7 +561,8 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
       <div class="fg"><label class="fl">Ancho (cm)</label><input class="fi" id="p-width" type="number" placeholder="Opcional"/></div>
       <div class="fg"><label class="fl">Alto (cm)</label><input class="fi" id="p-height" type="number" placeholder="Opcional"/></div>
     </div>
-    <div class="fg"><label class="fl">Descripción</label><textarea class="fta" id="p-desc" placeholder="Para el florista: materiales, colores, técnica…"></textarea></div>
+    <div class="fg"><label class="fl">Descripción (instrucciones para el florista)</label><textarea class="fta" id="p-desc" placeholder="Materiales, colores, técnica, pasos de elaboración…"></textarea></div>
+    <div class="fg"><label class="fl">Notas internas</label><textarea class="fta" id="p-notes" placeholder="Cambios frecuentes, consideraciones especiales, observaciones…" style="min-height:50px;"></textarea></div>
     <div class="fg"><label class="fl">Fotos (máx. 2)</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
         <div id="p-photo1-wrap" style="border:1.5px dashed var(--rule2);border-radius:var(--r8);height:70px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);font-size:12px;overflow:hidden;position:relative;" onclick="document.getElementById('p-photo1').click()">
@@ -999,8 +1000,9 @@ return `<div class="ec" id="ec-${o.id}">
   ${prod?.width||prod?.height?`<div style="font-size:10px;color:var(--mid);margin-bottom:4px;">📐 ${prod.width||'—'}cm × ${prod.height||'—'}cm</div>`:''}
   <div class="ec-desc">Para: <strong>${o.recipientName||'—'}</strong><br/>Ocasión: ${occLabel(o.occasion)}</div>
   ${o.messageText?`<div class="ec-note">💌 "${o.messageText}" — ${o.messageAnon?'Anónimo':o.messageFrom||''}</div>`:''}
-  ${item?.notes?`<div class="ec-note" style="background:var(--blue-dim);color:var(--blue);">📝 ${item.notes}</div>`:''}
-  ${prod?.description?`<div style="font-size:11px;color:var(--mid);margin-bottom:10px;line-height:1.5;">${prod.description}</div>`:''}
+  ${item?.notes?`<div class="ec-note" style="background:var(--blue-dim);color:var(--blue);">📝 Nota del pedido: ${item.notes}</div>`:''}
+  ${prod?.description?`<div style="font-size:11.5px;color:var(--text);background:var(--ink3);border-radius:var(--r8);padding:8px 10px;margin-bottom:7px;line-height:1.6;"><span style="font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:4px;">📋 Instrucciones</span>${prod.description}</div>`:''}
+  ${prod?.notes?`<div style="font-size:11px;background:var(--amber-dim);color:var(--amber);border-radius:var(--r8);padding:7px 10px;margin-bottom:7px;line-height:1.5;"><span style="font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:3px;">⚠️ Notas del producto</span>${prod.notes}</div>`:''}
   <button class="btn bs" style="width:100%;" onclick="markReady('${o.id}',this)">✓ Listo para entregar</button>
 </div>`}).join('')}
 </div>`}`;
@@ -1179,6 +1181,7 @@ function prodCard(p) {
     <div class="pc-c">${p.code} · ${p.category?.name||''}</div>
     ${p.width||p.height?`<div style="font-size:10px;color:var(--mid);margin-bottom:4px;">📐 ${p.width||'?'}cm × ${p.height||'?'}cm</div>`:''}
     <div style="font-size:12px;font-weight:700;color:var(--rose);margin-bottom:6px;">$${fmt(p.price)}</div>
+    ${p.notes?`<div style="font-size:10px;color:var(--amber);background:var(--amber-dim);border-radius:4px;padding:3px 7px;margin-bottom:5px;">⚠️ ${p.notes}</div>`:''}
     ${p.recipe?.length?`<div style="font-size:10px;color:var(--sage);margin-bottom:5px;">🧪 ${p.recipe.length} ingrediente${p.recipe.length>1?'s':''}</div>`:''}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
       <div class="tw"><div class="tog${p.visible?' on':''}" onclick="toggleProductVisible('${p.id}',this)"><div class="tk"></div></div><span class="tl" style="font-size:11px;">${p.visible?'Visible':'Oculto'}</span></div>
@@ -1213,6 +1216,7 @@ async function openProductModal(product=null) {
   document.getElementById('p-width').value = product?.width||'';
   document.getElementById('p-height').value= product?.height||'';
   document.getElementById('p-desc').value  = product?.description||'';
+  document.getElementById('p-notes').value = product?.notes||'';
   document.getElementById('p-visible').classList.toggle('on', product?.visible!==false);
   // Load categories
   try {
@@ -1276,6 +1280,7 @@ async function saveProduct() {
   fd.append('width',  document.getElementById('p-width').value  || '');
   fd.append('height', document.getElementById('p-height').value || '');
   fd.append('description', document.getElementById('p-desc').value);
+  fd.append('notes', document.getElementById('p-notes').value);
   fd.append('visible', document.getElementById('p-visible').classList.contains('on') ? 'true' : 'false');
   fd.append('recipe', JSON.stringify(recipeItems.map(r => ({ inventoryItemId: r.inventoryItemId, quantity: r.quantity }))));
 
