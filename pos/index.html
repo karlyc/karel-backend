@@ -653,12 +653,25 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 <!-- ════ MODAL: ORDER CONFIRM / PRINT ════ -->
 <div class="ov" id="m-order-done">
 <div class="modal mmd">
-  <div class="mh"><div class="mt">Pedido Creado ✓</div><button class="mx" onclick="cm('m-order-done')">✕</button></div>
+  <div class="mh"><div class="mt" id="done-title">Pedido Creado ✓</div><button class="mx" onclick="cm('m-order-done')">✕</button></div>
   <div class="mb">
     <div style="text-align:center;padding:16px 0 20px;">
       <div style="font-size:2.5rem;margin-bottom:10px;">🌹</div>
       <div style="font-family:var(--fd);font-size:18px;font-weight:800;" id="done-num">KAR-0000</div>
       <div style="font-size:12px;color:var(--mid);margin-top:4px;" id="done-client">—</div>
+      <div id="done-status" style="margin-top:8px;"></div>
+    </div>
+    <!-- Delivery confirmation details (shown when delivered) -->
+    <div id="done-delivery" style="display:none;background:var(--sage-dim);border:1px solid rgba(107,148,105,.2);border-radius:var(--r10);padding:12px;margin-bottom:14px;">
+      <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);margin-bottom:8px;">✓ Entrega Confirmada</div>
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div id="done-delivery-photo" style="width:72px;height:72px;border-radius:var(--r8);background:var(--ink4);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:11px;text-align:center;"></div>
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--rule);"><span style="color:var(--mid);">Recibió</span><span style="font-weight:600;" id="done-received-by">—</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--rule);"><span style="color:var(--mid);">Hora</span><span style="font-weight:600;" id="done-delivered-at">—</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;"><span style="color:var(--mid);">Repartidor</span><span style="font-weight:600;" id="done-repartidor">—</span></div>
+        </div>
+      </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
       <button class="btn bg" style="flex-direction:column;height:64px;gap:3px;" onclick="printOrder()">🖨️<span style="font-size:10px;">Imprimir</span></button>
@@ -935,8 +948,35 @@ async function openOrderActions(id) {
   try {
     const order = await api('GET', `/api/orders/${id}`);
     lastCreatedOrder = order;
+
+    // Header
+    document.getElementById('done-title').textContent = 'Detalles del Pedido';
     document.getElementById('done-num').textContent = order.orderNumber;
-    document.getElementById('done-client').textContent = `${order.client?.firstName||''} ${order.client?.lastNameP||''}`;
+    document.getElementById('done-client').textContent =
+      [order.client?.firstName, order.client?.lastNameP].filter(Boolean).join(' ') +
+      (order.client?.phone ? ` · ${order.client.phone}` : '');
+    document.getElementById('done-status').innerHTML =
+      `${sb(order.orderStatus)} ${pb(order.paymentStatus)}`;
+
+    // Delivery confirmation section
+    const delivery = order.delivery;
+    const deliverySection = document.getElementById('done-delivery');
+    if (delivery?.deliveredAt) {
+      deliverySection.style.display = 'block';
+      document.getElementById('done-received-by').textContent = delivery.receivedBy || '—';
+      document.getElementById('done-delivered-at').textContent =
+        new Date(delivery.deliveredAt).toLocaleString('es-MX', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
+      document.getElementById('done-repartidor').textContent = delivery.assignedTo?.name || '—';
+      const photoEl = document.getElementById('done-delivery-photo');
+      if (delivery.photoUrl) {
+        photoEl.innerHTML = `<img src="${API_BASE}${delivery.photoUrl}" style="width:100%;height:100%;object-fit:cover;"/>`;
+      } else {
+        photoEl.textContent = 'Sin foto';
+      }
+    } else {
+      deliverySection.style.display = 'none';
+    }
+
     om('m-order-done');
   } catch(e) { toastErr(e.message); }
 }
@@ -1827,6 +1867,9 @@ function printOrder() {
     '.subrow{display:flex;justify-content:space-between;font-size:11px;color:#888;padding:2px 0;}',
     '.pbadge{display:inline-block;background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;}',
     '.pbadge.pend{background:#fff3e0;color:#e65100;}',
+    '.delivered-box{background:#f0faf0;border:1.5px solid #a5d6a7;border-radius:8px;padding:12px;margin-bottom:16px;}',
+    '.delivered-box .sec-t{color:#2e7d32;border-bottom-color:#c8e6c9;}',
+    '.del-photo{width:80px;height:80px;border-radius:8px;object-fit:cover;border:1px solid #c8e6c9;float:right;margin-left:12px;}',
     '.ftr{text-align:center;margin-top:20px;padding-top:14px;border-top:1px dashed #ddd;font-size:10px;color:#aaa;line-height:1.8;}',
   ].join('\n');
 
@@ -1870,6 +1913,21 @@ function printOrder() {
       `<div class="totrow"><span class="totlbl">TOTAL</span><span class="totval">$${fmt(o.total)} MXN</span></div>`,
     '</div>',
     `<div class="sec"><div class="sec-t">Forma de Pago</div><div style="padding:6px 0"><span class="pbadge${o.paymentStatus==='PENDIENTE'?' pend':''}">${payLabel}</span></div></div>`,
+
+    // Delivery confirmation (only shown if delivered)
+    ...(o.delivery?.deliveredAt ? [
+      '<div class="delivered-box">',
+      '<div class="sec-t">✓ Entrega Confirmada</div>',
+      o.delivery.photoUrl
+        ? `<img class="del-photo" src="${API_BASE}${o.delivery.photoUrl}" alt="Foto de entrega"/>`
+        : '',
+      rows('Recibió', o.delivery.receivedBy),
+      rows('Hora de entrega', new Date(o.delivery.deliveredAt).toLocaleString('es-MX', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})),
+      rows('Repartidor', o.delivery.assignedTo?.name),
+      '<div style="clear:both"></div>',
+      '</div>',
+    ] : []),
+
     '<div class="ftr">Gracias por su preferencia · Florería y Regalos Karel<br>Av. de la Raza 5262 · Ciudad Juárez · WhatsApp (656) 130-3595<br>RFC: GMB081001TH8</div>',
   ].join('');
 
@@ -1893,7 +1951,10 @@ function waOrder() {
   const o = lastCreatedOrder;
   const winLabel = fmtWindow(o.deliveryWindow);
   const items = o.items?.map(i=>`• ${i.product?.name||'—'} × ${i.quantity}`).join('\n')||'—';
-  const msg = `🌹 *Pedido ${o.orderNumber} — Florería Karel*\n\n📅 Entrega: ${o.deliveryDate?.split('T')[0]||'—'} · ${winLabel}\n🎀 Para: ${o.recipientName||'—'}\n📍 ${o.recipientAddress||''} ${o.recipientColonia||''}\n\n*Productos:*\n${items}\n\n💰 Total: $${fmt(o.total)}\n\n_Gracias por su preferencia ✨_`;
+  const deliveryInfo = o.delivery?.deliveredAt
+    ? `\n\n✅ *Entrega confirmada*\nRecibió: ${o.delivery.receivedBy||'—'}\nHora: ${new Date(o.delivery.deliveredAt).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`
+    : '';
+  const msg = `🌹 *Pedido ${o.orderNumber} — Florería Karel*\n\n📅 Entrega: ${o.deliveryDate?.split('T')[0]||'—'} · ${winLabel}\n🎀 Para: ${o.recipientName||'—'}\n📍 ${o.recipientAddress||''} ${o.recipientColonia||''}\n\n*Productos:*\n${items}\n\n💰 Total: $${fmt(o.total)}${deliveryInfo}\n\n_Gracias por su preferencia ✨_`;
   const phone = o.client?.phone?.replace(/\D/g,'');
   window.open(`https://wa.me/52${phone}?text=${encodeURIComponent(msg)}`,'_blank');
 }
