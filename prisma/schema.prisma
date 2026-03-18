@@ -13,7 +13,7 @@ enum StaffRole {
   ADMIN 
   OFFICE 
   FLORISTA 
-  REPARTIDOR 
+  REPARTIDOR
 }
 
 model Staff {
@@ -30,19 +30,19 @@ model Staff {
 }
 
 enum ClientSource { 
-  WEB
-  IN_STORE
-  INSTAGRAM
-  GOOGLE
-  FACEBOOK
-  REFERRAL
-  OTHER
+  WEB 
+  IN_STORE 
+  INSTAGRAM 
+  GOOGLE 
+  FACEBOOK 
+  REFERRAL 
+  OTHER 
 }
 enum LoyaltyTier  { 
-  REGULAR
-  FREQUENT
-  VIP
-  PLATINUM
+  REGULAR 
+  FREQUENT 
+  VIP 
+  PLATINUM 
 }
 
 model Client {
@@ -124,39 +124,39 @@ model RecipeItem {
   inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
 }
 
-enum OrderStatus   {
-   EN_PROCESO
-   POR_ENTREGAR
-   COMPLETADA
-   CANCELADA
+enum OrderStatus   { 
+  EN_PROCESO 
+  POR_ENTREGAR 
+  COMPLETADA 
+  CANCELADA
 }
 enum PaymentStatus { 
   PENDIENTE 
   PAGO_RECIBIDO 
-  PAGADA
-   }
-enum PaymentMethod {
-   EFECTIVO
-   TRANSFERENCIA
-   TERMINAL
-   CASHAPP
-   APPLE_PAY
-   LINK_PAGO
-   CHEQUE
-   ZELLE
-   STRIPE
+  PAGADA 
+}
+enum PaymentMethod { 
+  EFECTIVO 
+  TRANSFERENCIA 
+  TERMINAL 
+  CASHAPP 
+  APPLE_PAY 
+  LINK_PAGO 
+  CHEQUE 
+  ZELLE 
+  STRIPE 
 }
 enum DeliveryType  { 
-   DOMICILIO_CASA
-   DOMICILIO_NEGOCIO
-   RECOGER_TIENDA
+  DOMICILIO_CASA 
+  DOMICILIO_NEGOCIO 
+  RECOGER_TIENDA 
 }
 enum Occasion      { 
-   CUMPLEANOS
-   ANIVERSARIO
-   FUNERAL
-   AMOR
-   OTRA
+  CUMPLEANOS 
+  ANIVERSARIO 
+  FUNERAL 
+  AMOR 
+  OTRA 
 }
 
 model Order {
@@ -247,9 +247,9 @@ model Task {
 }
 
 enum ExpenditureType { 
-   MENSUAL
-   MISCELANEA
-}
+  MENSUAL 
+  MISCELANEA
+  }
 
 model Expenditure {
   id          String          @id @default(cuid())

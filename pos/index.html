@@ -669,7 +669,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 // CONFIG
 // ════════════════════════════════════════════
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-  ? 'http://localhost:3000' : 'https://karel-backend-production.up.railway.app';
+  ? 'http://localhost:3000' : 'https://your-karel-backend.up.railway.app';
 
 // ════════════════════════════════════════════
 // STATE
@@ -1556,7 +1556,7 @@ function renderCal() {
     const isToday = date.toDateString() === today.toDateString();
     const isSel = iso === sel;
     const disabled = isPast || isSun;
-    html += `<div class="cal-day${isSel?' selected':''}${isToday&&!isSel?' today':''}${disabled?' disabled':''}" onclick="${disabled?'':''}" ${disabled?'':'onclick="pickDay(\''+iso+'\')"'}>${d}</div>`;
+    html += `<div class="cal-day${isSel?' selected':''}${isToday&&!isSel?' today':''}${disabled?' disabled':''}" ${disabled?'':'onclick="pickDay(\''+iso+'\')"'}>${d}</div>`;
   }
   html += `</div></div>`;
   c.innerHTML = html;

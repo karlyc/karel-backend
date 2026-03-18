@@ -25,7 +25,11 @@ router.get('/', async (req, res) => {
   ];
   try {
     const products = await prisma.product.findMany({
-      where, include: { category: { select: { name: true } } },
+      where,
+      include: {
+        category: { select: { name: true } },
+        recipe: { include: { inventoryItem: { select: { name: true, unit: true } } } },
+      },
       orderBy: { name: 'asc' },
     });
     res.json(products);
@@ -38,7 +42,10 @@ router.get('/:id', async (req, res) => {
   try {
     const product = await prisma.product.findUnique({
       where: { id: req.params.id },
-      include: { category: true },
+      include: {
+        category: true,
+        recipe: { include: { inventoryItem: true } },
+      },
     });
     if (!product) return res.status(404).json({ error: 'Product not found' });
     res.json(product);
@@ -55,13 +62,31 @@ router.post('/', requireAuth, requireOffice, upload.fields([
     const data = { ...req.body };
     if (req.files?.photo1) data.photo1Url = `/uploads/products/${req.files.photo1[0].filename}`;
     if (req.files?.photo2) data.photo2Url = `/uploads/products/${req.files.photo2[0].filename}`;
-    data.priceStd = parseFloat(data.priceStd);
-    if (data.priceDlx) data.priceDlx = parseFloat(data.priceDlx);
-    if (data.pricePrm) data.pricePrm = parseFloat(data.pricePrm);
+    data.price  = parseFloat(data.price);
+    if (data.width)  data.width  = parseFloat(data.width);
+    if (data.height) data.height = parseFloat(data.height);
     data.visible = data.visible === 'true' || data.visible === true;
-    const product = await prisma.product.create({ data });
+
+    // Handle recipe items
+    const recipe = data.recipe ? JSON.parse(typeof data.recipe === 'string' ? data.recipe : JSON.stringify(data.recipe)) : [];
+    delete data.recipe;
+
+    const product = await prisma.product.create({
+      data: {
+        ...data,
+        recipe: recipe.length > 0 ? {
+          create: recipe.map(r => ({
+            inventoryItemId: r.inventoryItemId,
+            quantity: parseFloat(r.quantity) || 1,
+            notes: r.notes || null,
+          }))
+        } : undefined,
+      },
+      include: { category: true, recipe: { include: { inventoryItem: true } } },
+    });
     res.status(201).json(product);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to create product' });
   }
 });
@@ -74,13 +99,39 @@ router.put('/:id', requireAuth, requireOffice, upload.fields([
     const data = { ...req.body };
     if (req.files?.photo1) data.photo1Url = `/uploads/products/${req.files.photo1[0].filename}`;
     if (req.files?.photo2) data.photo2Url = `/uploads/products/${req.files.photo2[0].filename}`;
-    if (data.priceStd) data.priceStd = parseFloat(data.priceStd);
-    if (data.priceDlx) data.priceDlx = parseFloat(data.priceDlx);
-    if (data.pricePrm) data.pricePrm = parseFloat(data.pricePrm);
+    if (data.price)  data.price  = parseFloat(data.price);
+    if (data.width)  data.width  = parseFloat(data.width);
+    if (data.height) data.height = parseFloat(data.height);
     if (data.visible !== undefined) data.visible = data.visible === 'true' || data.visible === true;
-    const product = await prisma.product.update({ where: { id: req.params.id }, data });
+
+    // Handle recipe — delete existing and recreate
+    const recipe = data.recipe ? JSON.parse(typeof data.recipe === 'string' ? data.recipe : JSON.stringify(data.recipe)) : null;
+    delete data.recipe;
+
+    await prisma.$transaction(async (tx) => {
+      if (recipe !== null) {
+        await tx.recipeItem.deleteMany({ where: { productId: req.params.id } });
+        if (recipe.length > 0) {
+          await tx.recipeItem.createMany({
+            data: recipe.map(r => ({
+              productId: req.params.id,
+              inventoryItemId: r.inventoryItemId,
+              quantity: parseFloat(r.quantity) || 1,
+              notes: r.notes || null,
+            }))
+          });
+        }
+      }
+      await tx.product.update({ where: { id: req.params.id }, data });
+    });
+
+    const product = await prisma.product.findUnique({
+      where: { id: req.params.id },
+      include: { category: true, recipe: { include: { inventoryItem: true } } },
+    });
     res.json(product);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to update product' });
   }
 });

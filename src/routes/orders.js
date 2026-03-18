@@ -97,7 +97,6 @@ router.post('/', requireAuth, [
   body('deliveryType').isIn(['DOMICILIO_CASA','DOMICILIO_NEGOCIO','RECOGER_TIENDA']),
   body('items').isArray({ min: 1 }).withMessage('At least one product required'),
   body('items.*.productId').notEmpty(),
-  body('items.*.tier').isIn(['STD','DLX','PRM']),
   body('items.*.quantity').isInt({ min: 1 }),
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -110,13 +109,13 @@ router.post('/', requireAuth, [
       deliveryType,
       deliveryWindow,
       deliveryFee = 0,
-      recipientName, recipientPhone, recipientAddress, recipientColonia, recipientNotes,
+      recipientName, recipientPhone, recipientAddress, recipientColonia, recipientZip, recipientNotes,
       businessName, businessDept,
       messageFrom, messageText, messageAnon,
       occasion = 'OTRA',
       hasBanda = false,
       items,
-      paymentType,   // "RECIBIDO" | "CREDITO"
+      paymentType,
       paymentMethod,
       creditDueDate, creditLocation, creditPayMethod,
       advance = 0,
@@ -124,9 +123,11 @@ router.post('/', requireAuth, [
       invoiceRfc, invoiceName, invoiceCfdi, invoiceEmail,
       notifyVia,
       attendedById,
+      subtotal: bodySubtotal,
+      total: bodyTotal,
     } = req.body;
 
-    // Resolve prices from DB
+    // Resolve prices from DB (single price per product)
     const productIds = items.map(i => i.productId);
     const products = await prisma.product.findMany({ where: { id: { in: productIds } } });
     const productMap = Object.fromEntries(products.map(p => [p.id, p]));
@@ -135,13 +136,10 @@ router.post('/', requireAuth, [
     const itemData = items.map(item => {
       const product = productMap[item.productId];
       if (!product) throw new Error(`Product ${item.productId} not found`);
-      const price = item.tier === 'STD' ? product.priceStd
-                  : item.tier === 'DLX' ? (product.priceDlx || product.priceStd)
-                  : (product.pricePrm || product.priceStd);
-      subtotal += Number(price) * item.quantity;
+      const price = Number(product.price);
+      subtotal += price * item.quantity;
       return {
         productId: item.productId,
-        tier: item.tier,
         quantity: item.quantity,
         unitPrice: price,
         notes: item.notes || null,
@@ -174,7 +172,9 @@ router.post('/', requireAuth, [
           deliveryDate: new Date(deliveryDate),
           deliveryWindow: deliveryWindow || '',
           deliveryFee,
-          recipientName, recipientPhone, recipientAddress, recipientColonia, recipientNotes,
+          recipientName, recipientPhone, recipientAddress, recipientColonia,
+          recipientZip: recipientZip || null,
+          recipientNotes,
           businessName, businessDept,
           messageFrom, messageText, messageAnon,
           paymentStatus,
@@ -187,7 +187,7 @@ router.post('/', requireAuth, [
           needsInvoice,
           invoiceRfc, invoiceName, invoiceCfdi, invoiceEmail,
           notifyVia,
-          attendedById,
+          attendedById: attendedById || null,
           items: { create: itemData },
         },
         include: { items: true },
@@ -203,6 +203,25 @@ router.post('/', requireAuth, [
         await tx.task.create({
           data: {
             description: `Hacer factura #${orderNumber} — ${invoiceName || ''}`,
+            orderId: created.id,
+          },
+        });
+      }
+
+      // Auto-create reminder for next year (birthday/anniversary)
+      if (generateReminder) {
+        const client = await tx.client.findUnique({ where: { id: clientId } });
+        const deliveryDt = new Date(deliveryDate);
+        const nextYear = new Date(deliveryDt);
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        nextYear.setDate(nextYear.getDate() - 2); // 2 days before
+        await tx.reminder.create({
+          data: {
+            clientId,
+            clientName: `${client.firstName} ${client.lastNameP}`,
+            clientPhone: client.phone || '',
+            occasion,
+            eventDate: nextYear,
             orderId: created.id,
           },
         });
