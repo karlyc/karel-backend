@@ -4,7 +4,7 @@ const { body, query, validationResult } = require('express-validator');
 const { prisma } = require('../db/prisma');
 const { requireAuth, requireAdmin, requireOffice } = require('../middleware/auth');
 const { generateOrderNumber, computeLoyaltyTier } = require('../utils/orders');
-
+const { upload, uploadToCloudinary, isCloudinaryConfigured } = require('../utils/upload');
 // ── GET /api/orders ──
 // List orders with filtering and search
 router.get('/', requireAuth, async (req, res) => {
@@ -91,41 +91,46 @@ router.get('/:id', requireAuth, async (req, res) => {
 
 // ── POST /api/orders ──
 // Create new order
-router.post('/', requireAuth, [
-  body('clientId').notEmpty().withMessage('Client is required'),
-  body('deliveryDate').isISO8601().withMessage('Valid delivery date required'),
-  body('deliveryType').isIn(['DOMICILIO_CASA','DOMICILIO_NEGOCIO','RECOGER_TIENDA']),
-  body('items').isArray({ min: 1 }).withMessage('At least one product required'),
-  body('items.*.productId').notEmpty(),
-  body('items.*.quantity').isInt({ min: 1 }),
+router.post('/', requireAuth, upload.single('paymentProof'), [
+  body('clientId').optional(),      // validated after JSON parse
+  body('deliveryDate').optional(),
 ], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  // Support both JSON body and FormData (with optional photo)
+  let bodyData = req.body;
+  if (req.body.data && typeof req.body.data === 'string') {
+    try { bodyData = JSON.parse(req.body.data); } catch(e) {}
+  }
+
+  const {
+    clientId, deliveryDate, deliveryType, deliveryWindow,
+    deliveryFee = 0,
+    recipientName, recipientPhone, recipientAddress, recipientColonia,
+    recipientZip, recipientNotes, businessName, businessDept,
+    messageFrom, messageText, messageAnon,
+    occasion = 'OTRA', hasBanda = false,
+    items, paymentType, paymentMethod,
+    creditDueDate, creditLocation, creditPayMethod,
+    advance = 0,
+    needsInvoice = false, invoiceRfc, invoiceName, invoiceCfdi, invoiceEmail,
+    notifyVia, attendedById,
+    subtotal: bodySubtotal, total: bodyTotal,
+  } = bodyData;
+
+  if (!clientId) return res.status(400).json({ error: 'Client is required' });
+  if (!deliveryDate) return res.status(400).json({ error: 'Delivery date is required' });
+  if (!deliveryType) return res.status(400).json({ error: 'Delivery type is required' });
+  if (!items || !items.length) return res.status(400).json({ error: 'At least one item required' });
 
   try {
-    const {
-      clientId,
-      deliveryDate,
-      deliveryType,
-      deliveryWindow,
-      deliveryFee = 0,
-      recipientName, recipientPhone, recipientAddress, recipientColonia, recipientZip, recipientNotes,
-      businessName, businessDept,
-      messageFrom, messageText, messageAnon,
-      occasion = 'OTRA',
-      hasBanda = false,
-      items,
-      paymentType,
-      paymentMethod,
-      creditDueDate, creditLocation, creditPayMethod,
-      advance = 0,
-      needsInvoice = false,
-      invoiceRfc, invoiceName, invoiceCfdi, invoiceEmail,
-      notifyVia,
-      attendedById,
-      subtotal: bodySubtotal,
-      total: bodyTotal,
-    } = req.body;
+    // Handle payment proof photo
+    let paymentProofUrl = null;
+    if (req.file) {
+      if (isCloudinaryConfigured()) {
+        paymentProofUrl = await uploadToCloudinary(req.file.buffer, 'karel/payment-proofs');
+      } else {
+        paymentProofUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      }
+    }
 
     // Resolve prices from DB (single price per product)
     const productIds = items.map(i => i.productId);
@@ -188,6 +193,7 @@ router.post('/', requireAuth, [
           invoiceRfc, invoiceName, invoiceCfdi, invoiceEmail,
           notifyVia,
           attendedById: attendedById || null,
+          paymentProofUrl: paymentProofUrl || null,
           items: { create: itemData },
         },
         include: { items: true },
@@ -291,6 +297,27 @@ router.patch('/:id/payment', requireAuth, requireOffice, async (req, res) => {
 
 // ── DELETE /api/orders/:id ──
 // Cancel order — admin only
+// ── PATCH /api/orders/:id/proof — upload payment proof photo after order creation
+router.patch('/:id/proof', requireAuth, upload.single('paymentProof'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No photo provided' });
+  try {
+    let paymentProofUrl;
+    if (isCloudinaryConfigured()) {
+      paymentProofUrl = await uploadToCloudinary(req.file.buffer, 'karel/payment-proofs');
+    } else {
+      paymentProofUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    }
+    const order = await prisma.order.update({
+      where: { id: req.params.id },
+      data: { paymentProofUrl },
+    });
+    res.json(order);
+  } catch(err) {
+    console.error('Proof upload error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     await prisma.order.update({

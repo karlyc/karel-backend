@@ -157,8 +157,8 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .pc{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r12);overflow:hidden;transition:border-color .12s;}
 .pc:hover{border-color:var(--rule2);}
-.pc-img{height:100px;background:var(--ink4);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;}
-.pc-img img{width:100%;height:100%;object-fit:cover;}
+.pc-img{height:140px;background:var(--ink4);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;}
+.pc-img img{width:100%;height:100%;object-fit:contain;background:var(--ink4);}
 .pc-b{padding:11px;}
 .pc-n{font-size:12.5px;font-weight:600;margin-bottom:2px;}
 .pc-c{font-size:10px;color:var(--dim);margin-bottom:5px;}
@@ -182,8 +182,8 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 .cinp input:focus{border-color:var(--rose);}
 .ec{background:var(--ink2);border:2px solid var(--amber);border-radius:var(--r12);padding:16px;transition:all .2s;}
 .ec.done{border-color:var(--sage);opacity:.5;}
-.ec-img{width:100%;height:130px;background:var(--ink3);border-radius:var(--r8);display:flex;align-items:center;justify-content:center;font-size:50px;margin-bottom:10px;overflow:hidden;}
-.ec-img img{width:100%;height:100%;object-fit:cover;}
+.ec-img{width:100%;height:160px;background:var(--ink3);border-radius:var(--r8);display:flex;align-items:center;justify-content:center;font-size:50px;margin-bottom:10px;overflow:hidden;}
+.ec-img img{width:100%;height:100%;object-fit:contain;background:var(--ink3);}
 .ec-name{font-family:var(--fd);font-size:15px;font-weight:800;margin-bottom:4px;}
 .ec-desc{font-size:12px;color:var(--mid);line-height:1.5;margin-bottom:4px;}
 .ec-note{font-size:11px;font-style:italic;color:var(--rose-l);margin-bottom:11px;padding:7px 9px;background:var(--rose-dim);border-radius:var(--r6);}
@@ -434,9 +434,6 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
             </div>
             <div class="fg"><label class="fl">Notas de acceso</label><input class="fi" id="o-r-notes" placeholder="Color de casa, código, piso…"/></div>
           </div>
-          <div class="fg" style="margin-top:5px;"><label class="fl">Notificación al cliente</label>
-            <div class="rcs" id="o-notif"><div class="rc sel" onclick="or(this,'o-notif')">💬 WhatsApp</div><div class="rc" onclick="or(this,'o-notif')">📧 Email</div><div class="rc" onclick="or(this,'o-notif')">📱 SMS</div><div class="rc" onclick="or(this,'o-notif')">🚫 No</div></div>
-          </div>
           <div class="fg"><label class="fl">Costo de envío</label><input class="fi" id="o-fee" type="number" value="0" oninput="recalcTotal()"/></div>
         </div>
 
@@ -464,6 +461,14 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
           <div id="o-fac-f" style="display:none;margin-top:9px;">
             <div class="fr"><div class="fg"><label class="fl">Razón Social</label><input class="fi" id="o-rfc-name"/></div><div class="fg"><label class="fl">Uso de CFDI</label><select class="fs" id="o-cfdi"><option value="G03">G03 – Gastos en general</option><option value="G01">G01 – Adquisición</option><option value="P01">P01 – Por definir</option></select></div></div>
             <div style="font-size:11px;color:var(--amber);background:var(--amber-dim);padding:7px 9px;border-radius:var(--r6);margin-top:3px;">⚡ Se creará tarea "Hacer factura" automáticamente.</div>
+          </div>
+          <!-- Delivery notification preference -->
+          <div class="fg" style="margin-top:4px;"><label class="fl">Notificar al cliente en entrega</label>
+            <div class="rcs" id="o-notif">
+              <div class="rc sel" onclick="or(this,'o-notif')">💬 WhatsApp</div>
+              <div class="rc" onclick="or(this,'o-notif')">📧 Email</div>
+              <div class="rc" onclick="or(this,'o-notif')">🚫 No notificar</div>
+            </div>
           </div>
         </div>
       </div>
@@ -697,6 +702,17 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
       <div style="font-family:var(--fd);font-size:18px;font-weight:800;" id="done-num">KAR-0000</div>
       <div style="font-size:12px;color:var(--mid);margin-top:4px;" id="done-client">—</div>
       <div id="done-status" style="margin-top:8px;"></div>
+    </div>
+    <!-- Payment proof (shown when available) -->
+    <div id="done-proof" style="display:none;background:var(--sage-dim);border:1px solid rgba(107,148,105,.2);border-radius:var(--r10);padding:12px;margin-bottom:14px;"></div>
+    <!-- Comprobante upload (shown for non-cash payments after order creation) -->
+    <div id="done-proof-upload" style="display:none;background:var(--amber-dim);border:1px solid rgba(200,152,64,.22);border-radius:var(--r10);padding:12px;margin-bottom:14px;">
+      <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;">📎 Adjuntar comprobante de pago</div>
+      <div id="done-proof-wrap" style="border:1.5px dashed rgba(200,152,64,.4);border-radius:var(--r8);padding:10px;text-align:center;cursor:pointer;color:var(--mid);font-size:12px;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;" onclick="document.getElementById('done-proof-file').click()">
+        <span id="done-proof-lbl">📷 Click para adjuntar foto del comprobante</span>
+        <input type="file" id="done-proof-file" accept="image/*" style="display:none;" onchange="previewProductPhoto(this,'done-proof-wrap','done-proof-lbl')"/>
+      </div>
+      <button class="btn ba bsm" style="width:100%;margin-top:8px;" onclick="uploadProofAfterOrder()">Guardar comprobante</button>
     </div>
     <!-- Delivery confirmation details (shown when delivered) -->
     <div id="done-delivery" style="display:none;background:var(--sage-dim);border:1px solid rgba(107,148,105,.2);border-radius:var(--r10);padding:12px;margin-bottom:14px;">
@@ -1042,6 +1058,17 @@ async function openOrderActions(id) {
       }
     } else {
       deliverySection.style.display = 'none';
+    }
+
+    // Payment proof photo
+    const proofSection = document.getElementById('done-proof');
+    if (order.paymentProofUrl && proofSection) {
+      proofSection.style.display = 'block';
+      proofSection.innerHTML = `
+        <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);margin-bottom:6px;">📎 Comprobante de pago</div>
+        <img src="${photoSrc(order.paymentProofUrl)}" style="width:100%;max-height:120px;object-fit:contain;border-radius:var(--r8);border:1px solid var(--rule);cursor:pointer;" onclick="window.open('${photoSrc(order.paymentProofUrl)}','_blank')"/>`;
+    } else if (proofSection) {
+      proofSection.style.display = 'none';
     }
 
     om('m-order-done');
@@ -2094,14 +2121,15 @@ async function submitOrder() {
     invoiceName:document.getElementById('o-rfc-name')?.value,
     invoiceCfdi:document.getElementById('o-cfdi')?.value,
     attendedById:document.getElementById('o-staff')?.value||undefined,
-    notifyVia:document.querySelector('#o-notif .sel')?.textContent?.includes('WhatsApp')?'whatsapp':'none',
+    notifyVia:document.querySelector('#o-notif .sel')?.textContent?.includes('WhatsApp')?'whatsapp':document.querySelector('#o-notif .sel')?.textContent?.includes('Email')?'email':'none',
     subtotal:sub, total:sub+fee-adv,
   };
   const btn=document.getElementById('o-submit'); btn.disabled=true; btn.textContent='Creando…';
   try {
-    const order = await api('POST','/api/orders',body);
-    // Fetch full order with client/items/delivery included
-    const fullOrder = await api('GET',`/api/orders/${order.id}`);
+    const order = await api('POST', '/api/orders', body);
+
+    // Fetch full order with client/items/delivery
+    const fullOrder = await api('GET', `/api/orders/${order.id}`);
     lastCreatedOrder = fullOrder;
     cm('m-order');
     document.getElementById('done-title').textContent = 'Pedido Creado ✓';
@@ -2111,6 +2139,22 @@ async function submitOrder() {
       (fullOrder.client?.phone ? ` · ${fullOrder.client.phoneCode||'+52'} ${fullOrder.client.phone}` : '');
     document.getElementById('done-status').innerHTML = `${sb(fullOrder.orderStatus)} ${pb(fullOrder.paymentStatus)}`;
     document.getElementById('done-delivery').style.display = 'none';
+    document.getElementById('done-proof').style.display = 'none';
+
+    // Show comprobante upload for non-cash payments
+    const isEfectivo = body.paymentMethod === 'EFECTIVO' || body.paymentType === 'CREDITO';
+    const proofUpload = document.getElementById('done-proof-upload');
+    if (proofUpload) {
+      proofUpload.style.display = isEfectivo ? 'none' : 'block';
+      // Reset the upload area
+      const wrap = document.getElementById('done-proof-wrap');
+      const lbl  = document.getElementById('done-proof-lbl');
+      if (wrap) wrap.style.background = '';
+      if (lbl)  lbl.style.display = '';
+      const inp = document.getElementById('done-proof-file');
+      if (inp) inp.value = '';
+    }
+
     om('m-order-done');
     loadBadges();
   } catch(e) { toastErr(e.message); }
@@ -2140,11 +2184,12 @@ function printOrder() {
     '*{margin:0;padding:0;box-sizing:border-box;}',
     'body{font-family:Helvetica Neue,Arial,sans-serif;color:#1a1a1a;background:white;padding:28px;max-width:560px;margin:0 auto;}',
     '.hdr{text-align:center;border-bottom:3px solid #C96E60;padding-bottom:16px;margin-bottom:18px;}',
-    '.logo-area{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;}',
-    '.flower{font-size:42px;line-height:1;}',
-    '.brand{font-size:18px;font-weight:800;letter-spacing:.04em;color:#1a1a1a;text-transform:uppercase;}',
+    '.logo-box{background:linear-gradient(135deg,#fff5f3,#fff);border:2px solid #C96E60;border-radius:12px;padding:16px 24px;display:inline-block;margin-bottom:12px;}',
+    '.logo-area{display:flex;align-items:center;justify-content:center;gap:12px;}',
+    '.flower{font-size:36px;line-height:1;}',
+    '.brand{font-size:20px;font-weight:900;letter-spacing:.02em;color:#1a1a1a;text-transform:uppercase;line-height:1.1;}',
     '.brand em{color:#C96E60;font-style:normal;}',
-    '.sub{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:#888;margin-top:2px;}',
+    '.sub{font-size:8.5px;letter-spacing:.22em;text-transform:uppercase;color:#C96E60;margin-top:3px;opacity:.8;}',
     '.hdr-info{font-size:10.5px;color:#555;line-height:1.8;}',
     '.hdr-info b{color:#1a1a1a;}',
     '.badge{display:inline-block;background:#C96E60;color:white;padding:6px 20px;border-radius:100px;font-size:16px;font-weight:800;letter-spacing:.06em;margin:14px 0 4px;}',
@@ -2185,7 +2230,7 @@ function printOrder() {
 
   const html = [
     '<div class="hdr">',
-      '<div class="logo-area"><div class="flower">🌹</div><div><div class="brand">FLORERÍA Y REGALOS <em>KAREL</em></div><div class="sub">Ciudad Juárez, Chihuahua</div></div></div>',
+      '<div class="logo-box"><div class="logo-area"><div class="flower">🌹</div><div><div class="brand">FLORERÍA Y REGALOS <em>KAREL</em></div><div class="sub">Ciudad Juárez · Est. 2008</div></div></div></div>',
       '<div class="hdr-info">AV. DE LA RAZA 5262, C.P. 32369, CIUDAD JUÁREZ<br>RFC: <b>GMB081001TH8</b> &nbsp;|&nbsp; WhatsApp: <b>(656) 130-3595</b></div>',
       `<div class="badge">${o.orderNumber}</div>`,
       `<div class="odate">Fecha de orden: ${new Date(o.createdAt).toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>`,
@@ -2214,6 +2259,14 @@ function printOrder() {
     '</div>',
     `<div class="sec"><div class="sec-t">Forma de Pago</div><div style="padding:6px 0"><span class="pbadge${o.paymentStatus==='PENDIENTE'?' pend':''}">${payLabel}</span></div></div>`,
 
+    // Payment proof (only shown if present)
+    ...(o.paymentProofUrl ? [
+      '<div style="margin-bottom:14px;">',
+      '<div class="sec-t">📎 Comprobante de Pago</div>',
+      `<img src="${photoSrc(o.paymentProofUrl)}" style="max-width:100%;max-height:160px;object-fit:contain;border-radius:8px;border:1px solid #eee;"/>`,
+      '</div>',
+    ] : []),
+
     // Delivery confirmation (only shown if delivered)
     ...(o.delivery?.deliveredAt ? [
       '<div class="delivered-box">',
@@ -2240,24 +2293,97 @@ function printOrder() {
 function emailOrder() {
   if (!lastCreatedOrder) return;
   const o = lastCreatedOrder;
-  const subject = encodeURIComponent(`Pedido ${o.orderNumber} — Florería Karel`);
-  const body = encodeURIComponent(`Estimado/a ${o.client?.firstName||''},\n\nTu pedido ${o.orderNumber} ha sido registrado.\n\nFecha de entrega: ${o.deliveryDate?.split('T')[0]||'—'}\nTotal: $${fmt(o.total)}\n\nGracias por preferir Florería y Regalos Karel.\nTel: 656 611 1124 · WhatsApp: 656 130 3595`);
-  window.open(`mailto:${o.client?.email||''}?subject=${subject}&body=${body}`,'_blank');
-  toast('Abriendo cliente de correo… 📧');
+  // Open print window — user can print to PDF and email it
+  // Also open mailto with the full text summary
+  const subject = encodeURIComponent(`Pedido ${o.orderNumber} — Florería y Regalos Karel`);
+
+  const winLabel = fmtWindow(o.deliveryWindow);
+  const isPickup = o.deliveryType === 'RECOGER_TIENDA';
+  const clientName = [o.client?.firstName, o.client?.middleName, o.client?.lastNameP, o.client?.lastNameM].filter(Boolean).join(' ') || '—';
+  const items = (o.items||[]).map(i=>`  • ${i.product?.name||'—'} × ${i.quantity}  $${fmt(i.unitPrice)}`).join('\n');
+  const deliveryAddr = isPickup
+    ? 'Recoger en tienda — Av. de la Raza 5262, Villa del Norte, C.P. 32369'
+    : [o.recipientAddress, o.recipientColonia].filter(Boolean).join(', ');
+  const payMap = { EFECTIVO:'Efectivo', TRANSFERENCIA:'Transferencia', TERMINAL:'Terminal', CASHAPP:'CashApp', APPLE_PAY:'Apple Pay', LINK_PAGO:'Link de pago', CHEQUE:'Cheque', ZELLE:'Zelle', STRIPE:'Stripe' };
+  const payLabel = o.paymentStatus === 'PENDIENTE' ? 'Crédito (pendiente)' : (payMap[o.paymentMethod] || '—');
+
+  const bodyText = [
+    `Estimado/a ${o.client?.firstName||'Cliente'},`,
+    '',
+    `Su pedido ${o.orderNumber} ha sido registrado en Florería y Regalos Karel.`,
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    `PEDIDO: ${o.orderNumber}`,
+    `Fecha: ${new Date(o.createdAt).toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`,
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    '',
+    'CLIENTE',
+    `  ${clientName}`,
+    `  Tel: ${o.client?.phoneCode||'+52'} ${o.client?.phone||''}`,
+    '',
+    'ENTREGA',
+    `  Fecha: ${o.deliveryDate?.split('T')[0]||'—'}`,
+    `  Horario: ${winLabel}`,
+    `  Tipo: ${isPickup ? 'Recoger en tienda' : 'A domicilio'}`,
+    o.recipientName ? `  Destinatario: ${o.recipientName}` : '',
+    deliveryAddr ? `  Dirección: ${deliveryAddr}` : '',
+    o.recipientNotes ? `  Notas: ${o.recipientNotes}` : '',
+    o.messageText ? `  Mensaje: "${o.messageText}" — ${o.messageAnon ? 'Anónimo' : o.messageFrom||''}` : '',
+    '',
+    'PRODUCTOS',
+    items,
+    '',
+    `  Subtotal: $${fmt(o.subtotal)}`,
+    Number(o.deliveryFee)>0 ? `  Envío: $${fmt(o.deliveryFee)}` : '',
+    Number(o.advance)>0 ? `  Anticipo: -$${fmt(o.advance)}` : '',
+    `  TOTAL: $${fmt(o.total)} MXN`,
+    '',
+    `PAGO: ${payLabel}`,
+    '',
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    'Gracias por su preferencia.',
+    'Florería y Regalos Karel',
+    'Av. de la Raza 5262 · Ciudad Juárez',
+    'Tel: 656 611 1124 · WhatsApp: (656) 130-3595',
+    'RFC: GMB081001TH8',
+  ].filter(l => l !== '').join('\n');
+
+  window.open(`mailto:${o.client?.email||''}?subject=${subject}&body=${encodeURIComponent(bodyText)}`, '_blank');
+  toast('Abriendo correo… 📧');
 }
 
 function waOrder() {
   if (!lastCreatedOrder) return;
   const o = lastCreatedOrder;
   const winLabel = fmtWindow(o.deliveryWindow);
-  const items = o.items?.map(i=>`• ${i.product?.name||'—'} × ${i.quantity}`).join('\n')||'—';
+  const isPickup = o.deliveryType === 'RECOGER_TIENDA';
+  const items = (o.items||[]).map(i=>`  • ${i.product?.name||'—'} × ${i.quantity}`).join('\n') || '—';
   const deliveryInfo = o.delivery?.deliveredAt
     ? `\n\n✅ *Entrega confirmada*\nRecibió: ${o.delivery.receivedBy||'—'}\nHora: ${new Date(o.delivery.deliveredAt).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`
     : '';
-  const msg = `🌹 *Pedido ${o.orderNumber} — Florería Karel*\n\n📅 Entrega: ${o.deliveryDate?.split('T')[0]||'—'} · ${winLabel}\n🎀 Para: ${o.recipientName||'—'}\n📍 ${o.recipientAddress||''} ${o.recipientColonia||''}\n\n*Productos:*\n${items}\n\n💰 Total: $${fmt(o.total)}${deliveryInfo}\n\n_Gracias por su preferencia ✨_`;
+  const msg = [
+    `🌹 *Pedido ${o.orderNumber}*`,
+    '*Florería y Regalos Karel*',
+    '',
+    `📅 Entrega: ${o.deliveryDate?.split('T')[0]||'—'} · ${winLabel}`,
+    isPickup
+      ? '🏪 Pasa a recoger en tienda\n📍 Av. de la Raza 5262, Villa del Norte'
+      : `🎀 Para: ${o.recipientName||'—'}\n📍 ${[o.recipientAddress, o.recipientColonia].filter(Boolean).join(', ')||'—'}`,
+    o.messageText ? `💌 "${o.messageText}" — ${o.messageAnon?'Anónimo':o.messageFrom||''}` : '',
+    '',
+    '*Productos:*',
+    items,
+    '',
+    `💰 Total: *$${fmt(o.total)} MXN*`,
+    deliveryInfo,
+    '',
+    '_Gracias por su preferencia_ 🌸',
+    '_Florería y Regalos Karel · (656) 130-3595_',
+  ].filter(l => l !== '').join('\n');
+
   const code = (o.client?.phoneCode||'+52').replace('+','');
   const num  = (o.client?.phone||'').replace(/\D/g,'');
-  window.open(`https://wa.me/${code}${num}?text=${encodeURIComponent(msg)}`,'_blank');
+  window.open(`https://wa.me/${code}${num}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 // ════════════════════════════════════════════
@@ -2339,22 +2465,115 @@ function previewProductPhoto(input, wrapId, lblId) {
 }
 
 async function confirmDelivery() {
-  const orderId=document.getElementById('d-order-id').value;
-  const receivedBy=document.getElementById('d-received').value.trim();
-  const photoFile=document.getElementById('d-photo').files[0];
+  const orderId    = document.getElementById('d-order-id').value;
+  const receivedBy = document.getElementById('d-received').value.trim();
+  const photoFile  = document.getElementById('d-photo').files[0];
   if (!receivedBy) { toastErr('¿Quién recibió?'); return; }
-  if (!photoFile) { toastErr('La foto es requerida'); return; }
-  const fd=new FormData(); fd.append('receivedBy',receivedBy); fd.append('photo',photoFile);
+  if (!photoFile)  { toastErr('La foto es requerida'); return; }
+
+  const fd = new FormData();
+  fd.append('receivedBy', receivedBy);
+  fd.append('photo', photoFile);
+
+  const btn = document.querySelector('#m-deliver .btn.bs');
+  if (btn) { btn.disabled = true; btn.textContent = 'Confirmando…'; }
   try {
-    await api('POST',`/api/deliveries/${orderId}/confirm`,fd,true);
-    cm('m-deliver'); toast('Entrega confirmada ✓');
-    showView('entregas'); loadBadges();
+    const result = await api('POST', `/api/deliveries/${orderId}/confirm`, fd, true);
+    cm('m-deliver');
+    toast('Entrega confirmada ✓');
+
+    // Fetch the order to get client notification preference + contact info
+    const order = await api('GET', `/api/orders/${orderId}`);
+
+    // Send notification based on stored preference
+    const notifyVia = order.notifyVia || 'none';
+    if (notifyVia === 'whatsapp' && order.client?.phone) {
+      sendDeliveryNotificationWA(order, receivedBy);
+    } else if (notifyVia === 'email' && order.client?.email) {
+      sendDeliveryNotificationEmail(order, receivedBy);
+    }
+
+    // Update lastCreatedOrder so the receipt shows the delivery info
+    lastCreatedOrder = { ...order, delivery: result.delivery || { receivedBy, deliveredAt: new Date() } };
+
+    showView('entregas');
+    loadBadges();
   } catch(e) { toastErr(e.message); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Confirmar Entrega'; } }
+}
+
+function sendDeliveryNotificationWA(order, receivedBy) {
+  const clientName = order.client?.firstName || 'Cliente';
+  const code = (order.client?.phoneCode||'+52').replace('+','');
+  const num  = (order.client?.phone||'').replace(/\D/g,'');
+  const time = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  const msg = [
+    `🌹 *Florería y Regalos Karel*`,
+    '',
+    `Hola ${clientName}! Tu pedido *${order.orderNumber}* fue entregado exitosamente. ✅`,
+    '',
+    `📦 Recibió: *${receivedBy}*`,
+    `🕐 Hora: ${time}`,
+    '',
+    `¡Gracias por tu preferencia! 🌸`,
+    `_Florería y Regalos Karel · (656) 130-3595_`,
+  ].join('\n');
+  window.open(`https://wa.me/${code}${num}?text=${encodeURIComponent(msg)}`, '_blank');
+  toast('Notificación WhatsApp enviada ✓');
+}
+
+function sendDeliveryNotificationEmail(order, receivedBy) {
+  const clientName = order.client?.firstName || 'Cliente';
+  const time = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  const subject = encodeURIComponent(`Tu pedido ${order.orderNumber} fue entregado ✅`);
+  const body = encodeURIComponent([
+    `Hola ${clientName},`,
+    '',
+    `Tu pedido ${order.orderNumber} de Florería y Regalos Karel fue entregado exitosamente.`,
+    '',
+    `Recibió: ${receivedBy}`,
+    `Hora: ${time}`,
+    '',
+    '¡Gracias por tu preferencia!',
+    '',
+    'Florería y Regalos Karel',
+    'Tel: 656 611 1124 · WhatsApp: (656) 130-3595',
+  ].join('\n'));
+  window.open(`mailto:${order.client.email}?subject=${subject}&body=${body}`, '_blank');
+  toast('Notificación por email enviada ✓');
+}
+
+async function uploadProofAfterOrder() {
+  if (!lastCreatedOrder) return;
+  const file = document.getElementById('done-proof-file')?.files[0];
+  if (!file) { toastErr('Selecciona una foto del comprobante'); return; }
+
+  const fd = new FormData();
+  fd.append('paymentProof', file);
+
+  const btn = document.querySelector('#done-proof-upload .btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Subiendo…'; }
+  try {
+    await api('PATCH', `/api/orders/${lastCreatedOrder.id}/proof`, fd, true);
+    lastCreatedOrder = await api('GET', `/api/orders/${lastCreatedOrder.id}`);
+    document.getElementById('done-proof-upload').style.display = 'none';
+    const proofSection = document.getElementById('done-proof');
+    proofSection.style.display = 'block';
+    proofSection.innerHTML = `
+      <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);margin-bottom:6px;">📎 Comprobante de pago</div>
+      <img src="${photoSrc(lastCreatedOrder.paymentProofUrl)}" style="width:100%;max-height:120px;object-fit:contain;border-radius:var(--r8);border:1px solid var(--rule);cursor:pointer;" onclick="window.open('${photoSrc(lastCreatedOrder.paymentProofUrl)}','_blank')"/>`;
+    toast('Comprobante guardado ✓');
+  } catch(e) { toastErr(e.message); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Guardar comprobante'; } }
 }
 
 async function markPaid(id) {
-  try { await api('PATCH',`/api/orders/${id}/payment`,{paymentStatus:'PAGO_RECIBIDO'}); toast('Pago confirmado ✓'); const v=document.querySelector('.ni.on')?.dataset.v; if(v) showView(v); }
-  catch(e) { toastErr(e.message); }
+  try {
+    await api('PATCH', `/api/orders/${id}/payment`, { paymentStatus: 'PAGO_RECIBIDO' });
+    toast('Pago confirmado ✓');
+    const v = document.querySelector('.ni.on')?.dataset.v;
+    if (v) showView(v);
+  } catch(e) { toastErr(e.message); }
 }
 
 // ════════════════════════════════════════════

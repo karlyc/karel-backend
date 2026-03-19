@@ -199,6 +199,7 @@ model Order {
   invoiceCfdi      String?
   invoiceEmail     String?
   invoiceFileUrl   String?
+  paymentProofUrl  String?
   notifyVia        String?
   orderStatus      OrderStatus   @default(EN_PROCESO)
   attendedById     String?
