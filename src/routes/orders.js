@@ -51,7 +51,7 @@ router.get('/', requireAuth, async (req, res) => {
         where,
         include: {
           client: { select: { id: true, firstName: true, lastNameP: true, phone: true, loyaltyTier: true } },
-          items: { include: { product: { select: { name: true, photo1Url: true } } } },
+          items: { include: { product: { select: { name:true, photo1Url:true, photo2Url:true, description:true, notes:true, width:true, height:true, recipe:{ include:{ inventoryItem:{ select:{ name:true, unit:true } } } } } } } },
           attendedBy: { select: { name: true } },
           delivery: { select: { assignedToId: true, deliveredAt: true, photoUrl: true } },
         },

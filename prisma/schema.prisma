@@ -78,6 +78,7 @@ model InventoryItem {
   cost        Decimal?     @db.Decimal(10,2)
   supplier    String?
   notes       String?
+  photoUrl    String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   recipeItems RecipeItem[]
@@ -236,15 +237,16 @@ model Delivery {
 }
 
 model Task {
-  id          String    @id @default(cuid())
-  description String
-  dueDate     DateTime?
-  completed   Boolean   @default(false)
-  completedAt DateTime?
-  orderId     String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  order       Order?    @relation(fields: [orderId], references: [id])
+  id           String    @id @default(cuid())
+  description  String
+  dueDate      DateTime?
+  completed    Boolean   @default(false)
+  completedAt  DateTime?
+  orderId      String?
+  assignedToId String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  order        Order?    @relation(fields: [orderId], references: [id])
 }
 
 enum ExpenditureType { 

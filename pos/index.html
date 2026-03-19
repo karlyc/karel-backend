@@ -490,10 +490,17 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
       <div class="fg"><label class="fl">Apellido Materno</label><input class="fi" id="c-lastm" placeholder="Opcional"/></div>
       <div class="fg"><label class="fl">Teléfono *</label>
         <div class="phone-wrap">
-          <select class="fs phone-code" id="c-code">
-            <option value="+52">🇲🇽 +52</option><option value="+1">🇺🇸 +1</option><option value="+1">🇨🇦 +1</option>
-            <option value="+34">🇪🇸 +34</option><option value="+44">🇬🇧 +44</option><option value="+49">🇩🇪 +49</option><option value="+33">🇫🇷 +33</option>
+          <select class="fs phone-code" id="c-code" onchange="handleCodeChange(this,'c-code-other')">
+            <option value="+52">🇲🇽 +52</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="+1">🇨🇦 +1</option>
+            <option value="+34">🇪🇸 +34</option>
+            <option value="+44">🇬🇧 +44</option>
+            <option value="+49">🇩🇪 +49</option>
+            <option value="+33">🇫🇷 +33</option>
+            <option value="other">Otro…</option>
           </select>
+          <input class="fi" id="c-code-other" placeholder="+00" style="display:none;width:70px;flex-shrink:0;"/>
           <input class="fi" id="c-phone" type="tel" placeholder="656 000 0000" style="flex:1;"/>
         </div>
       </div>
@@ -513,13 +520,36 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 </div>
 </div>
 
-<!-- ════ MODAL: TAREA ════ -->
+<!-- ════ MODAL: VER/EDITAR CLIENTE ════ -->
+<div class="ov" id="m-client-view">
+<div class="modal mlg">
+  <div class="mh"><div class="mt">Información del Cliente</div><button class="mx" onclick="cm('m-client-view')">✕</button></div>
+  <div class="mb" id="m-client-view-body"></div>
+  <div class="mf">
+    <button class="btn bg" onclick="cm('m-client-view')">Cerrar</button>
+    <button class="btn bp" id="client-view-save" onclick="saveClientEdit()">Guardar Cambios</button>
+  </div>
+</div>
+</div>
 <div class="ov" id="m-task">
-<div class="modal msm">
+<div class="modal mmd">
   <div class="mh"><div class="mt">Nueva Tarea</div><button class="mx" onclick="cm('m-task')">✕</button></div>
   <div class="mb">
-    <div class="fg"><label class="fl">Descripción *</label><textarea class="fta" id="t-desc"></textarea></div>
+    <div class="fg"><label class="fl">Fecha *</label><input class="fi" id="t-date" type="date"/></div>
+    <div class="fg"><label class="fl">Tarea *</label><textarea class="fta" id="t-desc" placeholder="Describe la tarea…"></textarea></div>
+    <div class="fg"><label class="fl">Frecuencia</label>
+      <select class="fs" id="t-freq">
+        <option value="once">Una vez</option>
+        <option value="weekly">Cada semana</option>
+        <option value="monthly">Mensual</option>
+      </select>
+    </div>
     <div class="fg"><label class="fl">Fecha límite</label><input class="fi" id="t-due" type="date"/></div>
+    <div class="fg"><label class="fl">Enviar a</label>
+      <select class="fs" id="t-assignee">
+        <option value="">Todos</option>
+      </select>
+    </div>
   </div>
   <div class="mf"><button class="btn bg" onclick="cm('m-task')">Cancelar</button><button class="btn bp" onclick="saveTask()">Guardar</button></div>
 </div>
@@ -628,6 +658,12 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
   <div class="mh"><div class="mt" id="m-inv-title">Agregar Artículo</div><button class="mx" onclick="cm('m-inv')">✕</button></div>
   <div class="mb">
     <input type="hidden" id="inv-id"/>
+    <div class="fg"><label class="fl">Foto del artículo</label>
+      <div id="inv-photo-wrap" style="border:1.5px dashed var(--rule2);border-radius:var(--r8);height:80px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);font-size:12px;overflow:hidden;position:relative;background:var(--ink3);" onclick="document.getElementById('inv-photo').click()">
+        <span id="inv-photo-lbl">📷 Foto del artículo (opcional)</span>
+        <input type="file" id="inv-photo" accept="image/*" style="display:none;" onchange="previewProductPhoto(this,'inv-photo-wrap','inv-photo-lbl')"/>
+      </div>
+    </div>
     <div class="fr">
       <div class="fg"><label class="fl">Nombre *</label><input class="fi" id="inv-name" placeholder="Ej: Base de florero grande"/></div>
       <div class="fg"><label class="fl">Unidad</label>
@@ -641,7 +677,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
       <div class="fg"><label class="fl">Cantidad actual</label><input class="fi" id="inv-qty" type="number" value="0" min="0" step="0.01"/></div>
       <div class="fg"><label class="fl">Stock mínimo (alerta)</label><input class="fi" id="inv-min" type="number" value="0" min="0" step="0.01"/></div>
     </div>
-    <div class="fr">
+    <div class="admin-only-field fr">
       <div class="fg"><label class="fl">Costo por unidad</label><input class="fi" id="inv-cost" type="number" placeholder="Opcional"/></div>
       <div class="fg"><label class="fl">Proveedor</label><input class="fi" id="inv-supplier" placeholder="Opcional"/></div>
     </div>
@@ -754,6 +790,14 @@ function showLoginErr(msg) {
   e.textContent = msg; e.style.display = 'block';
 }
 
+// Role permissions — which nav items each role can see
+const ROLE_VIEWS = {
+  ADMIN:      ['dashboard','pedidos','nuevo','elaboracion','entregas','tareas','chat','productos','categorias','inventario','admin-gate','repartidor'],
+  OFFICE:     ['dashboard','pedidos','nuevo','elaboracion','entregas','tareas','chat','productos','categorias','inventario','repartidor'],
+  FLORISTA:   ['elaboracion','tareas','inventario'],
+  REPARTIDOR: ['entregas','tareas','inventario'],
+};
+
 function enterApp() {
   document.getElementById('login-screen').classList.add('hidden');
   setTimeout(() => document.getElementById('login-screen').style.display = 'none', 300);
@@ -761,10 +805,32 @@ function enterApp() {
   document.getElementById('sb-name').textContent = currentStaff.name;
   document.getElementById('sb-role').textContent = roleLabel(currentStaff.role);
   document.getElementById('sb-av').textContent = currentStaff.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  if (!['ADMIN','OFFICE'].includes(currentStaff.role)) document.querySelector('[data-v="admin-gate"]').style.display = 'none';
-  if (currentStaff.role === 'REPARTIDOR') { showView('repartidor'); return; }
-  showView('dashboard');
-  loadBadges();
+
+  // Show/hide nav items based on role
+  const allowed = ROLE_VIEWS[currentStaff.role] || [];
+  document.querySelectorAll('.ni[data-v]').forEach(ni => {
+    ni.style.display = allowed.includes(ni.dataset.v) ? 'flex' : 'none';
+  });
+  // Hide section labels if all items in section are hidden
+  document.querySelectorAll('.sb-sec').forEach(sec => {
+    let next = sec.nextElementSibling;
+    let anyVisible = false;
+    while (next && next.classList.contains('nav')) {
+      if ([...next.querySelectorAll('.ni')].some(n => n.style.display !== 'none')) anyVisible = true;
+      next = next.nextElementSibling;
+    }
+    sec.style.display = anyVisible ? '' : 'none';
+  });
+
+  // Hide admin-only fields in inventory modal for non-admins
+  document.querySelectorAll('.admin-only-field').forEach(el => {
+    el.style.display = currentStaff.role === 'ADMIN' ? '' : 'none';
+  });
+
+  // Route to first allowed view
+  const firstView = allowed[0] || 'dashboard';
+  showView(firstView);
+  if (['ADMIN','OFFICE'].includes(currentStaff.role)) loadBadges();
 }
 
 function logout() {
@@ -824,7 +890,7 @@ async function vDash() {
   const [todayDels, tomorrowDels, tasks, pending, reminders] = await Promise.all([
     api('GET', '/api/deliveries/today'),
     api('GET', '/api/deliveries/tomorrow'),
-    api('GET', '/api/tasks'),
+    api('GET', `/api/tasks?staffId=${currentStaff?.id||''}`),
     api('GET', '/api/reports/pending-payments'),
     api('GET', '/api/reminders/upcoming'),
   ]);
@@ -860,7 +926,7 @@ ${pending.pending.length > 0 ? `
   <div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
       <div class="card">
-        <div class="ch"><span class="ct">Tareas Pendientes</span><button class="btn bg bsm" onclick="om('m-task')">＋</button></div>
+        <div class="ch"><span class="ct">Tareas Pendientes</span><button class="btn bg bsm" onclick="openTaskModal()">＋</button></div>
         ${tasks.filter(t=>!t.completed).slice(0,4).map(t=>`<div class="task"><div class="tchk" onclick="toggleTask('${t.id}',this)"></div><div style="flex:1;min-width:0;"><div class="ttxt">${t.description}</div><div class="tdue${t.dueDate&&new Date(t.dueDate)<new Date()?' late':''}">📅 ${t.dueDate?t.dueDate.split('T')[0]:'—'}</div></div></div>`).join('')}
         <button class="btn bg bsm" style="width:100%;margin-top:7px;" onclick="showView('tareas')">Ver todas →</button>
       </div>
@@ -987,24 +1053,112 @@ async function openOrderActions(id) {
 // ════════════════════════════════════════════
 async function vElab() {
   const data = await api('GET', '/api/orders?orderStatus=EN_PROCESO&limit=50');
+
+  // Sort by delivery date first, then by window time — earliest = most urgent
+  const orders = [...data.orders].sort((a, b) => {
+    const dateA = new Date(a.deliveryDate), dateB = new Date(b.deliveryDate);
+    if (dateA - dateB !== 0) return dateA - dateB;
+    // Extract time from window string e.g. "antes_09:00" → "09:00"
+    const timeA = a.deliveryWindow?.split('_')[1] || '23:59';
+    const timeB = b.deliveryWindow?.split('_')[1] || '23:59';
+    // "antes" is more urgent than "despues" at the same time
+    const urgA = a.deliveryWindow?.startsWith('antes') ? 0 : 1;
+    const urgB = b.deliveryWindow?.startsWith('antes') ? 0 : 1;
+    if (urgA !== urgB) return urgA - urgB;
+    return timeA.localeCompare(timeB);
+  });
   document.getElementById('vc').innerHTML = `
-<p style="font-size:12px;color:var(--mid);margin-bottom:14px;">Prioridad por fecha de entrega.</p>
-${data.orders.length===0?'<div class="empty-state">🌸 Sin arreglos pendientes</div>':
-`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-${data.orders.map((o,i)=>{const item=o.items?.[0]; const prod=item?.product;
-return `<div class="ec" id="ec-${o.id}">
-  <div style="background:var(--amber-dim);color:var(--amber);padding:2px 9px;border-radius:100px;font-size:10px;font-weight:700;display:inline-flex;margin-bottom:9px;">🚨 Prioridad ${i+1}</div>
-  <div style="font-size:9px;color:var(--dim);margin-bottom:5px;">${o.orderNumber} · ${o.deliveryDate?.split('T')[0]||'—'} · ${fmtWindow(o.deliveryWindow)}</div>
-  <div class="ec-img">${prod?.photo1Url?`<img src="${photoSrc(prod.photo1Url)}"/>`:'🌸'}</div>
-  <div class="ec-name">${prod?.name||'Arreglo'}</div>
-  ${prod?.width||prod?.height?`<div style="font-size:10px;color:var(--mid);margin-bottom:4px;">📐 ${prod.width||'—'}cm × ${prod.height||'—'}cm</div>`:''}
-  <div class="ec-desc">Para: <strong>${o.recipientName||'—'}</strong><br/>Ocasión: ${occLabel(o.occasion)}</div>
-  ${o.messageText?`<div class="ec-note">💌 "${o.messageText}" — ${o.messageAnon?'Anónimo':o.messageFrom||''}</div>`:''}
-  ${item?.notes?`<div class="ec-note" style="background:var(--blue-dim);color:var(--blue);">📝 Nota del pedido: ${item.notes}</div>`:''}
-  ${prod?.description?`<div style="font-size:11.5px;color:var(--text);background:var(--ink3);border-radius:var(--r8);padding:8px 10px;margin-bottom:7px;line-height:1.6;"><span style="font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:4px;">📋 Instrucciones</span>${prod.description}</div>`:''}
-  ${prod?.notes?`<div style="font-size:11px;background:var(--amber-dim);color:var(--amber);border-radius:var(--r8);padding:7px 10px;margin-bottom:7px;line-height:1.5;"><span style="font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:3px;">⚠️ Notas del producto</span>${prod.notes}</div>`:''}
-  <button class="btn bs" style="width:100%;" onclick="markReady('${o.id}',this)">✓ Listo para entregar</button>
-</div>`}).join('')}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+  <p style="font-size:12px;color:var(--mid);">${orders.length} arreglo${orders.length!==1?'s':''} pendiente${orders.length!==1?'s':''}. Ordenados por fecha y horario — el más urgente primero.</p>
+</div>
+${orders.length===0 ? '<div class="empty-state">🌸 Sin arreglos pendientes</div>' :
+`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;">
+${orders.map((o,i) => {
+  const item = o.items?.[0];
+  const prod = item?.product;
+  const allItems = o.items || [];
+
+  // Recipe rows
+  const recipeHTML = prod?.recipe?.length ? `
+    <div style="background:var(--sage-dim);border:1px solid rgba(107,148,105,.15);border-radius:var(--r8);padding:9px 11px;margin-bottom:8px;">
+      <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);margin-bottom:7px;">🧪 Receta del producto</div>
+      ${prod.recipe.map(r => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(107,148,105,.1);font-size:11.5px;">
+          <span style="color:var(--text);">${r.inventoryItem?.name||'—'}</span>
+          <span style="font-weight:700;color:var(--sage);">${Number(r.quantity)} ${r.inventoryItem?.unit||''}</span>
+        </div>`).join('')}
+    </div>` : '';
+
+  // All order items (in case there are multiple)
+  const itemsHTML = allItems.length > 1 ? `
+    <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);margin-bottom:5px;">Todos los productos</div>
+    ${allItems.map(it => `<div style="font-size:11.5px;padding:2px 0;color:var(--text);">• ${it.product?.name||'—'} × ${it.quantity}${it.notes?` <em style="color:var(--mid);">(${it.notes})</em>`:''}</div>`).join('')}
+    <div style="height:1px;background:var(--rule);margin:8px 0;"></div>` : '';
+
+  return `<div class="ec" id="ec-${o.id}">
+
+    <!-- Priority + order info -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="background:var(--amber-dim);color:var(--amber);padding:2px 10px;border-radius:100px;font-size:10px;font-weight:700;">🚨 Prioridad ${i+1}</div>
+      <div style="font-size:10px;color:var(--mid);font-weight:600;">${o.orderNumber}</div>
+    </div>
+    <div style="font-size:11px;color:var(--mid);margin-bottom:10px;">📅 ${o.deliveryDate?.split('T')[0]||'—'} · ⏰ ${fmtWindow(o.deliveryWindow)}</div>
+
+    <!-- Product photo -->
+    <div class="ec-img">${prod?.photo1Url ? `<img src="${photoSrc(prod.photo1Url)}"/>` : '🌸'}</div>
+
+    <!-- Product name + dimensions -->
+    <div class="ec-name">${prod?.name || 'Arreglo'}</div>
+    ${prod?.width || prod?.height ? `
+      <div style="display:inline-flex;align-items:center;gap:6px;background:var(--ink3);border-radius:100px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--mid);margin-bottom:8px;">
+        📐 <span style="color:var(--text);">${prod.width||'—'} cm ancho</span>
+        <span style="color:var(--rule2);">×</span>
+        <span style="color:var(--text);">${prod.height||'—'} cm alto</span>
+      </div>` : ''}
+
+    <!-- Multiple items -->
+    ${itemsHTML}
+
+    <!-- Delivery info -->
+    <div style="background:var(--ink3);border-radius:var(--r8);padding:8px 10px;margin-bottom:8px;font-size:11.5px;">
+      <div style="margin-bottom:3px;">🎀 Para: <strong>${o.recipientName||'Pasa a recoger'}</strong></div>
+      <div style="color:var(--mid);">Ocasión: ${occLabel(o.occasion)}</div>
+    </div>
+
+    <!-- Message card -->
+    ${o.messageText ? `
+      <div class="ec-note">
+        💌 <em>"${o.messageText}"</em>
+        <span style="color:var(--mid);font-size:10px;"> — ${o.messageAnon?'Anónimo':o.messageFrom||''}</span>
+      </div>` : ''}
+
+    <!-- Per-item notes -->
+    ${item?.notes ? `
+      <div class="ec-note" style="background:var(--blue-dim);color:var(--blue);">
+        📝 Nota del pedido: ${item.notes}
+      </div>` : ''}
+
+    <!-- Product instructions -->
+    ${prod?.description ? `
+      <div style="background:var(--ink3);border-radius:var(--r8);padding:9px 11px;margin-bottom:8px;">
+        <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);margin-bottom:5px;">📋 Instrucciones para el florista</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.6;">${prod.description}</div>
+      </div>` : ''}
+
+    <!-- Product notes / warnings -->
+    ${prod?.notes ? `
+      <div style="background:var(--amber-dim);border:1px solid rgba(200,152,64,.2);border-radius:var(--r8);padding:8px 11px;margin-bottom:8px;">
+        <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:4px;">⚠️ Notas del producto</div>
+        <div style="font-size:11.5px;color:var(--text);line-height:1.5;">${prod.notes}</div>
+      </div>` : ''}
+
+    <!-- Recipe -->
+    ${recipeHTML}
+
+    <!-- Action button -->
+    <button class="btn bs" style="width:100%;margin-top:4px;" onclick="markReady('${o.id}',this)">✓ Listo para entregar</button>
+  </div>`;
+}).join('')}
 </div>`}`;
 }
 
@@ -1058,7 +1212,11 @@ async function assignDelivery(orderId, staffId) {
 // TAREAS
 // ════════════════════════════════════════════
 async function vTar() {
-  const [open, done] = await Promise.all([api('GET','/api/tasks'),api('GET','/api/tasks?completed=true')]);
+  const staffId = currentStaff?.id || '';
+  const [open, done] = await Promise.all([
+    api('GET', `/api/tasks?staffId=${staffId}`),
+    api('GET', `/api/tasks?completed=true&staffId=${staffId}`),
+  ]);
   const all = [...open, ...done];
   document.getElementById('vc').innerHTML = `
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -1067,7 +1225,7 @@ async function vTar() {
     <div class="fp">Pendientes (${open.length})</div>
     <div class="fp">Completadas (${done.length})</div>
   </div>
-  <button class="btn bp bsm" onclick="om('m-task')">＋ Nueva</button>
+  <button class="btn bp bsm" onclick="openTaskModal()">＋ Nueva</button>
 </div>
 <div class="card">
 ${all.map(t=>`<div class="task" id="tw-${t.id}">
@@ -1093,19 +1251,39 @@ async function deleteTask(id, btn) {
   catch(e) { btn.disabled=false; toastErr(e.message); }
 }
 
+async function openTaskModal() {
+  // Auto-populate today's date
+  document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('t-desc').value = '';
+  document.getElementById('t-due').value = '';
+  document.getElementById('t-freq').value = 'once';
+  // Load staff into assignee dropdown
+  try {
+    const staff = await api('GET', '/api/staff');
+    document.getElementById('t-assignee').innerHTML = '<option value="">Todos</option>' +
+      staff.filter(s=>s.active).map(s=>`<option value="${s.id}">${s.name} (${roleLabel(s.role)})</option>`).join('');
+  } catch(e) {}
+  om('m-task');
+}
+
 async function saveTask() {
   const desc = document.getElementById('t-desc').value.trim();
   const due  = document.getElementById('t-due').value;
+  const date = document.getElementById('t-date').value;
+  const freq = document.getElementById('t-freq').value;
+  const assigneeId = document.getElementById('t-assignee').value;
   if (!desc) { toastErr('Ingresa una descripción'); return; }
   const btn = document.querySelector('#m-task .btn.bp');
   if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
   try {
-    await api('POST', '/api/tasks', { description: desc, dueDate: due || null });
+    const taskData = {
+      description: `${desc}${freq !== 'once' ? ` [${freq === 'weekly' ? 'Semanal' : 'Mensual'}]` : ''}`,
+      dueDate: due || null,
+      assignedToId: assigneeId || null,
+    };
+    await api('POST', '/api/tasks', taskData);
     cm('m-task');
-    document.getElementById('t-desc').value = '';
-    document.getElementById('t-due').value = '';
     toast('Tarea guardada ✓');
-    // Refresh whichever view is active
     const curView = document.querySelector('.ni.on')?.dataset.v;
     if (curView === 'tareas' || curView === 'dashboard') showView(curView);
   } catch(e) {
@@ -1340,15 +1518,21 @@ ${renderInvTable(items)}
 }
 
 function renderInvTable(items) {
+  const isAdmin = currentStaff?.role === 'ADMIN';
   if (items.length===0) return '<div class="empty-state">Sin artículos en inventario</div>';
-  return `<table class="tbl"><thead><tr><th>Artículo</th><th>Cantidad</th><th>Mín.</th><th>Unidad</th><th>Costo</th><th>Proveedor</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+  return `<table class="tbl"><thead><tr>
+    <th>Artículo</th><th>Cantidad</th><th>Mín.</th><th>Unidad</th>
+    ${isAdmin ? '<th>Costo</th><th>Proveedor</th>' : ''}
+    <th>Estado</th><th>Acciones</th></tr></thead><tbody>
   ${items.map(i=>{const low=Number(i.quantity)<=Number(i.minStock);return`<tr>
-    <td><strong>${i.name}</strong>${i.notes?`<div style="font-size:10px;color:var(--dim);">${i.notes}</div>`:''}</td>
+    <td>
+      ${i.photoUrl?`<img src="${photoSrc(i.photoUrl)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;"/>`:''}
+      <strong>${i.name}</strong>${i.notes?`<div style="font-size:10px;color:var(--dim);">${i.notes}</div>`:''}
+    </td>
     <td class="${low?'inv-low':''}" style="font-weight:700;">${Number(i.quantity).toFixed(2)}</td>
     <td style="color:var(--dim);">${Number(i.minStock).toFixed(2)}</td>
     <td>${i.unit}</td>
-    <td style="color:var(--mid);">${i.cost?'$'+fmt(i.cost):'—'}</td>
-    <td style="color:var(--mid);font-size:11px;">${i.supplier||'—'}</td>
+    ${isAdmin ? `<td style="color:var(--mid);">${i.cost?'$'+fmt(i.cost):'—'}</td><td style="color:var(--mid);font-size:11px;">${i.supplier||'—'}</td>` : ''}
     <td>${low?`<span class="badge br2">⚠ Bajo</span>`:`<span class="badge bg2">OK</span>`}</td>
     <td><div style="display:flex;gap:4px;">
       <button class="btn bg bsm" onclick="adjustStock('${i.id}','${i.name}')">± Stock</button>
@@ -1374,26 +1558,51 @@ function openInvModal(item=null) {
   document.getElementById('inv-cost').value = item?.cost||'';
   document.getElementById('inv-supplier').value = item?.supplier||'';
   document.getElementById('inv-notes').value = item?.notes||'';
+  // Reset photo
+  const wrap = document.getElementById('inv-photo-wrap');
+  const lbl  = document.getElementById('inv-photo-lbl');
+  if (wrap) wrap.style.background = '';
+  if (lbl)  lbl.style.display = '';
+  document.getElementById('inv-photo').value = '';
+  // Show existing photo if any
+  if (item?.photoUrl && wrap) {
+    wrap.style.background = `url(${photoSrc(item.photoUrl)}) center/cover`;
+    if (lbl) lbl.style.display = 'none';
+  }
+  // Hide cost/supplier for non-admin
+  const adminFields = document.querySelectorAll('.admin-only-field');
+  adminFields.forEach(el => {
+    el.style.display = currentStaff?.role === 'ADMIN' ? '' : 'none';
+  });
   om('m-inv');
 }
 
 async function saveInventoryItem() {
   const id = document.getElementById('inv-id').value;
-  const body = {
-    name:document.getElementById('inv-name').value.trim(),
-    unit:document.getElementById('inv-unit').value,
-    quantity:parseFloat(document.getElementById('inv-qty').value)||0,
-    minStock:parseFloat(document.getElementById('inv-min').value)||0,
-    cost:document.getElementById('inv-cost').value||undefined,
-    supplier:document.getElementById('inv-supplier').value||undefined,
-    notes:document.getElementById('inv-notes').value||undefined,
-  };
-  if (!body.name) { toastErr('El nombre es requerido'); return; }
+  const name = document.getElementById('inv-name').value.trim();
+  if (!name) { toastErr('El nombre es requerido'); return; }
+
+  const fd = new FormData();
+  fd.append('name', name);
+  fd.append('unit', document.getElementById('inv-unit').value);
+  fd.append('quantity', document.getElementById('inv-qty').value||0);
+  fd.append('minStock', document.getElementById('inv-min').value||0);
+  if (currentStaff?.role === 'ADMIN') {
+    fd.append('cost', document.getElementById('inv-cost').value||'');
+    fd.append('supplier', document.getElementById('inv-supplier').value||'');
+  }
+  fd.append('notes', document.getElementById('inv-notes').value||'');
+  const photo = document.getElementById('inv-photo').files[0];
+  if (photo) fd.append('photo', photo);
+
+  const btn = document.querySelector('#m-inv .btn.bp');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
   try {
-    if (id) { await api('PUT',`/api/inventory/${id}`,body); toast('Artículo actualizado ✓'); }
-    else { await api('POST','/api/inventory',body); toast('Artículo agregado ✓'); }
+    if (id) { await api('PUT', `/api/inventory/${id}`, fd, true); toast('Artículo actualizado ✓'); }
+    else    { await api('POST', '/api/inventory', fd, true); toast('Artículo agregado ✓'); }
     cm('m-inv'); showView('inventario');
   } catch(e) { toastErr(e.message); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Guardar'; } }
 }
 
 async function adjustStock(id, name) {
@@ -1687,9 +1896,12 @@ async function searchClients(q) {
   try {
     const data = await api('GET',`/api/clients?search=${encodeURIComponent(q)}`);
     document.getElementById('client-results').innerHTML = data.map(c=>`
-      <div class="client-result" onclick="selectClient('${c.id}','${c.firstName} ${c.lastNameP}','${c.phone}','${c.loyaltyTier}','${c.orderCount}')">
-        <div style="display:flex;justify-content:space-between;"><span style="font-weight:600;">${c.firstName} ${c.lastNameP}</span>${loyaltyBadge(c.loyaltyTier,c.orderCount)}</div>
-        <div style="color:var(--mid);font-size:11px;">📱 ${c.phone}</div>
+      <div class="client-result" style="display:flex;align-items:center;gap:8px;">
+        <div style="flex:1;" onclick="selectClient('${c.id}','${c.firstName} ${c.lastNameP}','${c.phone}','${c.loyaltyTier}','${c.orderCount}')">
+          <div style="display:flex;justify-content:space-between;"><span style="font-weight:600;">${c.firstName} ${c.lastNameP}</span>${loyaltyBadge(c.loyaltyTier,c.orderCount)}</div>
+          <div style="color:var(--mid);font-size:11px;">📱 ${c.phoneCode||'+52'} ${c.phone}</div>
+        </div>
+        <button class="btn bg bsm" onclick="event.stopPropagation();openClientView('${c.id}')">Ver ›</button>
       </div>`).join('')||'<div style="padding:7px;font-size:11px;color:var(--dim);">Sin resultados</div>';
   } catch(e) {}
 }
@@ -1701,12 +1913,89 @@ function selectClient(id, name, phone, tier, count) {
   const el = document.getElementById('client-selected');
   el.style.display = 'block';
   el.innerHTML=`<div class="client-result selected">
-    <div style="display:flex;justify-content:space-between;"><span style="font-weight:600;">${name}</span>${loyaltyBadge(tier,count)}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-weight:600;">${name}</span>${loyaltyBadge(tier,count)}
+    </div>
     <div style="color:var(--mid);font-size:11px;">📱 ${phone}</div>
-    <button class="btn bg bsm" style="margin-top:5px;" onclick="clearClient()">Cambiar</button>
+    <div style="display:flex;gap:6px;margin-top:5px;">
+      <button class="btn bg bsm" onclick="clearClient()">Cambiar</button>
+      <button class="btn bg bsm" onclick="openClientView('${id}')">Ver / Editar</button>
+    </div>
   </div>`;
 }
 function clearClient() { orderState.clientId=null; document.getElementById('client-selected').style.display='none'; }
+
+let editingClientId = null;
+async function openClientView(id) {
+  editingClientId = id;
+  try {
+    const c = await api('GET', `/api/clients/${id}`);
+    const isAdmin = ['ADMIN','OFFICE'].includes(currentStaff?.role);
+    document.getElementById('m-client-view-body').innerHTML = `
+      <div class="fr3">
+        <div class="fg"><label class="fl">Nombre</label><input class="fi" id="cv-first" value="${c.firstName||''}"/></div>
+        <div class="fg"><label class="fl">Segundo Nombre</label><input class="fi" id="cv-middle" value="${c.middleName||''}"/></div>
+        <div class="fg"><label class="fl">Apellido Paterno</label><input class="fi" id="cv-lastp" value="${c.lastNameP||''}"/></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Apellido Materno</label><input class="fi" id="cv-lastm" value="${c.lastNameM||''}"/></div>
+        <div class="fg"><label class="fl">Teléfono</label>
+          <div class="phone-wrap">
+            <select class="fs phone-code" id="cv-code">
+              <option value="+52" ${(c.phoneCode||'+52')==='+52'?'selected':''}>🇲🇽 +52</option>
+              <option value="+1" ${c.phoneCode==='+1'?'selected':''}>🇺🇸 +1</option>
+              <option value="+34" ${c.phoneCode==='+34'?'selected':''}>🇪🇸 +34</option>
+              <option value="+44" ${c.phoneCode==='+44'?'selected':''}>🇬🇧 +44</option>
+              <option value="other">Otro…</option>
+            </select>
+            <input class="fi" id="cv-phone" value="${c.phone||''}" style="flex:1;"/>
+          </div>
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Correo</label><input class="fi" id="cv-email" type="email" value="${c.email||''}"/></div>
+        <div class="fg"><label class="fl">Empresa / Trabajo</label><input class="fi" id="cv-biz" value="${c.business||''}"/></div>
+      </div>
+      <div class="fg"><label class="fl">Dirección</label><input class="fi" id="cv-addr" value="${c.address||''}"/></div>
+      <div class="fg"><label class="fl">Notas</label><textarea class="fta" id="cv-notes" style="min-height:56px;">${c.notes||''}</textarea></div>
+      <div style="background:var(--ink3);border-radius:var(--r10);padding:12px;margin-top:4px;">
+        <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);margin-bottom:8px;">Historial</div>
+        <div style="display:flex;gap:16px;font-size:12px;">
+          <span>Pedidos: <strong>${c.orderCount}</strong></span>
+          <span>Lealtad: ${loyaltyBadge(c.loyaltyTier,c.orderCount)||`<span class="badge bm">${c.loyaltyTier}</span>`}</span>
+          <span>Fuente: <strong>${c.source||'—'}</strong></span>
+        </div>
+        ${c.orders?.length ? `<div style="margin-top:8px;font-size:11px;color:var(--mid);">Últimos pedidos: ${c.orders.slice(0,3).map(o=>`${o.orderNumber} (${o.deliveryDate?.split('T')[0]||'—'})`).join(', ')}</div>` : ''}
+      </div>`;
+    om('m-client-view');
+  } catch(e) { toastErr(e.message); }
+}
+
+async function saveClientEdit() {
+  if (!editingClientId) return;
+  const phoneCode = document.getElementById('cv-code').value;
+  const body = {
+    firstName:  document.getElementById('cv-first').value.trim(),
+    middleName: document.getElementById('cv-middle').value||undefined,
+    lastNameP:  document.getElementById('cv-lastp').value.trim(),
+    lastNameM:  document.getElementById('cv-lastm').value||undefined,
+    phoneCode:  phoneCode === 'other' ? prompt('Ingresa el código (ej: +33)') || '+52' : phoneCode,
+    phone:      document.getElementById('cv-phone').value.trim(),
+    email:      document.getElementById('cv-email').value||undefined,
+    business:   document.getElementById('cv-biz').value||undefined,
+    address:    document.getElementById('cv-addr').value||undefined,
+    notes:      document.getElementById('cv-notes').value||undefined,
+  };
+  try {
+    await api('PUT', `/api/clients/${editingClientId}`, body);
+    cm('m-client-view');
+    toast('Cliente actualizado ✓');
+    // Refresh selected client display if this is the order's client
+    if (orderState.clientId === editingClientId) {
+      selectClient(editingClientId, `${body.firstName} ${body.lastNameP}`, body.phone, 'REGULAR', 0);
+    }
+  } catch(e) { toastErr(e.message); }
+}
 
 async function searchProducts(q) {
   const res = document.getElementById('product-results');
@@ -1811,11 +2100,17 @@ async function submitOrder() {
   const btn=document.getElementById('o-submit'); btn.disabled=true; btn.textContent='Creando…';
   try {
     const order = await api('POST','/api/orders',body);
-    lastCreatedOrder = order;
+    // Fetch full order with client/items/delivery included
+    const fullOrder = await api('GET',`/api/orders/${order.id}`);
+    lastCreatedOrder = fullOrder;
     cm('m-order');
-    document.getElementById('done-num').textContent = order.orderNumber;
-    const clientName = document.querySelector('#client-selected .client-result')?.childNodes[0]?.textContent?.trim()||'—';
-    document.getElementById('done-client').textContent = clientName;
+    document.getElementById('done-title').textContent = 'Pedido Creado ✓';
+    document.getElementById('done-num').textContent = fullOrder.orderNumber;
+    document.getElementById('done-client').textContent =
+      [fullOrder.client?.firstName, fullOrder.client?.lastNameP].filter(Boolean).join(' ') +
+      (fullOrder.client?.phone ? ` · ${fullOrder.client.phoneCode||'+52'} ${fullOrder.client.phone}` : '');
+    document.getElementById('done-status').innerHTML = `${sb(fullOrder.orderStatus)} ${pb(fullOrder.paymentStatus)}`;
+    document.getElementById('done-delivery').style.display = 'none';
     om('m-order-done');
     loadBadges();
   } catch(e) { toastErr(e.message); }
@@ -1960,27 +2255,44 @@ function waOrder() {
     ? `\n\n✅ *Entrega confirmada*\nRecibió: ${o.delivery.receivedBy||'—'}\nHora: ${new Date(o.delivery.deliveredAt).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`
     : '';
   const msg = `🌹 *Pedido ${o.orderNumber} — Florería Karel*\n\n📅 Entrega: ${o.deliveryDate?.split('T')[0]||'—'} · ${winLabel}\n🎀 Para: ${o.recipientName||'—'}\n📍 ${o.recipientAddress||''} ${o.recipientColonia||''}\n\n*Productos:*\n${items}\n\n💰 Total: $${fmt(o.total)}${deliveryInfo}\n\n_Gracias por su preferencia ✨_`;
-  const phone = o.client?.phone?.replace(/\D/g,'');
-  window.open(`https://wa.me/52${phone}?text=${encodeURIComponent(msg)}`,'_blank');
+  const code = (o.client?.phoneCode||'+52').replace('+','');
+  const num  = (o.client?.phone||'').replace(/\D/g,'');
+  window.open(`https://wa.me/${code}${num}?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
 // ════════════════════════════════════════════
 // CLIENT MODAL
 // ════════════════════════════════════════════
+function handleCodeChange(sel, otherId) {
+  const other = document.getElementById(otherId);
+  if (!other) return;
+  other.style.display = sel.value === 'other' ? 'block' : 'none';
+  if (sel.value === 'other') other.focus();
+}
+
+function getPhoneCode(selId, otherId) {
+  const sel = document.getElementById(selId);
+  if (sel?.value === 'other') {
+    const v = document.getElementById(otherId)?.value?.trim();
+    return v ? (v.startsWith('+') ? v : '+' + v) : '+52';
+  }
+  return sel?.value || '+52';
+}
+
 async function saveClient() {
   const body = {
-    firstName:document.getElementById('c-first').value.trim(),
-    middleName:document.getElementById('c-middle').value||undefined,
-    lastNameP:document.getElementById('c-lastp').value.trim(),
-    lastNameM:document.getElementById('c-lastm').value||undefined,
-    phoneCode:document.getElementById('c-code').value,
-    phone:document.getElementById('c-phone').value.trim(),
-    phoneAlt:document.getElementById('c-phone2').value||undefined,
-    email:document.getElementById('c-email').value||undefined,
-    address:document.getElementById('c-addr').value||undefined,
-    business:document.getElementById('c-biz').value||undefined,
-    source:document.getElementById('c-source').value||'IN_STORE',
-    notes:document.getElementById('c-notes').value||undefined,
+    firstName:  document.getElementById('c-first').value.trim(),
+    middleName: document.getElementById('c-middle').value||undefined,
+    lastNameP:  document.getElementById('c-lastp').value.trim(),
+    lastNameM:  document.getElementById('c-lastm').value||undefined,
+    phoneCode:  getPhoneCode('c-code','c-code-other'),
+    phone:      document.getElementById('c-phone').value.trim(),
+    phoneAlt:   document.getElementById('c-phone2').value||undefined,
+    email:      document.getElementById('c-email').value||undefined,
+    address:    document.getElementById('c-addr').value||undefined,
+    business:   document.getElementById('c-biz').value||undefined,
+    source:     document.getElementById('c-source').value||'IN_STORE',
+    notes:      document.getElementById('c-notes').value||undefined,
   };
   if (!body.firstName||!body.lastNameP||!body.phone) { toastErr('Nombre, apellido y teléfono son requeridos'); return; }
   try {
