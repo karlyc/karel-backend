@@ -77,6 +77,14 @@ app.use('/api/reminders',    reminderRoutes);
 // ── Health check ──
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date() }));
 
+// ── Debug: check Cloudinary config (remove after confirming it works) ──
+app.get('/debug/cloudinary', (_req, res) => res.json({
+  configured: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET),
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'NOT SET',
+  api_key_set: !!process.env.CLOUDINARY_API_KEY,
+  api_secret_set: !!process.env.CLOUDINARY_API_SECRET,
+}));
+
 // ── 404 handler ──
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
 

@@ -92,19 +92,18 @@ router.post('/:orderId/confirm', requireAuth, upload.single('photo'), async (req
       }
     }
 
-    const [delivery, order] = await prisma.$transaction([
-      prisma.delivery.update({
-        where: { orderId: req.params.orderId },
-        data: { receivedBy: receivedBy.trim(), deliveredAt: new Date(), photoUrl, notificationSent: false },
-      }),
-      prisma.order.update({
-        where: { id: req.params.orderId },
-        data: { orderStatus: 'COMPLETADA' },
-      }),
-    ]);
+    const delivery = await prisma.delivery.update({
+      where: { orderId: req.params.orderId },
+      data: { receivedBy: receivedBy.trim(), deliveredAt: new Date(), photoUrl, notificationSent: false },
+    });
+
+    await prisma.order.update({
+      where: { id: req.params.orderId },
+      data: { orderStatus: 'COMPLETADA' },
+    });
 
     req.io?.emit('delivery:confirmed', { orderId: req.params.orderId, receivedBy, deliveredAt: delivery.deliveredAt });
-    res.json({ delivery, order });
+    res.json({ delivery });
   } catch(err) {
     console.error('Delivery confirm error:', err);
     res.status(500).json({ error: err.message });

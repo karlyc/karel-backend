@@ -849,7 +849,7 @@ ${pending.pending.length > 0 ? `
     <div class="card" style="margin-bottom:12px;">
       <div class="ch"><span class="ct">Entregas Hoy</span><span class="badge ba2">${delPending.length}</span></div>
       ${delPending.length === 0 ? '<div class="empty-state">Sin entregas pendientes</div>' :
-        delPending.map(o => `<div class="dc"><div class="dc-img">${o.items?.[0]?.product?.photo1Url?`<img src="${API_BASE}${o.items[0].product.photo1Url}"/>`:'🌸'}</div><div class="dc-info"><div class="dc-id">${o.orderNumber}</div><div class="dc-name">${o.recipientName||'Pasa a recoger'}</div><div class="dc-time">⏰ ${fmtWindow(o.deliveryWindow)}</div></div>${sb(o.orderStatus)}</div>`).join('')}
+        delPending.map(o => `<div class="dc"><div class="dc-img">${o.items?.[0]?.product?.photo1Url?`<img src="${photoSrc(o.items[0].product.photo1Url)}"/>`:'🌸'}</div><div class="dc-info"><div class="dc-id">${o.orderNumber}</div><div class="dc-name">${o.recipientName||'Pasa a recoger'}</div><div class="dc-time">⏰ ${fmtWindow(o.deliveryWindow)}</div></div>${sb(o.orderStatus)}</div>`).join('')}
     </div>
     <div class="card">
       <div class="ch"><span class="ct">Entregas Mañana</span><span class="badge bm">${tomorrowDels.length}</span></div>
@@ -970,7 +970,7 @@ async function openOrderActions(id) {
       document.getElementById('done-repartidor').textContent = delivery.assignedTo?.name || '—';
       const photoEl = document.getElementById('done-delivery-photo');
       if (delivery.photoUrl) {
-        photoEl.innerHTML = `<img src="${API_BASE}${delivery.photoUrl}" style="width:100%;height:100%;object-fit:cover;"/>`;
+        photoEl.innerHTML = `<img src="${photoSrc(delivery.photoUrl)}" style="width:100%;height:100%;object-fit:cover;"/>`;
       } else {
         photoEl.textContent = 'Sin foto';
       }
@@ -995,7 +995,7 @@ ${data.orders.map((o,i)=>{const item=o.items?.[0]; const prod=item?.product;
 return `<div class="ec" id="ec-${o.id}">
   <div style="background:var(--amber-dim);color:var(--amber);padding:2px 9px;border-radius:100px;font-size:10px;font-weight:700;display:inline-flex;margin-bottom:9px;">🚨 Prioridad ${i+1}</div>
   <div style="font-size:9px;color:var(--dim);margin-bottom:5px;">${o.orderNumber} · ${o.deliveryDate?.split('T')[0]||'—'} · ${fmtWindow(o.deliveryWindow)}</div>
-  <div class="ec-img">${prod?.photo1Url?`<img src="${API_BASE}${prod.photo1Url}"/>`:'🌸'}</div>
+  <div class="ec-img">${prod?.photo1Url?`<img src="${photoSrc(prod.photo1Url)}"/>`:'🌸'}</div>
   <div class="ec-name">${prod?.name||'Arreglo'}</div>
   ${prod?.width||prod?.height?`<div style="font-size:10px;color:var(--mid);margin-bottom:4px;">📐 ${prod.width||'—'}cm × ${prod.height||'—'}cm</div>`:''}
   <div class="ec-desc">Para: <strong>${o.recipientName||'—'}</strong><br/>Ocasión: ${occLabel(o.occasion)}</div>
@@ -1030,7 +1030,7 @@ async function vEntr() {
     <div class="ch"><span class="ct">Entregas del Día</span><span class="badge ba2">${pending.length} pendientes</span></div>
     ${pending.length===0?'<div class="empty-state">Sin entregas pendientes</div>':
       pending.map(o=>`<div class="dc" style="margin-bottom:9px;">
-        <div class="dc-img">${o.items?.[0]?.product?.photo1Url?`<img src="${API_BASE}${o.items[0].product.photo1Url}"/>`:'🌸'}</div>
+        <div class="dc-img">${o.items?.[0]?.product?.photo1Url?`<img src="${photoSrc(o.items[0].product.photo1Url)}"/>`:'🌸'}</div>
         <div class="dc-info"><div class="dc-id">${o.orderNumber}</div><div class="dc-name">${o.recipientName||'—'}</div><div class="dc-time">⏰ ${fmtWindow(o.deliveryWindow)}</div><div style="font-size:10px;color:var(--dim);">📍 ${o.recipientAddress||'—'}</div></div>
         <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
           <select class="fs" style="font-size:10px;padding:3px 6px;height:auto;border-radius:5px;" onchange="assignDelivery('${o.id}',this.value)">
@@ -1175,7 +1175,7 @@ ${prods.map(p=>prodCard(p)).join('')}
 
 function prodCard(p) {
   return `<div class="pc">
-  <div class="pc-img">${p.photo1Url?`<img src="${API_BASE}${p.photo1Url}"/>`:'🌸'}</div>
+  <div class="pc-img">${p.photo1Url?`<img src="${photoSrc(p.photo1Url)}"/>`:'🌸'}</div>
   <div class="pc-b">
     <div class="pc-n">${p.name}</div>
     <div class="pc-c">${p.code} · ${p.category?.name||''}</div>
@@ -1595,7 +1595,7 @@ ${orders.length===0?'<div class="empty-state">Sin entregas asignadas hoy</div>':
       <div><div class="rpl">Ventana</div><div class="rpv" style="color:var(--amber);">⏰ ${fmtWindow(o.deliveryWindow)}</div></div>
     </div>
     ${o.items?.map(item=>`<div style="background:var(--ink3);border-radius:var(--r8);padding:11px;display:flex;gap:11px;align-items:center;margin-bottom:11px;">
-      <div style="width:50px;height:50px;border-radius:var(--r8);background:var(--ink4);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">${item.product?.photo1Url?`<img src="${API_BASE}${item.product.photo1Url}" style="width:100%;height:100%;object-fit:cover;"/>`:'🌸'}</div>
+      <div style="width:50px;height:50px;border-radius:var(--r8);background:var(--ink4);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">${item.product?.photo1Url?`<img src="${photoSrc(item.product.photo1Url)}" style="width:100%;height:100%;object-fit:cover;"/>`:'🌸'}</div>
       <div><div style="font-size:12.5px;font-weight:600;">${item.product?.name||'—'}</div>${item.notes?`<div style="font-size:11px;color:var(--mid);">${item.notes}</div>`:''}</div>
     </div>`).join('')||''}
     ${o.recipientNotes?`<div style="background:var(--amber-dim);border-radius:var(--r8);padding:9px;margin-bottom:11px;font-size:11.5px;color:var(--amber);">⚠️ ${o.recipientNotes}</div>`:''}
@@ -1882,7 +1882,7 @@ function printOrder() {
 
   const productRows = (o.items||[]).map(i => {
     const imgHTML = i.product?.photo1Url
-      ? `<img class="pimg" src="${API_BASE}${i.product.photo1Url}"/>`
+      ? `<img class="pimg" src="${photoSrc(i.product.photo1Url)}"/>`
       : `<div class="pph">🌸</div>`;
     const noteHTML = i.notes ? `<br/><small style="color:#888">${i.notes}</small>` : '';
     return `<tr><td style="width:48px">${imgHTML}</td><td><b>${i.product?.name||'—'}</b>${noteHTML}</td><td style="text-align:right">${i.quantity}</td><td style="text-align:right;font-weight:700">$${fmt(i.unitPrice)}</td></tr>`;
@@ -1924,7 +1924,7 @@ function printOrder() {
       '<div class="delivered-box">',
       '<div class="sec-t">✓ Entrega Confirmada</div>',
       o.delivery.photoUrl
-        ? `<img class="del-photo" src="${API_BASE}${o.delivery.photoUrl}" alt="Foto de entrega"/>`
+        ? `<img class="del-photo" src="${photoSrc(o.delivery.photoUrl)}" alt="Foto de entrega"/>`
         : '',
       rows('Recibió', o.delivery.receivedBy),
       rows('Hora de entrega', new Date(o.delivery.deliveredAt).toLocaleString('es-MX', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})),
@@ -2083,6 +2083,8 @@ document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.
 const pb=p=>({PENDIENTE:`<span class="badge ba2">Pendiente</span>`,PAGO_RECIBIDO:`<span class="badge bb">Pago recibido</span>`,PAGADA:`<span class="badge bg2">Pagada</span>`}[p]||`<span class="badge bm">${p||'—'}</span>`);
 const sb=s=>({EN_PROCESO:`<span class="badge ba2">En proceso</span>`,POR_ENTREGAR:`<span class="badge bb">Por entregar</span>`,COMPLETADA:`<span class="badge bg2">Completada</span>`,CANCELADA:`<span class="badge br2">Cancelada</span>`}[s]||`<span class="badge bm">${s||'—'}</span>`);
 const occLabel=o=>({CUMPLEANOS:'🎂 Cumpleaños',ANIVERSARIO:'💑 Aniversario',FUNERAL:'⚱️ Funeral',AMOR:'💝 Amor',OTRA:'🎊 Otra'}[o]||o);
+// Returns full photo URL — Cloudinary URLs are already absolute, local ones need API_BASE
+const photoSrc=url=>url?(url.startsWith('http')?url:API_BASE+url):null;
 const roleLabel=r=>({ADMIN:'Administrador',OFFICE:'Oficina',FLORISTA:'Florista',REPARTIDOR:'Repartidor'}[r]||r);
 const roleColor=r=>({ADMIN:'brose',OFFICE:'bb',FLORISTA:'bp2',REPARTIDOR:'ba2'}[r]||'bm');
 const loyaltyBadge=(t,n)=>({PLATINUM:`<span class="badge bp2">Platinum ×${n}</span>`,VIP:`<span class="badge brose">VIP ×${n}</span>`,FREQUENT:`<span class="badge bg2">Frecuente ×${n}</span>`}[t]||'');
