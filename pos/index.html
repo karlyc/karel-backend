@@ -917,13 +917,13 @@ async function vDash() {
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
   <div class="sc"><div class="sv">${delPending.length}</div><div class="sl">Entregas hoy</div></div>
   <div class="sc"><div class="sv">${activeOrds.total}</div><div class="sl">Órdenes activas</div></div>
-  <div class="sc"><div class="sv" style="color:var(--amber);">${pending.pending.length}</div><div class="sl">Pagos pendientes</div><div class="sn">$${fmt(pending.pending.total)}</div></div>
+  <div class="sc"><div class="sv" style="color:var(--amber);">${(pending.pending||[]).length}</div><div class="sl">Pagos pendientes</div><div class="sn">$${fmt(pending.total)}</div></div>
   <div class="sc"><div class="sv" style="color:var(--sage);">${reminders.length}</div><div class="sl">Recordatorios próximos</div></div>
 </div>
-${pending.pending.length > 0 ? `
+${(pending.pending||[]).length > 0 ? `
 <div class="pbanner">
-  <div><div style="font-size:12px;font-weight:700;color:var(--amber);">💰 ${pending.pending.length} pagos pendientes · $${fmt(pending.pending.total)} MXN</div>
-  <div style="font-size:11px;color:var(--mid);">${pending.pending.orders.slice(0,3).map(o=>`${o.orderNumber} · ${o.client?.firstName||''}`).join(' · ')}</div></div>
+  <div><div style="font-size:12px;font-weight:700;color:var(--amber);">💰 ${(pending.pending||[]).length} pagos pendientes · $${fmt(pending.total)} MXN</div>
+  <div style="font-size:11px;color:var(--mid);">${(pending.pending||[]).slice(0,3).map(o=>`${o.orderNumber} · ${o.client?.firstName||''}`).join(' · ')}</div></div>
   <button class="btn ba bsm" onclick="showView('admin')">Ver todas</button>
 </div>` : ''}
 <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;">
@@ -1062,13 +1062,31 @@ async function openOrderActions(id) {
 
     // Payment proof photo
     const proofSection = document.getElementById('done-proof');
+    const proofUpload  = document.getElementById('done-proof-upload');
     if (order.paymentProofUrl && proofSection) {
+      const url = photoSrc(order.paymentProofUrl);
       proofSection.style.display = 'block';
+      if (proofUpload) proofUpload.style.display = 'none';
       proofSection.innerHTML = `
         <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);margin-bottom:6px;">📎 Comprobante de pago</div>
-        <img src="${photoSrc(order.paymentProofUrl)}" style="width:100%;max-height:120px;object-fit:contain;border-radius:var(--r8);border:1px solid var(--rule);cursor:pointer;" onclick="window.open('${photoSrc(order.paymentProofUrl)}','_blank')"/>`;
+        <img src="${url}" style="width:100%;max-height:120px;object-fit:contain;border-radius:var(--r8);border:1px solid var(--rule);" onerror="this.style.display='none'"/>
+        <div style="margin-top:4px;"><a href="${url}" target="_blank" style="font-size:11px;color:var(--blue);">🔗 Abrir imagen en nueva pestaña</a></div>`;
     } else if (proofSection) {
       proofSection.style.display = 'none';
+      // Show upload for non-cash orders that don't have a proof yet
+      const needsProof = order.paymentMethod && order.paymentMethod !== 'EFECTIVO' && order.paymentStatus !== 'PENDIENTE';
+      if (proofUpload) {
+        proofUpload.style.display = needsProof ? 'block' : 'none';
+        if (needsProof) {
+          // Reset upload fields
+          const wrap = document.getElementById('done-proof-wrap');
+          const lbl  = document.getElementById('done-proof-lbl');
+          if (wrap) wrap.style.background = '';
+          if (lbl)  lbl.style.display = '';
+          const inp = document.getElementById('done-proof-file');
+          if (inp) inp.value = '';
+        }
+      }
     }
 
     om('m-order-done');
@@ -2556,12 +2574,15 @@ async function uploadProofAfterOrder() {
   try {
     await api('PATCH', `/api/orders/${lastCreatedOrder.id}/proof`, fd, true);
     lastCreatedOrder = await api('GET', `/api/orders/${lastCreatedOrder.id}`);
+    const url = photoSrc(lastCreatedOrder.paymentProofUrl);
     document.getElementById('done-proof-upload').style.display = 'none';
     const proofSection = document.getElementById('done-proof');
     proofSection.style.display = 'block';
     proofSection.innerHTML = `
-      <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);margin-bottom:6px;">📎 Comprobante de pago</div>
-      <img src="${photoSrc(lastCreatedOrder.paymentProofUrl)}" style="width:100%;max-height:120px;object-fit:contain;border-radius:var(--r8);border:1px solid var(--rule);cursor:pointer;" onclick="window.open('${photoSrc(lastCreatedOrder.paymentProofUrl)}','_blank')"/>`;
+      <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);margin-bottom:6px;">📎 Comprobante de pago guardado ✓</div>
+      <img src="${url}" style="width:100%;max-height:120px;object-fit:contain;border-radius:var(--r8);border:1px solid var(--rule);" onerror="this.style.display='none';this.nextSibling.style.display='block'"/>
+      <a href="${url}" target="_blank" style="display:none;font-size:11px;color:var(--blue);">Ver comprobante →</a>
+      <div style="margin-top:4px;"><a href="${url}" target="_blank" style="font-size:11px;color:var(--blue);">🔗 Abrir imagen en nueva pestaña</a></div>`;
     toast('Comprobante guardado ✓');
   } catch(e) { toastErr(e.message); }
   finally { if (btn) { btn.disabled = false; btn.textContent = 'Guardar comprobante'; } }
