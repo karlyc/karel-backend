@@ -32,22 +32,34 @@ const fs = require('fs');
   const full = path.join(__dirname, '..', dir);
   if (!fs.existsSync(full)) fs.mkdirSync(full, { recursive: true });
 });
-const io = new Server(httpServer, {
-  cors: { origin: process.env.CORS_ORIGIN || '*', methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] }
-});
+// ── CORS — supports multiple origins via comma-separated CORS_ORIGIN env var ──
+// e.g. CORS_ORIGIN=https://karel-pos.pages.dev,https://karel-site.pages.dev
+const rawOrigin = process.env.CORS_ORIGIN || '*';
+const allowedOrigins = rawOrigin === '*' ? '*' : rawOrigin.split(',').map(o => o.trim());
 
-// ── Middleware ──
+function corsOriginFn(origin, callback) {
+  // Allow requests with no origin (mobile apps, curl, Postman)
+  if (!origin) return callback(null, true);
+  if (allowedOrigins === '*') return callback(null, true);
+  if (allowedOrigins.includes(origin)) return callback(null, true);
+  callback(new Error(`CORS blocked: ${origin}`));
+}
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: corsOriginFn,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
   optionsSuccessStatus: 200,
 };
 
+const io = new Server(httpServer, {
+  cors: { origin: allowedOrigins, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] }
+});
+
 // Must be before all routes — handles preflight
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // explicitly handle preflight for all routes
+app.options('*', cors(corsOptions));
 
 // Stripe webhooks need raw body — mount BEFORE json parser
 app.use('/api/webhooks', webhookRoutes);
