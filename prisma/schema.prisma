@@ -250,7 +250,10 @@ model Task {
   order        Order?    @relation(fields: [orderId], references: [id])
 }
 
-enum ExpenditureType { MENSUAL MISCELANEA }
+enum ExpenditureType { 
+  MENSUAL 
+  MISCELANEA 
+  }
 
 model Expenditure {
   id          String          @id @default(cuid())
