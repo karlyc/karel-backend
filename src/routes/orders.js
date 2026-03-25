@@ -5,6 +5,7 @@ const { prisma } = require('../db/prisma');
 const { requireAuth, requireAdmin, requireOffice } = require('../middleware/auth');
 const { generateOrderNumber, computeLoyaltyTier } = require('../utils/orders');
 const { upload, uploadToCloudinary, isCloudinaryConfigured } = require('../utils/upload');
+const { sendOrderConfirmation } = require('../utils/email');
 // ── GET /api/orders ──
 // List orders with filtering and search
 router.get('/', requireAuth, async (req, res) => {
@@ -91,7 +92,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 
 // ── POST /api/orders ──
 // Create new order
-router.post('/', upload.single('paymentProof'), [
+router.post('/', requireAuth, upload.single('paymentProof'), [
   body('clientId').optional(),      // validated after JSON parse
   body('deliveryDate').optional(),
 ], async (req, res) => {
@@ -248,6 +249,18 @@ router.post('/', upload.single('paymentProof'), [
 
     // Notify POS dashboard via socket
     req.io?.emit('order:new', { orderNumber: order.orderNumber, id: order.id });
+
+    // Send confirmation email (fetch full order with relations first)
+    const fullOrder = await prisma.order.findUnique({
+      where: { id: order.id },
+      include: {
+        client: true,
+        items: { include: { product: { select: { name: true, photo1Url: true } } } },
+      },
+    });
+    if (fullOrder?.client?.email) {
+      sendOrderConfirmation(fullOrder).catch(e => console.error('[Email] Order confirmation failed:', e.message));
+    }
 
     res.status(201).json(order);
   } catch (err) {

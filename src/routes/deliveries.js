@@ -3,6 +3,7 @@ const router = require('express').Router();
 const { prisma } = require('../db/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { upload, uploadToCloudinary, isCloudinaryConfigured } = require('../utils/upload');
+const { sendDeliveryNotification } = require('../utils/email');
 
 // GET /api/deliveries/today
 router.get('/today', requireAuth, async (req, res) => {
@@ -103,6 +104,17 @@ router.post('/:orderId/confirm', requireAuth, upload.single('photo'), async (req
     });
 
     req.io?.emit('delivery:confirmed', { orderId: req.params.orderId, receivedBy, deliveredAt: delivery.deliveredAt });
+
+    // Send delivery notification email if client has email and notifyVia includes email
+    const fullOrder = await prisma.order.findUnique({
+      where: { id: req.params.orderId },
+      include: { client: true },
+    });
+    if (fullOrder?.client?.email && fullOrder?.notifyVia === 'email') {
+      sendDeliveryNotification(fullOrder, delivery)
+        .catch(e => console.error('[Email] Delivery notification failed:', e.message));
+    }
+
     res.json({ delivery });
   } catch(err) {
     console.error('Delivery confirm error:', err);

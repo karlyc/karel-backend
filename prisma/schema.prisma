@@ -13,8 +13,8 @@ enum StaffRole {
   ADMIN 
   OFFICE 
   FLORISTA 
-  REPARTIDOR 
-  }
+  REPARTIDOR
+   }
 
 model Staff {
   id        String    @id @default(cuid())
@@ -253,7 +253,7 @@ model Task {
 enum ExpenditureType { 
   MENSUAL 
   MISCELANEA 
-  }
+ }
 
 model Expenditure {
   id          String          @id @default(cuid())
