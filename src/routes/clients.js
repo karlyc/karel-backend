@@ -5,7 +5,7 @@ const { prisma } = require('../db/prisma');
 const { requireAuth } = require('../middleware/auth');
 
 // GET /api/clients?search=...
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', async (req, res) => {
   const { search } = req.query;
   const where = search ? {
     OR: [
@@ -31,7 +31,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // GET /api/clients/:id
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const client = await prisma.client.findUnique({
       where: { id: req.params.id },
@@ -51,7 +51,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 // POST /api/clients
-router.post('/', requireAuth, [
+router.post('/', [
   body('phone').notEmpty().withMessage('Phone is required'),
   body('firstName').notEmpty().withMessage('First name is required'),
   body('lastNameP').notEmpty().withMessage('Last name is required'),
