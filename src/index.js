@@ -46,20 +46,14 @@ function corsOriginFn(origin, callback) {
 }
 
 const corsOptions = {
-  origin: corsOriginFn,
+  origin: process.env.CORS_ORIGIN || '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
   optionsSuccessStatus: 200,
 };
 
-const io = new Server(httpServer, {
-  cors: { origin: allowedOrigins, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] }
-});
 
-// Must be before all routes — handles preflight
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 // Stripe webhooks need raw body — mount BEFORE json parser
 app.use('/api/webhooks', webhookRoutes);
