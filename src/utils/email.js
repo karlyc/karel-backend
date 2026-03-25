@@ -1,8 +1,15 @@
 // src/utils/email.js — Send transactional emails via Resend
 const { Resend } = require('resend');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM   = process.env.FROM_EMAIL || 'Florería Karel <pedidos@floreriakarel.com>';
+// Lazy initialization — only create client when actually sending
+// This prevents crash on startup if RESEND_API_KEY is not set locally
+let _resend = null;
+function getResend() {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
+
+const FROM = process.env.FROM_EMAIL || 'Florería Karel <pedidos@floreriakarel.com>';
 
 // ─── Helpers ────────────────────────────────────────────────
 const fmt = n => Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -99,7 +106,7 @@ function buildReceiptHTML(order) {
       <tr><td colspan="2" style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#C96E60;border-bottom:1.5px solid #f0e8e6;padding-bottom:6px;">🚐 Entrega</td></tr>
       <tr>
         <td style="padding:6px 0;font-size:13px;color:#888;width:110px;">Fecha</td>
-        <td style="padding:6px 0;font-size:13px;font-weight:600;">${order.deliveryDate?.split('T')[0] || '—'}</td>
+        <td style="padding:6px 0;font-size:13px;font-weight:600;">${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('es-MX', {weekday:'long', year:'numeric', month:'long', day:'numeric'}) : '—'}</td>
       </tr>
       <tr>
         <td style="padding:6px 0;font-size:13px;color:#888;">Horario</td>
@@ -203,7 +210,7 @@ async function sendOrderConfirmation(order) {
   if (!process.env.RESEND_API_KEY) return { skipped: true, reason: 'RESEND_API_KEY not set' };
 
   try {
-    const result = await resend.emails.send({
+    const result = await getResend().emails.send({
       from: FROM,
       to: email,
       subject: `Pedido ${order.orderNumber} confirmado — Florería y Regalos Karel 🌹`,
@@ -270,7 +277,7 @@ async function sendDeliveryNotification(order, delivery) {
 </body></html>`;
 
   try {
-    const result = await resend.emails.send({
+    const result = await getResend().emails.send({
       from: FROM,
       to: email,
       subject: `Tu pedido ${order.orderNumber} fue entregado ✅`,

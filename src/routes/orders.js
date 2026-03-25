@@ -92,7 +92,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 
 // ── POST /api/orders ──
 // Create new order
-router.post('/', upload.single('paymentProof'), [
+router.post('/', requireAuth, upload.single('paymentProof'), [
   body('clientId').optional(),      // validated after JSON parse
   body('deliveryDate').optional(),
 ], async (req, res) => {

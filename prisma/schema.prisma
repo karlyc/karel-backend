@@ -30,14 +30,14 @@ model Staff {
 }
 
 enum ClientSource { 
-  WEB 
-  IN_STORE 
-  INSTAGRAM 
-  GOOGLE 
-  FACEBOOK 
-  REFERRAL 
-  OTHER 
-  }
+  WEB
+ IN_STORE 
+ INSTAGRAM 
+ GOOGLE 
+ FACEBOOK 
+ REFERRAL 
+ OTHER 
+ }
 enum LoyaltyTier  { 
   REGULAR 
   FREQUENT 
