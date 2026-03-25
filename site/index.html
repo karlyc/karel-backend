@@ -346,6 +346,27 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
   .mfr{grid-template-columns:1fr;}
   .cart-sidebar{width:100vw;}
 }
+
+/* ── Product Detail Modal ── */
+.prod-detail-overlay{display:none;position:fixed;inset:0;background:rgba(46,35,32,.55);z-index:600;backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;}
+.prod-detail-overlay.open{display:flex;}
+.prod-detail-modal{background:var(--white);border-radius:20px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.2);}
+.pd-imgs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:16px 16px 0;}
+.pd-img{border-radius:12px;overflow:hidden;background:var(--pink-light);height:180px;display:flex;align-items:center;justify-content:center;font-size:3rem;}
+.pd-img img{width:100%;height:100%;object-fit:contain;}
+.pd-img.single{grid-column:1/-1;height:240px;}
+.pd-body{padding:20px;}
+.pd-cat{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--rose);margin-bottom:6px;}
+.pd-name{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--text);margin-bottom:4px;}
+.pd-code{font-size:.72rem;color:var(--muted);margin-bottom:10px;}
+.pd-price{font-size:1.6rem;font-weight:900;color:var(--rose);margin-bottom:8px;}
+.pd-dims{display:inline-flex;align-items:center;gap:6px;background:var(--pink-light);border-radius:100px;padding:4px 12px;font-size:.75rem;color:var(--text);font-weight:600;margin-bottom:12px;}
+.pd-desc{font-size:.88rem;color:var(--mid);line-height:1.7;margin-bottom:20px;border-top:1px solid var(--border);padding-top:14px;}
+.pd-actions{display:flex;gap:10px;}
+.pd-add-btn{flex:1;padding:14px;border-radius:12px;background:var(--rose);color:white;border:none;font-weight:800;font-size:.95rem;cursor:pointer;transition:background .15s;}
+.pd-add-btn:hover{background:var(--rose-dark);}
+.pd-close-btn{width:44px;height:44px;border-radius:12px;border:1.5px solid var(--border);background:transparent;font-size:1.1rem;cursor:pointer;color:var(--muted);}
+.pd-close-btn:hover{background:var(--pink-light);}
 </style>
 </head>
 <body>
@@ -613,6 +634,25 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 </footer>
 
 <!-- ════════ CART SIDEBAR ════════ -->
+
+<!-- Product Detail Modal -->
+<div class="prod-detail-overlay" id="pd-overlay" onclick="if(event.target===this)closePD()">
+  <div class="prod-detail-modal">
+    <div id="pd-imgs" class="pd-imgs"></div>
+    <div class="pd-body">
+      <div class="pd-cat" id="pd-cat"></div>
+      <div class="pd-name" id="pd-name"></div>
+      <div class="pd-code" id="pd-code"></div>
+      <div class="pd-price" id="pd-price"></div>
+      <div class="pd-dims" id="pd-dims" style="display:none"></div>
+      <div class="pd-desc" id="pd-desc" style="display:none"></div>
+      <div class="pd-actions">
+        <button class="pd-add-btn" onclick="addToCartFromDetail()">Agregar al carrito 🌸</button>
+        <button class="pd-close-btn" onclick="closePD()">✕</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
 <div class="cart-sidebar" id="cart-sidebar">
   <div class="cart-head">
@@ -880,7 +920,7 @@ const API_BASE = (window.location.hostname === 'localhost' || window.location.ho
 const WA_NUMBER = '526561303595';
 const STRIPE_PK = 'pk_test_YOUR_STRIPE_PUBLIC_KEY'; // ← update with your Stripe key
 const SHIPPING_FEE = 125;
-const IVA_RATE = 0.16;
+const IVA_RATE = 0.08;
 
 // ═══════════════════════════════════════════
 // API
@@ -986,21 +1026,16 @@ async function loadProducts() {
 }
 
 function productCard(p, opts = {}) {
-  const { showAdd = true, compact = false } = opts;
-  return `<div class="prod-card" onclick="${showAdd ? `addToCart('${p.id}')` : `addToCartAndOpen('${p.id}')`}">
+  const { compact = false } = opts;
+  return `<div class="prod-card" onclick="openProductDetail('${p.id}')">
     <div class="prod-img">
-      ${p.photo1Url ? `<img src="${API_BASE}${p.photo1Url}" alt="${escHtml(p.name)}" loading="lazy"/>` : '🌸'}
+      ${p.photo1Url ? `<img src="${photoSrc(p.photo1Url)}" alt="${escHtml(p.name)}" loading="lazy"/>` : '🌸'}
     </div>
     <div class="prod-body">
       <div class="prod-cat">${p.category?.name || ''}</div>
       <div class="prod-name">${escHtml(p.name)}</div>
-      <div class="prod-price">Desde $${fmt(p.priceStd)}</div>
-      ${(p.priceDlx || p.pricePrm) ? `<div class="prod-price-tiers">
-        <span class="tier-pill">STD $${fmt(p.priceStd)}</span>
-        ${p.priceDlx ? `<span class="tier-pill">DLX $${fmt(p.priceDlx)}</span>` : ''}
-        ${p.pricePrm ? `<span class="tier-pill">PRM $${fmt(p.pricePrm)}</span>` : ''}
-      </div>` : ''}
-      ${showAdd ? `<button class="add-cart-btn" onclick="event.stopPropagation();addToCart('${p.id}')" data-es="Agregar al carrito" data-en="Add to cart">Agregar al carrito</button>` : ''}
+      <div class="prod-price">$${fmt(p.price || p.priceStd)}</div>
+      <button class="add-cart-btn" onclick="event.stopPropagation();addToCart('${p.id}')" data-es="Agregar al carrito" data-en="Add to cart">Agregar al carrito</button>
     </div>
   </div>`;
 }
@@ -1038,8 +1073,8 @@ function renderCatalog() {
   let prods = [...allProducts];
   if (catalogFilter) prods = prods.filter(p => p.category?.name?.toLowerCase().includes(catalogFilter.toLowerCase()) || true); // backend will filter by occasion when that field is added
 
-  if (catalogSort === 'price-asc') prods.sort((a,b) => a.priceStd - b.priceStd);
-  else if (catalogSort === 'price-desc') prods.sort((a,b) => b.priceStd - a.priceStd);
+  if (catalogSort === 'price-asc') prods.sort((a,b) => (a.price||a.priceStd) - (b.price||b.priceStd));
+  else if (catalogSort === 'price-desc') prods.sort((a,b) => (b.price||b.priceStd) - (a.price||a.priceStd));
   else if (catalogSort === 'name') prods.sort((a,b) => a.name.localeCompare(b.name));
 
   // Group by category
@@ -1062,32 +1097,27 @@ function renderCatalog() {
 // ═══════════════════════════════════════════
 let cart = []; // [{productId, name, tier, unitPrice, qty, photo}]
 
-function addToCart(productId, tier = 'STD') {
+function addToCart(productId) {
   const prod = allProducts.find(p => p.id === productId);
   if (!prod) return;
-  const price = tier === 'STD' ? prod.priceStd : tier === 'DLX' ? prod.priceDlx : prod.pricePrm;
-  const existing = cart.find(i => i.productId === productId && i.tier === tier);
+  const price = prod.price || prod.priceStd;
+  const existing = cart.find(i => i.productId === productId);
   if (existing) { existing.qty++; }
-  else { cart.push({ productId, name: prod.name, tier, unitPrice: price, qty: 1, photo: prod.photo1Url }); }
+  else { cart.push({ productId, name: prod.name, unitPrice: price, qty: 1, photo: prod.photo1Url }); }
   updateCartUI();
   showToast(`${prod.name} agregado al carrito 🌸`);
 }
 
-function addToCartAndOpen(productId) {
-  addToCart(productId);
-  openCart();
-}
-
-function updateQty(productId, tier, delta) {
-  const item = cart.find(i => i.productId === productId && i.tier === tier);
+function updateQty(productId, delta) {
+  const item = cart.find(i => i.productId === productId);
   if (!item) return;
   item.qty += delta;
-  if (item.qty <= 0) cart = cart.filter(i => !(i.productId === productId && i.tier === tier));
+  if (item.qty <= 0) cart = cart.filter(i => i.productId !== productId);
   updateCartUI();
 }
 
-function removeFromCart(productId, tier) {
-  cart = cart.filter(i => !(i.productId === productId && i.tier === tier));
+function removeFromCart(productId) {
+  cart = cart.filter(i => i.productId !== productId);
   updateCartUI();
 }
 
@@ -1109,16 +1139,15 @@ function updateCartUI() {
 
   const sub = cartSubtotal();
   list.innerHTML = cart.map(i => `<div class="cart-item">
-    <div class="cart-item-img">${i.photo ? `<img src="${API_BASE}${i.photo}" alt="${escHtml(i.name)}"/>` : '🌸'}</div>
+    <div class="cart-item-img">${i.photo ? `<img src="${photoSrc(i.photo)}" alt="${escHtml(i.name)}"/>` : '🌸'}</div>
     <div class="cart-item-info">
       <div class="cart-item-name">${escHtml(i.name)}</div>
-      <div class="cart-item-tier">${i.tier}</div>
       <div class="cart-item-price">$${fmt(i.unitPrice)} c/u</div>
       <div class="cart-item-qty">
-        <button class="qty-btn" onclick="updateQty('${i.productId}','${i.tier}',-1)">−</button>
+        <button class="qty-btn" onclick="updateQty('${i.productId}',-1)">−</button>
         <span class="qty-val">${i.qty}</span>
-        <button class="qty-btn" onclick="updateQty('${i.productId}','${i.tier}',1)">+</button>
-        <button class="cart-remove" onclick="removeFromCart('${i.productId}','${i.tier}')">Eliminar</button>
+        <button class="qty-btn" onclick="updateQty('${i.productId}',1)">+</button>
+        <button class="cart-remove" onclick="removeFromCart('${i.productId}')">Eliminar</button>
       </div>
     </div>
   </div>`).join('');
@@ -1262,12 +1291,12 @@ function renderModalProducts() {
     const inCart = cart.find(i => i.productId === p.id);
     return `<div class="prod-card" style="${inCart ? 'border-color:var(--rose);' : ''}">
       <div class="prod-img" style="height:120px;">
-        ${p.photo1Url ? `<img src="${API_BASE}${p.photo1Url}" loading="lazy"/>` : '🌸'}
+        ${p.photo1Url ? `<img src="${photoSrc(p.photo1Url)}" loading="lazy"/>` : '🌸'}
         ${inCart ? `<div class="prod-badge">×${inCart.qty}</div>` : ''}
       </div>
       <div class="prod-body" style="padding:10px 12px;">
         <div class="prod-name" style="font-size:.88rem;">${escHtml(p.name)}</div>
-        <div class="prod-price">$${fmt(p.priceStd)}</div>
+        <div class="prod-price">$${fmt(p.price || p.priceStd)}</div>
         <button class="add-cart-btn" onclick="addToCart('${p.id}');renderModalProducts();" style="margin-top:7px;">
           ${inCart ? '+ Agregar otro' : 'Agregar'}
         </button>
@@ -1475,11 +1504,72 @@ function appendChatMsg(text, dir) {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
+
+// ═══════════════════════════════════════════
+// PRODUCT DETAIL MODAL
+// ═══════════════════════════════════════════
+let currentDetailProduct = null;
+
+function openProductDetail(productId) {
+  const p = allProducts.find(x => x.id === productId);
+  if (!p) return;
+  currentDetailProduct = p;
+
+  const imgsEl = document.getElementById('pd-imgs');
+  if (p.photo1Url && p.photo2Url) {
+    imgsEl.innerHTML =
+      `<div class="pd-img"><img src="${photoSrc(p.photo1Url)}"/></div>` +
+      `<div class="pd-img"><img src="${photoSrc(p.photo2Url)}"/></div>`;
+  } else if (p.photo1Url) {
+    imgsEl.innerHTML = `<div class="pd-img single"><img src="${photoSrc(p.photo1Url)}"/></div>`;
+  } else {
+    imgsEl.innerHTML = `<div class="pd-img single" style="font-size:5rem">🌸</div>`;
+  }
+
+  document.getElementById('pd-cat').textContent   = p.category?.name || '';
+  document.getElementById('pd-name').textContent  = p.name;
+  document.getElementById('pd-code').textContent  = `Código: ${p.code}`;
+  document.getElementById('pd-price').textContent = `$${fmt(p.price || p.priceStd)}`;
+
+  const dimsEl = document.getElementById('pd-dims');
+  if (p.width || p.height) {
+    dimsEl.style.display = 'inline-flex';
+    dimsEl.textContent = `📐 ${p.width || '—'} cm ancho × ${p.height || '—'} cm alto`;
+  } else {
+    dimsEl.style.display = 'none';
+  }
+
+  const descEl = document.getElementById('pd-desc');
+  if (p.description) {
+    descEl.style.display = 'block';
+    descEl.textContent = p.description;
+  } else {
+    descEl.style.display = 'none';
+  }
+
+  document.getElementById('pd-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePD() {
+  document.getElementById('pd-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  currentDetailProduct = null;
+}
+
+function addToCartFromDetail() {
+  if (!currentDetailProduct) return;
+  addToCart(currentDetailProduct.id);
+  closePD();
+  openCart();
+}
+
 // ═══════════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════════
 const fmt = n => Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const photoSrc = url => url ? (url.startsWith('http') ? url : API_BASE + url) : null;
 const occLabel = o => ({ CUMPLEANOS:'Cumpleaños', ANIVERSARIO:'Aniversario', FUNERAL:'Funeral', AMOR:'Amor', OTRA:'Otra' }[o] || o);
 
 // ═══════════════════════════════════════════
@@ -1488,6 +1578,5 @@ const occLabel = o => ({ CUMPLEANOS:'Cumpleaños', ANIVERSARIO:'Aniversario', FU
 loadProducts();
 updateCartUI();
 </script>
-
 </body>
 </html>
