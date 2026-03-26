@@ -30,14 +30,14 @@ model Staff {
 }
 
 enum ClientSource { 
-  WEB
- IN_STORE 
- INSTAGRAM 
- GOOGLE 
- FACEBOOK 
- REFERRAL 
- OTHER 
- }
+  WEB 
+  IN_STORE 
+  INSTAGRAM 
+  GOOGLE 
+  FACEBOOK 
+  REFERRAL 
+  OTHER 
+  }
 enum LoyaltyTier  { 
   REGULAR 
   FREQUENT 
@@ -131,12 +131,12 @@ enum OrderStatus   {
   POR_ENTREGAR 
   COMPLETADA 
   CANCELADA 
- }
+  }
 enum PaymentStatus { 
   PENDIENTE 
   PAGO_RECIBIDO 
   PAGADA 
- }
+  }
 enum PaymentMethod { 
   EFECTIVO 
   TRANSFERENCIA 
@@ -147,19 +147,19 @@ enum PaymentMethod {
   CHEQUE 
   ZELLE 
   STRIPE 
- }
+  }
 enum DeliveryType  { 
   DOMICILIO_CASA 
   DOMICILIO_NEGOCIO 
   RECOGER_TIENDA 
- }
+  }
 enum Occasion      { 
   CUMPLEANOS 
   ANIVERSARIO 
   FUNERAL 
   AMOR 
   OTRA 
- }
+  }
 
 model Order {
   id               String        @id @default(cuid())

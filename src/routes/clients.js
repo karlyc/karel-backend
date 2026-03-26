@@ -4,8 +4,8 @@ const { body, validationResult } = require('express-validator');
 const { prisma } = require('../db/prisma');
 const { requireAuth } = require('../middleware/auth');
 
-// GET /api/clients?search=...
-router.get('/', requireAuth, async (req, res) => {
+// GET /api/clients?search=... (public — used by website checkout)
+router.get('/', async (req, res) => {
   const { search } = req.query;
   const where = search ? {
     OR: [
@@ -20,8 +20,8 @@ router.get('/', requireAuth, async (req, res) => {
       orderBy: { createdAt: 'desc' },
       take: 20,
       select: {
-        id: true, firstName: true, lastNameP: true, lastNameM: true,
-        phone: true, email: true, loyaltyTier: true, orderCount: true,
+        id: true, firstName: true, middleName: true, lastNameP: true, lastNameM: true,
+        phone: true, phoneCode: true, email: true, loyaltyTier: true, orderCount: true,
       },
     });
     res.json(clients);
@@ -30,7 +30,7 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/clients/:id
+// GET /api/clients/:id (auth required — POS only)
 router.get('/:id', requireAuth, async (req, res) => {
   try {
     const client = await prisma.client.findUnique({
@@ -50,8 +50,8 @@ router.get('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/clients
-router.post('/', requireAuth, [
+// POST /api/clients (public — used by website checkout)
+router.post('/', [
   body('phone').notEmpty().withMessage('Phone is required'),
   body('firstName').notEmpty().withMessage('First name is required'),
   body('lastNameP').notEmpty().withMessage('Last name is required'),
@@ -70,7 +70,7 @@ router.post('/', requireAuth, [
   }
 });
 
-// PUT /api/clients/:id
+// PUT /api/clients/:id (auth required — POS only)
 router.put('/:id', requireAuth, async (req, res) => {
   try {
     const client = await prisma.client.update({
