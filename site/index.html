@@ -4,32 +4,34 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Florería y Regalos Karel — Ciudad Juárez</title>
+<link rel="icon" type="image/png" href="https://res.cloudinary.com/dkz7mbacc/image/upload/v1774566491/Untitled_design_2_adxk40.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Nunito:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@1,400;1,500&display=swap" rel="stylesheet"/>
 <script src="https://js.stripe.com/v3/"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --white:#FFFFFF;--cream:#FDF9F6;--blush:#FAF0EE;--pink-light:#F5E1DC;--pink:#EDCAC2;
-  --rose:#C96E60;--rose-dark:#A85748;--rose-dim:rgba(201,110,96,.1);
-  --sage:#7A9978;--sage-dark:#5C7A5A;--sage-pale:#EEF3EC;
-  --text:#2E2320;--mid:#7A6A65;--muted:#B8A8A4;--border:rgba(46,35,32,.09);
+  --white:#FFFFFF;--cream:#FBF8F5;--blush:#F5EEE9;--pink-light:#FAEAE8;--pink:#E8B4B8;
+  --rose:#E8B4B8;--rose-dark:#D49598;--rose-dim:rgba(232,180,184,.2);
+  --sage:#C4846A;--sage-dark:#A8684E;--sage-pale:#FAF0EB;
+  --text:#2E2320;--mid:#7A6A65;--muted:#A89880;--border:rgba(46,35,32,.09);
+  --gold:#C4846A;--gold-dark:#A8684E;--gold-dim:rgba(196,132,106,.15);
 }
 html{scroll-behavior:smooth;}
 body{font-family:'Nunito',sans-serif;background:var(--cream);color:var(--text);overflow-x:hidden;}
 
 /* ── ANNOUNCE BAR ── */
-.announce{background:var(--sage);color:white;text-align:center;padding:9px 20px;font-size:.72rem;letter-spacing:.08em;display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;}
+.announce{background:#C4846A;color:white;text-align:center;padding:9px 20px;font-size:.72rem;letter-spacing:.08em;display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;}
 .announce a{color:rgba(255,255,255,.9);text-decoration:underline;}
 .announce-sep{opacity:.4;}
 
 /* ── NAV ── */
-nav{position:sticky;top:0;z-index:300;background:rgba(253,249,246,.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;transition:box-shadow .3s;}
+nav{position:sticky;top:0;z-index:300;background:rgba(251,248,245,.97);backdrop-filter:blur(16px);border-bottom:1px solid rgba(232,180,184,.3);height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;transition:box-shadow .3s;}
 nav.shadow{box-shadow:0 4px 32px rgba(46,35,32,.08);}
-.nav-logo{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:var(--text);text-decoration:none;display:flex;flex-direction:column;line-height:1.1;}
+.nav-logo{text-decoration:none;display:flex;align-items:center;}
 .nav-logo span{font-size:.58rem;font-family:'Nunito',sans-serif;font-weight:600;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;}
 .nav-links{display:flex;gap:28px;list-style:none;}
 .nav-links a{font-size:.82rem;font-weight:600;color:var(--mid);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
-.nav-links a:hover{color:var(--rose);}
+.nav-links a:hover{color:#C4846A;}
 .nav-actions{display:flex;align-items:center;gap:12px;}
 .lang-toggle{background:none;border:1.5px solid var(--border);border-radius:100px;padding:4px 11px;font-size:.72rem;font-weight:700;color:var(--mid);cursor:pointer;letter-spacing:.08em;transition:all .2s;}
 .lang-toggle:hover{border-color:var(--rose);color:var(--rose);}
@@ -37,8 +39,8 @@ nav.shadow{box-shadow:0 4px 32px rgba(46,35,32,.08);}
 .cart-btn:hover{transform:scale(1.1);}
 .cart-count{position:absolute;top:0;right:0;background:var(--rose);color:white;font-size:.6rem;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;display:none;}
 .cart-count.show{display:flex;}
-.cta-nav{background:var(--rose);color:white;padding:8px 18px;border-radius:100px;font-size:.78rem;font-weight:700;text-decoration:none;transition:background .2s;}
-.cta-nav:hover{background:var(--rose-dark);}
+.cta-nav{background:#E8B4B8;color:#2E2320;padding:8px 18px;border-radius:100px;font-size:.78rem;font-weight:700;text-decoration:none;transition:background .2s;}
+.cta-nav:hover{background:#D49598;}
 .hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px;}
 .hamburger span{width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .25s;}
 .hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
@@ -54,16 +56,16 @@ nav.shadow{box-shadow:0 4px 32px rgba(46,35,32,.08);}
 .page.active{display:block;}
 
 /* ── HERO ── */
-.hero{min-height:92vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:60px 6vw;gap:40px;position:relative;overflow:hidden;}
+.hero{min-height:92vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:60px 6vw;gap:40px;position:relative;overflow:hidden;background:linear-gradient(135deg,#FAEAE8 0%,#F5EEE9 100%);}
 .hero::before{content:'';position:absolute;right:-120px;top:-120px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,var(--pink-light) 0%,transparent 70%);pointer-events:none;}
-.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--rose);margin-bottom:18px;}
-.hero-eyebrow::after{content:'';flex:1;height:1px;background:var(--rose);opacity:.4;width:40px;}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#C4846A;margin-bottom:18px;}
+.hero-eyebrow::after{content:'';flex:1;height:1px;background:#C4846A;opacity:.4;width:40px;}
 .hero-title{font-family:'Playfair Display',serif;font-size:clamp(2.4rem,5vw,3.8rem);line-height:1.1;color:var(--text);margin-bottom:20px;}
-.hero-title em{color:var(--rose);font-style:italic;}
+.hero-title em{color:#C4846A;font-style:italic;}
 .hero-sub{font-size:.9rem;color:var(--mid);line-height:1.75;margin-bottom:32px;max-width:440px;}
 .hero-btns{display:flex;gap:12px;flex-wrap:wrap;}
-.btn-rose{background:var(--rose);color:white;padding:13px 28px;border-radius:100px;font-weight:700;font-size:.85rem;border:none;cursor:pointer;transition:background .2s;text-decoration:none;display:inline-flex;align-items:center;gap:7px;}
-.btn-rose:hover{background:var(--rose-dark);}
+.btn-rose{background:#E8B4B8;color:#2E2320;padding:13px 28px;border-radius:100px;font-weight:700;font-size:.85rem;border:none;cursor:pointer;transition:background .2s;text-decoration:none;display:inline-flex;align-items:center;gap:7px;}
+.btn-rose:hover{background:#D49598;}
 .btn-outline{border:1.5px solid rgba(46,35,32,.2);background:transparent;color:var(--text);padding:12px 24px;border-radius:100px;font-weight:600;font-size:.82rem;cursor:pointer;transition:all .2s;text-decoration:none;}
 .btn-outline:hover{border-color:var(--rose);color:var(--rose);}
 .hero-img{border-radius:24px;aspect-ratio:4/5;background:linear-gradient(135deg,var(--pink-light),var(--pink));display:flex;align-items:center;justify-content:center;font-size:7rem;position:relative;}
@@ -74,32 +76,32 @@ nav.shadow{box-shadow:0 4px 32px rgba(46,35,32,.08);}
 /* ── SECTIONS ── */
 .section{padding:80px 6vw;}
 .section-alt{background:var(--blush);}
-.s-eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:.68rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--rose);margin-bottom:14px;}
-.s-eyebrow::before{content:'';width:28px;height:1px;background:var(--rose);opacity:.5;}
+.s-eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:.68rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#C4846A;margin-bottom:14px;}
+.s-eyebrow::before{content:'';width:28px;height:1px;background:#C4846A;opacity:.5;}
 .s-title{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,3.5vw,2.6rem);line-height:1.2;color:var(--text);margin-bottom:14px;}
-.s-title em{color:var(--rose);font-style:italic;}
+.s-title em{color:#C4846A;font-style:italic;}
 .s-sub{font-size:.85rem;color:var(--mid);line-height:1.75;max-width:520px;}
 
 /* ── PRODUCTS GRID ── */
 .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;margin-top:36px;}
 .prod-card{background:white;border-radius:16px;overflow:hidden;transition:transform .2s,box-shadow .2s;cursor:pointer;border:2px solid transparent;}
-.prod-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(46,35,32,.1);border-color:var(--pink);}
+.prod-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(196,132,106,.15);border-color:#E8B4B8;}
 .prod-img{height:180px;background:linear-gradient(135deg,var(--blush),var(--pink-light));display:flex;align-items:center;justify-content:center;font-size:4rem;position:relative;overflow:hidden;}
 .prod-img img{width:100%;height:100%;object-fit:cover;}
 .prod-badge{position:absolute;top:10px;left:10px;background:var(--rose);color:white;font-size:.6rem;font-weight:800;padding:3px 9px;border-radius:100px;letter-spacing:.08em;}
 .prod-body{padding:14px 16px;}
-.prod-cat{font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--sage);margin-bottom:4px;}
+.prod-cat{font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#A89880;margin-bottom:4px;}
 .prod-name{font-family:'Playfair Display',serif;font-size:1rem;color:var(--text);margin-bottom:6px;}
-.prod-price{font-size:.82rem;font-weight:700;color:var(--rose);}
+.prod-price{font-size:.82rem;font-weight:700;color:#C4846A;}
 .prod-price-tiers{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
 .tier-pill{font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:100px;background:var(--sage-pale);color:var(--sage-dark);}
-.add-cart-btn{width:100%;margin-top:10px;background:var(--rose);color:white;border:none;border-radius:100px;padding:8px;font-size:.78rem;font-weight:700;cursor:pointer;transition:background .2s;}
-.add-cart-btn:hover{background:var(--rose-dark);}
+.add-cart-btn{width:100%;margin-top:10px;background:#C4846A;color:white;border:none;border-radius:100px;padding:8px;font-size:.78rem;font-weight:700;cursor:pointer;transition:background .2s;}
+.add-cart-btn:hover{background:#A8684E;}
 
 /* ── OCCASIONS ── */
 .occ-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px;}
 .occ-card{background:white;border-radius:14px;padding:24px 16px;text-align:center;cursor:pointer;border:2px solid transparent;transition:all .2s;}
-.occ-card:hover{border-color:var(--rose);transform:translateY(-2px);}
+.occ-card:hover{border-color:#E8B4B8;transform:translateY(-2px);}
 .occ-icon{font-size:2.2rem;margin-bottom:10px;}
 .occ-name{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--text);}
 
@@ -119,7 +121,7 @@ nav.shadow{box-shadow:0 4px 32px rgba(46,35,32,.08);}
 .hours-day{font-weight:600;color:var(--text);}
 .hours-time{color:var(--mid);}
 .hours-badge{font-size:.62rem;font-weight:800;letter-spacing:.1em;padding:2px 8px;border-radius:100px;margin-left:8px;}
-.open{background:var(--sage-pale);color:var(--sage-dark);}
+.open{background:rgba(196,132,106,.12);color:#A8684E;}
 .closed-badge{background:var(--pink-light);color:var(--rose-dark);}
 
 /* ── GALLERY ── */
@@ -135,7 +137,7 @@ nav.shadow{box-shadow:0 4px 32px rgba(46,35,32,.08);}
 .form-group{margin-bottom:16px;}
 .form-label{font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:5px;}
 .form-input,.form-textarea,.form-select{width:100%;padding:10px 14px;background:var(--cream);border:1.5px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:.88rem;color:var(--text);outline:none;transition:border-color .2s;}
-.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--rose);}
+.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:#C4846A;}
 .form-textarea{min-height:100px;resize:vertical;}
 .contact-info{display:flex;flex-direction:column;gap:20px;}
 .c-item{display:flex;gap:14px;align-items:flex-start;}
@@ -147,18 +149,18 @@ nav.shadow{box-shadow:0 4px 32px rgba(46,35,32,.08);}
 .map-embed iframe{width:100%;height:100%;border:none;}
 
 /* ── FOOTER ── */
-footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
+footer{background:#2E2320;color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px;}
 .footer-brand{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:white;margin-bottom:10px;}
-.footer-brand span{color:var(--rose);}
+.footer-brand span{color:#E8B4B8;}
 .footer-tagline{font-size:.78rem;line-height:1.7;margin-bottom:16px;}
 .footer-social{display:flex;gap:8px;}
 .f-soc{width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.7);text-decoration:none;font-size:.72rem;font-weight:700;transition:all .2s;}
-.f-soc:hover{background:var(--rose);border-color:var(--rose);color:white;}
+.f-soc:hover{background:#E8B4B8;border-color:#E8B4B8;color:white;}
 .footer-col h4{font-size:.68rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:14px;}
 .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
 .footer-col li a{font-size:.8rem;color:rgba(255,255,255,.6);text-decoration:none;transition:color .2s;}
-.footer-col li a:hover{color:white;}
+.footer-col li a:hover{color:#E8B4B8;}
 .footer-bottom{border-top:1px solid rgba(255,255,255,.08);padding-top:24px;display:flex;justify-content:space-between;font-size:.72rem;flex-wrap:wrap;gap:8px;}
 
 /* ── CATALOG PAGE ── */
@@ -166,8 +168,8 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 .catalog-filters{padding:24px 6vw;background:white;border-bottom:1px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;align-items:center;position:sticky;top:68px;z-index:100;}
 .filter-label{font-size:.7rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-right:4px;}
 .filter-pill{padding:6px 16px;border-radius:100px;border:1.5px solid var(--border);font-size:.78rem;font-weight:600;color:var(--mid);cursor:pointer;transition:all .15s;background:white;}
-.filter-pill:hover{border-color:var(--rose);color:var(--rose);}
-.filter-pill.active{background:var(--rose);color:white;border-color:var(--rose);}
+.filter-pill:hover{border-color:#C4846A;color:#C4846A;}
+.filter-pill.active{background:#C4846A;color:white;border-color:#C4846A;}
 .filter-select{padding:6px 14px;border-radius:100px;border:1.5px solid var(--border);font-size:.78rem;font-weight:600;color:var(--mid);cursor:pointer;background:white;outline:none;margin-left:auto;}
 .catalog-body{padding:32px 6vw;}
 .catalog-section-title{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--text);margin:32px 0 16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
@@ -209,8 +211,8 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 .cart-foot{padding:20px 24px;border-top:1px solid var(--border);background:white;}
 .cart-total-row{display:flex;justify-content:space-between;font-size:.85rem;color:var(--mid);margin-bottom:6px;}
 .cart-total-row.final{font-size:1rem;font-weight:800;color:var(--text);padding-top:8px;border-top:1px solid var(--border);margin-top:6px;}
-.checkout-btn{width:100%;background:var(--rose);color:white;border:none;border-radius:100px;padding:13px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;margin-top:14px;transition:background .2s;}
-.checkout-btn:hover{background:var(--rose-dark);}
+.checkout-btn{width:100%;background:#C4846A;color:white;border:none;border-radius:100px;padding:13px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;margin-top:14px;transition:background .2s;}
+.checkout-btn:hover{background:#A8684E;}
 
 /* ── ORDER MODAL (6 steps) ── */
 .order-overlay{display:none;position:fixed;inset:0;background:rgba(46,35,32,.6);z-index:600;backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;}
@@ -233,15 +235,15 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 .om-foot{padding:16px 28px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;bottom:0;background:white;}
 .om-back{background:none;border:1.5px solid var(--border);border-radius:100px;padding:8px 20px;font-size:.82rem;font-weight:600;cursor:pointer;color:var(--mid);transition:all .2s;}
 .om-back:hover{border-color:var(--rose);color:var(--rose);}
-.om-next{background:var(--rose);color:white;border:none;border-radius:100px;padding:10px 28px;font-size:.9rem;font-weight:700;cursor:pointer;transition:background .2s;}
-.om-next:hover{background:var(--rose-dark);}
+.om-next{background:#C4846A;color:white;border:none;border-radius:100px;padding:10px 28px;font-size:.9rem;font-weight:700;cursor:pointer;transition:background .2s;}
+.om-next:hover{background:#A8684E;}
 .om-next:disabled{opacity:.5;cursor:not-allowed;}
 
 /* ── FORM INSIDE MODAL ── */
 .mfg{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;}
 .mfl{font-size:.68rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);}
 .mfi,.mfs,.mfta{padding:9px 13px;background:var(--cream);border:1.5px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:.88rem;color:var(--text);outline:none;transition:border-color .2s;width:100%;}
-.mfi:focus,.mfs:focus,.mfta:focus{border-color:var(--rose);}
+.mfi:focus,.mfs:focus,.mfta:focus{border-color:#C4846A;}
 .mfs option{background:white;}
 .mfta{resize:vertical;min-height:72px;}
 .mfr{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -255,10 +257,10 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 .tile-group.cols-2{grid-template-columns:1fr 1fr;}
 .tile{padding:14px 12px;border-radius:12px;border:2px solid var(--border);cursor:pointer;text-align:center;transition:all .15s;}
 .tile:hover{border-color:var(--pink);}
-.tile.sel{border-color:var(--rose);background:var(--rose-dim);}
+.tile.sel{border-color:#C4846A;background:rgba(196,132,106,.1);}
 .tile-icon{font-size:1.6rem;margin-bottom:6px;}
 .tile-label{font-size:.78rem;font-weight:700;color:var(--text);}
-.tile.sel .tile-label{color:var(--rose);}
+.tile.sel .tile-label{color:#C4846A;}
 
 /* ── CART SUMMARY STRIP ── */
 .cart-strip{background:var(--blush);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:20px;}
@@ -276,38 +278,38 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 
 /* ── STRIPE ELEMENT ── */
 #stripe-card-element{padding:11px 13px;background:var(--cream);border:1.5px solid var(--border);border-radius:10px;margin-top:6px;}
-#stripe-card-element.StripeElement--focus{border-color:var(--rose);}
+#stripe-card-element.StripeElement--focus{border-color:#C4846A;}
 .stripe-error{color:var(--rose-dark);font-size:.78rem;margin-top:6px;}
 
 /* ── CONFIRMATION ── */
 .confirm-screen{text-align:center;padding:40px 24px;}
 .confirm-icon{font-size:4rem;margin-bottom:16px;}
 .confirm-title{font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--text);margin-bottom:10px;}
-.confirm-num{display:inline-block;background:var(--rose-dim);border:1.5px solid rgba(201,110,96,.25);border-radius:100px;padding:8px 24px;font-size:1.1rem;font-weight:800;color:var(--rose);margin-bottom:16px;}
+.confirm-num{display:inline-block;background:rgba(232,180,184,.2);border:1.5px solid rgba(232,180,184,.5);border-radius:100px;padding:8px 24px;font-size:1.1rem;font-weight:800;color:#C4846A;margin-bottom:16px;}
 .confirm-note{font-size:.85rem;color:var(--mid);line-height:1.7;max-width:400px;margin:0 auto 24px;}
 .confirm-wa{display:inline-flex;align-items:center;gap:8px;background:#25D366;color:white;padding:12px 28px;border-radius:100px;font-weight:700;font-size:.9rem;border:none;cursor:pointer;transition:opacity .2s;}
 .confirm-wa:hover{opacity:.88;}
 
 /* ── CHAT FAB ── */
 .chat-fab{position:fixed;bottom:28px;right:28px;z-index:400;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
-.chat-fab-btn{width:54px;height:54px;border-radius:50%;background:var(--rose);color:white;border:none;font-size:1.4rem;cursor:pointer;box-shadow:0 6px 24px rgba(201,110,96,.4);transition:transform .2s;}
+.chat-fab-btn{width:54px;height:54px;border-radius:50%;background:#E8B4B8;color:white;border:none;font-size:1.4rem;cursor:pointer;box-shadow:0 6px 24px rgba(232,180,184,.4);transition:transform .2s;}
 .chat-fab-btn:hover{transform:scale(1.08);}
 .chat-window{background:white;border-radius:20px;box-shadow:0 20px 60px rgba(46,35,32,.18);width:320px;overflow:hidden;display:none;border:1px solid var(--border);}
 .chat-window.open{display:flex;flex-direction:column;}
-.chat-wh{background:var(--rose);padding:14px 16px;display:flex;align-items:center;gap:10px;}
+.chat-wh{background:#E8B4B8;padding:14px 16px;display:flex;align-items:center;gap:10px;}
 .chat-wh-av{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
 .chat-wh-info{flex:1;}
 .chat-wh-name{font-weight:700;color:white;font-size:.88rem;}
-.chat-wh-status{font-size:.7rem;color:rgba(255,255,255,.8);}
+.chat-wh-status{font-size:.7rem;color:rgba(255,255,255,.85);}
 .chat-close{background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:1rem;padding:2px;}
 .chat-msgs{height:220px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--cream);}
 .chat-bubble{max-width:78%;padding:8px 12px;border-radius:12px;font-size:.8rem;line-height:1.5;}
 .chat-bubble.in{background:white;color:var(--text);align-self:flex-start;border-bottom-left-radius:3px;}
-.chat-bubble.out{background:var(--rose);color:white;align-self:flex-end;border-bottom-right-radius:3px;}
+.chat-bubble.out{background:#C4846A;color:white;align-self:flex-end;border-bottom-right-radius:3px;}
 .chat-inp{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);}
 .chat-inp input{flex:1;border:1.5px solid var(--border);border-radius:100px;padding:7px 12px;font-family:'Nunito',sans-serif;font-size:.82rem;outline:none;}
 .chat-inp input:focus{border-color:var(--rose);}
-.chat-inp button{background:var(--rose);color:white;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:.8rem;}
+.chat-inp button{background:#C4846A;color:white;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:.8rem;}
 
 /* ── TOAST ── */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--text);color:white;padding:10px 20px;border-radius:100px;font-size:.82rem;font-weight:600;z-index:9999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;}
@@ -356,15 +358,15 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 .pd-img img{width:100%;height:100%;object-fit:contain;}
 .pd-img.single{grid-column:1/-1;height:240px;}
 .pd-body{padding:20px;}
-.pd-cat{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--rose);margin-bottom:6px;}
+.pd-cat{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#E8B4B8;margin-bottom:6px;}
 .pd-name{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--text);margin-bottom:4px;}
 .pd-code{font-size:.72rem;color:var(--muted);margin-bottom:10px;}
-.pd-price{font-size:1.6rem;font-weight:900;color:var(--rose);margin-bottom:8px;}
+.pd-price{font-size:1.6rem;font-weight:900;color:#C4846A;margin-bottom:8px;}
 .pd-dims{display:inline-flex;align-items:center;gap:6px;background:var(--pink-light);border-radius:100px;padding:4px 12px;font-size:.75rem;color:var(--text);font-weight:600;margin-bottom:12px;}
 .pd-desc{font-size:.88rem;color:var(--mid);line-height:1.7;margin-bottom:20px;border-top:1px solid var(--border);padding-top:14px;}
 .pd-actions{display:flex;gap:10px;}
-.pd-add-btn{flex:1;padding:14px;border-radius:12px;background:var(--rose);color:white;border:none;font-weight:800;font-size:.95rem;cursor:pointer;}
-.pd-add-btn:hover{background:var(--rose-dark);}
+.pd-add-btn{flex:1;padding:14px;border-radius:12px;background:#C4846A;color:white;border:none;font-weight:800;font-size:.95rem;cursor:pointer;}
+.pd-add-btn:hover{background:#A8684E;}
 .pd-close-btn{width:44px;height:44px;border-radius:12px;border:1.5px solid var(--border);background:transparent;font-size:1.1rem;cursor:pointer;color:var(--muted);}
 
 </style>
@@ -375,7 +377,7 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 <div class="announce">
   <span>🚚 <span data-es="Entrega el mismo día si ordenas antes de la 1 PM" data-en="Same-day delivery if ordered before 1 PM">Entrega el mismo día si ordenas antes de la 1 PM</span></span>
   <span class="announce-sep">|</span>
-  <a href="tel:6566111124">📞 656 611 1124</a>
+  <a href="tel:6566111124">📞 (656) 611-1124</a>
   <span class="announce-sep">|</span>
   <a href="https://wa.me/526561303595" target="_blank">💬 WhatsApp</a>
 </div>
@@ -383,8 +385,8 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 <!-- ── NAV ── -->
 <nav id="navbar">
   <a class="nav-logo" href="#" onclick="showPage('home');return false;">
-    Florería <em style="color:var(--rose);font-style:italic;">Karel</em>
-    <span data-es="Ciudad Juárez" data-en="City of Juárez">Ciudad Juárez</span>
+    <!-- LOGO: replace the src below with your Cloudinary logo URL -->
+    <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1773958184/000LOGO_mrylkc.png" alt="Florería y Regalos Karel" style="height:48px;width:auto;object-fit:contain;"/>
   </a>
   <ul class="nav-links">
     <li><a href="#" onclick="showPage('home');return false;" data-es="Inicio" data-en="Home">Inicio</a></li>
@@ -417,7 +419,7 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
   <!-- HERO -->
   <section class="hero">
     <div>
-      <div class="hero-eyebrow rv">🌹 <span data-es="Florería y Regalos" data-en="Florist & Gifts">Florería y Regalos</span></div>
+      <div class="hero-eyebrow rv"><span data-es="Florería y Regalos Karel" data-en="Florist & Gifts">Florería y Regalos Karel</span></div>
       <h1 class="hero-title rv d1">
         <span data-es="Flores que" data-en="Flowers that">Flores que</span><br/>
         <em data-es="hablan por ti" data-en="speak for you">hablan por ti</em>
@@ -431,7 +433,7 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
       </div>
     </div>
     <div class="hero-img rv d2">
-      🌹
+       <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1774564229/ChatGPT_Image_Jan_29_2026_02_12_13_PM_mraetk.png" alt="Arreglo floral karel" style="width: 100%; height: 100%; object-fit: cover;border-radius: 24px;">
       <div class="hero-badge"><span>★★★★★</span>+500 <span data-es="clientes felices" data-en="happy clients">clientes felices</span></div>
     </div>
   </section>
@@ -468,8 +470,8 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
     <div class="steps-grid">
       <div class="step rv"><div class="step-num">1</div><div class="step-title" data-es="Elige tu arreglo" data-en="Choose your arrangement">Elige tu arreglo</div><div class="step-txt" data-es="Explora el catálogo y agrega al carrito" data-en="Browse the catalog and add to cart">Explora el catálogo y agrega al carrito</div></div>
       <div class="step rv d1"><div class="step-num">2</div><div class="step-title" data-es="Personaliza" data-en="Personalize">Personaliza</div><div class="step-txt" data-es="Ocasión, mensaje y datos de entrega" data-en="Occasion, message and delivery details">Ocasión, mensaje y datos de entrega</div></div>
-      <div class="step rv d2"><div class="step-num">3</div><div class="step-title" data-es="Paga seguro" data-en="Pay securely">Paga seguro</div><div class="step-txt" data-es="Tarjeta, transferencia o efectivo" data-en="Card, transfer or cash">Tarjeta, transferencia o efectivo</div></div>
-      <div class="step rv d3"><div class="step-num">4</div><div class="step-title" data-es="¡Listo!" data-en="Done!">¡Listo!</div><div class="step-txt" data-es="Entregamos con cariño en Ciudad Juárez" data-en="We deliver with care in Ciudad Juárez">Entregamos con cariño en Ciudad Juárez</div></div>
+      <div class="step rv d2"><div class="step-num">3</div><div class="step-title" data-es="Paga seguro" data-en="Pay securely">Paga seguro</div><div class="step-txt" data-es="Enlace de mercado de pago" data-en="Card, transfer or cash">Tarjeta de credito o debito</div></div>
+      <div class="step rv d3"><div class="step-num">4</div><div class="step-title" data-es="¡Listo!" data-en="Done!">¡Listo!</div><div class="step-txt" data-es="Entregamos con cariño en Ciudad Juárez" data-en="We deliver with care in Ciudad Juárez">Entregamos con cariño en Ciudad Juárez y recibiras confirmacion de entrega de tu pedido.</div></div>
     </div>
   </section>
 
@@ -500,14 +502,14 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
     <div class="rv"><div class="s-eyebrow" data-es="Síguenos" data-en="Follow us">Síguenos</div></div>
     <h2 class="s-title rv d1" data-es="Nuestros arreglos" data-en="Our arrangements">Nuestros <em>arreglos</em></h2>
     <div class="gal-grid">
-      <div class="gal-cell rv" style="font-size:5rem;">🌹<div class="gal-overlay"></div></div>
-      <div class="gal-cell rv d1">💐<div class="gal-overlay"></div></div>
-      <div class="gal-cell rv d2">🌸<div class="gal-overlay"></div></div>
-      <div class="gal-cell rv">🌻<div class="gal-overlay"></div></div>
-      <div class="gal-cell rv d1">🥀<div class="gal-overlay"></div></div>
+      <div class="gal-cell rv" style="font-size:5rem;"> <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1774564961/WhatsApp_Image_2026-02-06_at_15.19.17_wavjt8.jpg" alt="Arreglo floral karel" style="width: 100%; height: 100%; object-fit: cover;border-radius: 24px;"><div class="gal-overlay"></div></div>
+      <div class="gal-cell rv d1"><img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1774564961/e2ab5178-2bbf-4847-ba91-10bab7443f63_kezq0e.jpg" alt="Arreglo floral karel" style="width: 100%; height: 100%; object-fit: cover;border-radius: 24px;"><div class="gal-overlay"></div><div class="gal-overlay"></div></div>
+      <div class="gal-cell rv d2"><img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1774564961/WhatsApp_Image_2026-02-06_at_15.20.24_nvoi2v.jpg" alt="Arreglo floral karel" style="width: 100%; height: 100%; object-fit: cover;border-radius: 24px;"><div class="gal-overlay"></div><div class="gal-overlay"></div></div>
+      <div class="gal-cell rv"><img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1774565925/PHOTO-2026-03-26-16-57-53_br5zxt.jpg" alt="Arreglo floral karel" style="width: 100%; height: 100%; object-fit: cover;border-radius: 24px;"><div class="gal-overlay"></div><div class="gal-overlay"></div></div>
+      <div class="gal-cell rv d1"><img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1774565932/PHOTO-2026-03-26-16-58-24_mhn5z6.jpg" alt="Arreglo floral karel" style="width: 100%; height: 100%; object-fit: cover;border-radius: 24px;"><div class="gal-overlay"></div><div class="gal-overlay"></div></div>
     </div>
     <div style="text-align:center;margin-top:20px;" class="rv">
-      <a href="https://instagram.com" target="_blank" class="btn-outline" data-es="Ver más en Instagram →" data-en="See more on Instagram →">Ver más en Instagram →</a>
+      <a href="https://instagram.com/floreriakarel" target="_blank" class="btn-outline" data-es="Ver más en Instagram →" data-en="See more on Instagram →">Ver más en Instagram →</a>
     </div>
   </section>
 
@@ -600,12 +602,13 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 <footer>
   <div class="footer-grid">
     <div>
-      <div class="footer-brand">Florería <span>Karel</span></div>
-      <p class="footer-tagline" data-es="Flores frescas, arreglos con amor, entregas en Ciudad Juárez desde hace más de 10 años." data-en="Fresh flowers, arrangements with love, delivering in Ciudad Juárez for over 10 years.">Flores frescas, arreglos con amor, entregas en Ciudad Juárez.</p>
+      <!-- LOGO: replace src below with your Cloudinary logo URL -->
+      <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1773958184/000LOGO_mrylkc.png" alt="Florería y Regalos Karel" style="height:52px;width:auto;object-fit:contain;margin-bottom:10px;display:block;"/>
+      <p class="footer-tagline" data-es="Elegancia y distinción en todos nuestros diseños." data-en="Elegance and distinction in every arrangement">Flores frescas, arreglos con amor, entregas en Ciudad Juárez.</p>
       <div class="footer-social">
         <a href="https://wa.me/526561303595" target="_blank" class="f-soc">wa</a>
-        <a href="https://instagram.com" target="_blank" class="f-soc">ig</a>
-        <a href="https://facebook.com" target="_blank" class="f-soc">fb</a>
+        <a href="https://www.instagram.com/floreriakarel" target="_blank" class="f-soc">ig</a>
+        <a href="https://www.facebook.com/floreriayregaloskarel/" target="_blank" class="f-soc">fb</a>
       </div>
     </div>
     <div class="footer-col"><h4 data-es="Navegación" data-en="Navigation">Navegación</h4><ul>
@@ -621,9 +624,9 @@ footer{background:var(--text);color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
       <li><a href="#" onclick="openOrderModalOcc('FUNERAL');return false;" data-es="Funeral" data-en="Funeral">Funeral</a></li>
     </ul></div>
     <div class="footer-col"><h4 data-es="Horarios" data-en="Hours">Horarios</h4><ul>
-      <li><a href="#">Lun–Vie 9–18h</a></li>
-      <li><a href="#">Sáb 9–16h</a></li>
-      <li><a href="#">Dom Cerrado</a></li>
+      <li><a href="#">Lunes–Viernes 9AM-6PM</a></li>
+      <li><a href="#">Sábado 9AM-4PM</a></li>
+      <li><a href="#">Domingo Cerrado</a></li>
       <li><a href="tel:6566111124">656 611 1124</a></li>
     </ul></div>
   </div>
