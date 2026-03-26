@@ -216,6 +216,11 @@ async function sendOrderConfirmation(order) {
       subject: `Pedido ${order.orderNumber} confirmado — Florería y Regalos Karel 🌹`,
       html: buildReceiptHTML(order),
     });
+    console.log('[Email] Resend full response:', JSON.stringify(result));
+    if (result.error) {
+      console.error('[Email] Resend error:', result.error);
+      return { sent: false, error: result.error };
+    }
     console.log(`[Email] Sent confirmation to ${email} — ID: ${result.data?.id}`);
     return { sent: true, id: result.data?.id };
   } catch (err) {

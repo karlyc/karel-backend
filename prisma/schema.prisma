@@ -13,8 +13,8 @@ enum StaffRole {
   ADMIN 
   OFFICE 
   FLORISTA 
-  REPARTIDOR
-   }
+  REPARTIDOR 
+  }
 
 model Staff {
   id        String    @id @default(cuid())
@@ -36,8 +36,8 @@ enum ClientSource {
   GOOGLE 
   FACEBOOK 
   REFERRAL 
-  OTHER 
-  }
+  OTHER
+   }
 enum LoyaltyTier  { 
   REGULAR 
   FREQUENT 
@@ -135,7 +135,8 @@ enum OrderStatus   {
 enum PaymentStatus { 
   PENDIENTE 
   PAGO_RECIBIDO 
-  PAGADA 
+  PAGADA
+  CREDITO 
   }
 enum PaymentMethod { 
   EFECTIVO 
@@ -148,6 +149,7 @@ enum PaymentMethod {
   ZELLE 
   STRIPE 
   }
+
 enum DeliveryType  { 
   DOMICILIO_CASA 
   DOMICILIO_NEGOCIO 
@@ -253,7 +255,7 @@ model Task {
 enum ExpenditureType { 
   MENSUAL 
   MISCELANEA 
- }
+  }
 
 model Expenditure {
   id          String          @id @default(cuid())
