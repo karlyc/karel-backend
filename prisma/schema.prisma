@@ -30,14 +30,14 @@ model Staff {
 }
 
 enum ClientSource { 
-  WEB 
+  WEB
   IN_STORE 
   INSTAGRAM 
   GOOGLE 
   FACEBOOK 
   REFERRAL 
-  OTHER
-   }
+  OTHER 
+  }
 enum LoyaltyTier  { 
   REGULAR 
   FREQUENT 
@@ -108,10 +108,10 @@ model Product {
   width       Decimal?     @db.Decimal(6,1)
   height      Decimal?     @db.Decimal(6,1)
   visible     Boolean      @default(true)
-  categoryId  String
+  categoryId  String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  category    Category     @relation(fields: [categoryId], references: [id])
+  category    Category?    @relation(fields: [categoryId], references: [id])
   orderItems  OrderItem[]
   recipe      RecipeItem[]
 }
@@ -135,8 +135,7 @@ enum OrderStatus   {
 enum PaymentStatus { 
   PENDIENTE 
   PAGO_RECIBIDO 
-  PAGADA
-  CREDITO 
+  PAGADA 
   }
 enum PaymentMethod { 
   EFECTIVO 
@@ -155,6 +154,7 @@ enum DeliveryType  {
   DOMICILIO_NEGOCIO 
   RECOGER_TIENDA 
   }
+
 enum Occasion      { 
   CUMPLEANOS 
   ANIVERSARIO 

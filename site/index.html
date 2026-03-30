@@ -1045,7 +1045,7 @@ function productCard(p, opts = {}) {
 function renderHomeProducts() {
   const grid = document.getElementById('home-products');
   if (!grid) return;
-  const popular = allProducts.slice(0, 6);
+  const popular = allProducts.slice(0, 4);
   grid.innerHTML = popular.length ? popular.map(p => productCard(p)).join('') : '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">Sin productos disponibles</div>';
 }
 

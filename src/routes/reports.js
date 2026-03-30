@@ -131,7 +131,7 @@ router.get('/range', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // GET /api/reports/pending-payments
-router.get('/pending-payments', requireAuth, requireAdmin, async (req, res) => {
+router.get('/pending-payments', requireAuth, async (req, res) => {
   try {
     const pending = await prisma.order.findMany({
       where: { paymentStatus: 'PENDIENTE', orderStatus: { not: 'CANCELADA' } },
