@@ -1033,7 +1033,7 @@ function renderCategoryCards() {
   const grid = document.getElementById('cat-cards-grid');
   if (!grid || !allCategories.length) return;
   grid.innerHTML = allCategories.map((c, i) =>
-    '<div class="occ-card rv' + (i > 0 ? ' d' + Math.min(i,3) : '') + '" onclick="showPage(&quot;catalog&quot;);setTimeout(function(){filterCatalog(&quot;' + c.id + '&quot;)},150)" style="padding:0;overflow:hidden;cursor:pointer;border-radius:14px;">' +
+    '<div class="occ-card" onclick="showPage(&quot;catalog&quot;);setTimeout(function(){filterCatalog(&quot;' + c.id + '&quot;)},150)" style="padding:0;overflow:hidden;cursor:pointer;border-radius:14px;">' +
     (c.photoUrl
       ? '<div style="height:140px;overflow:hidden;border-radius:12px 12px 0 0;"><img src="' + photoSrc(c.photoUrl) + '" alt="' + escHtml(c.name) + '" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>'
       : '<div style="height:100px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">🌸</div>') +
@@ -1041,6 +1041,8 @@ function renderCategoryCards() {
     (c.description ? '<div style="font-size:.72rem;color:var(--muted);margin-top:4px;line-height:1.5;">' + escHtml(c.description) + '</div>' : '') +
     '</div></div>'
   ).join('');
+  // Trigger reveal animation for new cards
+  grid.querySelectorAll('.occ-card').forEach(el => el.style.opacity = '1');
 }
 
 // ═══════════════════════════════════════════
