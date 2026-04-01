@@ -38,6 +38,7 @@ enum ClientSource {
   REFERRAL 
   OTHER 
   }
+
 enum LoyaltyTier  { 
   REGULAR 
   FREQUENT 
@@ -259,7 +260,7 @@ model Task {
 enum ExpenditureType { 
   MENSUAL 
   MISCELANEA 
-}
+ }
 
 model Expenditure {
   id          String          @id @default(cuid())

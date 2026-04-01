@@ -19,15 +19,17 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.post('/', requireAuth, upload.single('photo'), async (req, res) => {
   try {
-    const { name, unit, quantity, minStock, cost, supplier, notes } = req.body;
+    const { name, unit, quantity, minStock, cost, unitsPerPurchase, category, supplier, notes } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'El nombre es requerido' });
     const photoUrl = await handlePhoto(req.file);
     const item = await prisma.inventoryItem.create({
       data: {
         name: name.trim(), unit: unit || 'pza',
+        category: category || null,
         quantity: parseFloat(quantity) || 0,
         minStock: parseFloat(minStock) || 0,
         cost: cost ? parseFloat(cost) : null,
+        unitsPerPurchase: unitsPerPurchase ? parseFloat(unitsPerPurchase) : null,
         supplier: supplier || null,
         notes: notes || null,
         photoUrl: photoUrl || null,
@@ -39,18 +41,19 @@ router.post('/', requireAuth, upload.single('photo'), async (req, res) => {
 
 router.put('/:id', requireAuth, upload.single('photo'), async (req, res) => {
   try {
-    const { name, unit, quantity, minStock, cost, supplier, notes } = req.body;
+    const { name, unit, quantity, minStock, cost, unitsPerPurchase, category, supplier, notes } = req.body;
     const data = {
       name: name?.trim(), unit,
+      category: category || null,
       quantity: quantity !== undefined ? parseFloat(quantity) : undefined,
       minStock: minStock !== undefined ? parseFloat(minStock) : undefined,
       cost: cost ? parseFloat(cost) : null,
+      unitsPerPurchase: unitsPerPurchase ? parseFloat(unitsPerPurchase) : null,
       supplier: supplier || null,
       notes: notes || null,
     };
     const photoUrl = await handlePhoto(req.file);
     if (photoUrl) data.photoUrl = photoUrl;
-    // Remove undefined keys
     Object.keys(data).forEach(k => data[k] === undefined && delete data[k]);
     const item = await prisma.inventoryItem.update({ where: { id: req.params.id }, data });
     res.json(item);
