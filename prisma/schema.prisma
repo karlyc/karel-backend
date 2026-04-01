@@ -30,7 +30,7 @@ model Staff {
 }
 
 enum ClientSource { 
-  WEB
+  WEB 
   IN_STORE 
   INSTAGRAM 
   GOOGLE 
@@ -70,18 +70,20 @@ model Client {
 }
 
 model InventoryItem {
-  id          String       @id @default(cuid())
-  name        String
-  unit        String       @default("pza")
-  quantity    Decimal      @default(0) @db.Decimal(10,3)
-  minStock    Decimal      @default(0) @db.Decimal(10,3)
-  cost        Decimal?     @db.Decimal(10,2)
-  supplier    String?
-  notes       String?
-  photoUrl    String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  recipeItems RecipeItem[]
+  id               String       @id @default(cuid())
+  name             String
+  category         String?
+  unit             String       @default("pza")
+  quantity         Decimal      @default(0) @db.Decimal(10,3)
+  minStock         Decimal      @default(0) @db.Decimal(10,3)
+  cost             Decimal?     @db.Decimal(10,2)
+  unitsPerPurchase Decimal?     @db.Decimal(10,3)
+  supplier         String?
+  notes            String?
+  photoUrl         String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  recipeItems      RecipeItem[]
 }
 
 model Category {
@@ -132,11 +134,13 @@ enum OrderStatus   {
   COMPLETADA 
   CANCELADA 
   }
+
 enum PaymentStatus { 
   PENDIENTE 
   PAGO_RECIBIDO 
   PAGADA 
   }
+
 enum PaymentMethod { 
   EFECTIVO 
   TRANSFERENCIA 
@@ -255,7 +259,7 @@ model Task {
 enum ExpenditureType { 
   MENSUAL 
   MISCELANEA 
-  }
+}
 
 model Expenditure {
   id          String          @id @default(cuid())

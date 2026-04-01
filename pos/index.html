@@ -622,7 +622,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     </div>
     <div class="fr">
       <div class="fg"><label class="fl">Categoría</label><select class="fs" id="p-cat"></select></div>
-      <div class="fg"><label class="fl">Precio *</label><input class="fi" id="p-price" type="number" placeholder="$0.00"/></div>
+      <div class="fg"><label class="fl">Precio *</label><input class="fi" id="p-price" type="number" placeholder="$0.00" oninput="updateCostSummary()"/></div>
     </div>
     <div class="fr">
       <div class="fg"><label class="fl">Ancho (cm)</label><input class="fi" id="p-width" type="number" placeholder="Opcional"/></div>
@@ -651,6 +651,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
         <input class="fi" id="recipe-qty" type="number" placeholder="Cant." style="width:70px;" value="1" min="0.01" step="0.01"/>
         <button class="btn bg bsm" onclick="addRecipeItem()">Agregar</button>
       </div>
+      <div id="recipe-cost-summary" class="admin-only-field" style="display:none;background:var(--ink3);border-radius:var(--r8);padding:10px 14px;margin-top:10px;border:1px solid var(--rule2);"></div>
       <div style="font-size:10px;color:var(--dim);margin-top:5px;">Los ingredientes se descontarán del inventario al crear un pedido con este producto.</div>
     </div>
     <div class="tw" style="margin-top:4px;"><div class="tog on" id="p-visible" onclick="this.classList.toggle('on')"><div class="tk"></div></div><span class="tl">Visible en página web</span></div>
@@ -703,20 +704,45 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     </div>
     <div class="fr">
       <div class="fg"><label class="fl">Nombre *</label><input class="fi" id="inv-name" placeholder="Ej: Base de florero grande"/></div>
-      <div class="fg"><label class="fl">Unidad</label>
-        <select class="fs" id="inv-unit">
-          <option value="pza">pza (pieza)</option><option value="rollo">rollo</option><option value="caja">caja</option>
-          <option value="metro">metro</option><option value="litro">litro</option><option value="bolsa">bolsa</option><option value="kg">kg</option>
+      <div class="fg"><label class="fl">Categoría</label>
+        <select class="fs" id="inv-category">
+          <option value="flores">🌸 Flores</option>
+          <option value="bases">🏺 Bases</option>
+          <option value="papel_coreano">🎀 Papel Coreano</option>
+          <option value="elaboracion">✂️ Elaboración</option>
+          <option value="botella_vino">🍷 Botella de Vino</option>
+          <option value="peluches">🧸 Peluches</option>
+          <option value="otro">📦 Otro</option>
         </select>
       </div>
     </div>
     <div class="fr">
+      <div class="fg"><label class="fl">Unidad</label>
+        <select class="fs" id="inv-unit">
+          <option value="pza">pza (pieza)</option>
+          <option value="rollo">rollo</option>
+          <option value="caja">caja</option>
+          <option value="bonche">bonche</option>
+          <option value="bolsa">bolsa</option>
+          <option value="gruesa">gruesa</option>
+        </select>
+      </div>
       <div class="fg"><label class="fl">Cantidad actual</label><input class="fi" id="inv-qty" type="number" value="0" min="0" step="0.01"/></div>
+    </div>
+    <div class="fr">
       <div class="fg"><label class="fl">Stock mínimo (alerta)</label><input class="fi" id="inv-min" type="number" value="0" min="0" step="0.01"/></div>
     </div>
-    <div class="admin-only-field fr">
-      <div class="fg"><label class="fl">Costo por unidad</label><input class="fi" id="inv-cost" type="number" placeholder="Opcional"/></div>
-      <div class="fg"><label class="fl">Proveedor</label><input class="fi" id="inv-supplier" placeholder="Opcional"/></div>
+    <div class="admin-only-field">
+      <div class="fr">
+        <div class="fg"><label class="fl">Costo total</label><input class="fi" id="inv-cost" type="number" placeholder="0.00" step="0.01" oninput="calcCostPerUnit()"/></div>
+        <div class="fg"><label class="fl">Unidades por compra</label><input class="fi" id="inv-units-per" type="number" placeholder="Ej: 25" step="0.01" oninput="calcCostPerUnit()"/></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Costo por unidad</label>
+          <input class="fi" id="inv-cost-per-unit" type="number" placeholder="Se calcula automático" step="0.01" readonly style="background:var(--ink3);color:var(--sage);font-weight:700;"/>
+        </div>
+        <div class="fg"><label class="fl">Proveedor</label><input class="fi" id="inv-supplier" placeholder="Opcional"/></div>
+      </div>
     </div>
     <div class="fg"><label class="fl">Notas</label><input class="fi" id="inv-notes" placeholder="Opcional"/></div>
   </div>
@@ -1486,17 +1512,29 @@ async function openProductModal(product=null) {
   try {
     if (!cachedInventory.length) cachedInventory = await api('GET','/api/inventory');
     document.getElementById('recipe-inv-sel').innerHTML = '<option value="">Seleccionar ingrediente…</option>' +
-      cachedInventory.map(i=>`<option value="${i.id}" data-name="${i.name}" data-unit="${i.unit}">${i.name} (${i.unit})</option>`).join('');
+      cachedInventory.map(i => {
+        const costPerUnit = i.cost && i.unitsPerPurchase
+          ? (Number(i.cost) / Number(i.unitsPerPurchase)).toFixed(4)
+          : (i.cost ? Number(i.cost).toFixed(4) : 0);
+        return `<option value="${i.id}" data-name="${i.name}" data-unit="${i.unit}" data-cost="${costPerUnit}">${i.name} (${i.unit})${Number(costPerUnit)>0?' — $'+fmt(costPerUnit)+'/'+i.unit:''}</option>`;
+      }).join('');
   } catch(e) {}
   // Load existing recipe if editing
   if (product?.recipe) {
-    recipeItems = product.recipe.map(r=>({
-      inventoryItemId: r.inventoryItemId,
-      name: r.inventoryItem?.name||'',
-      unit: r.inventoryItem?.unit||'',
-      quantity: Number(r.quantity),
-      notes: r.notes||''
-    }));
+    recipeItems = product.recipe.map(r=>{
+      const inv = cachedInventory.find(i => i.id === r.inventoryItemId);
+      const costPerUnit = inv?.cost && inv?.unitsPerPurchase
+        ? Number(inv.cost) / Number(inv.unitsPerPurchase)
+        : (inv?.cost ? Number(inv.cost) : 0);
+      return {
+        inventoryItemId: r.inventoryItemId,
+        name: r.inventoryItem?.name||'',
+        unit: r.inventoryItem?.unit||'',
+        quantity: Number(r.quantity),
+        costPerUnit,
+        notes: r.notes||''
+      };
+    });
   }
   renderRecipeItems();
   om('m-product');
@@ -1508,20 +1546,62 @@ function addRecipeItem() {
   if (!sel.value) { toastErr('Selecciona un ingrediente'); return; }
   const opt = sel.options[sel.selectedIndex];
   if (recipeItems.find(r=>r.inventoryItemId===sel.value)) { toastErr('Ingrediente ya agregado'); return; }
-  recipeItems.push({ inventoryItemId:sel.value, name:opt.dataset.name, unit:opt.dataset.unit, quantity:qty });
+  recipeItems.push({
+    inventoryItemId: sel.value,
+    name: opt.dataset.name,
+    unit: opt.dataset.unit,
+    quantity: qty,
+    costPerUnit: parseFloat(opt.dataset.cost) || 0
+  });
   sel.value=''; document.getElementById('recipe-qty').value='1';
   renderRecipeItems();
 }
 
 function renderRecipeItems() {
-  document.getElementById('recipe-items').innerHTML = recipeItems.length === 0
-    ? '<div style="font-size:11px;color:var(--dim);padding:6px 0;">Sin ingredientes</div>'
-    : recipeItems.map((r,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--rule);">
+  const isAdmin = currentStaff?.role === 'ADMIN';
+  if (recipeItems.length === 0) {
+    document.getElementById('recipe-items').innerHTML =
+      '<div style="font-size:11px;color:var(--dim);padding:6px 0;">Sin ingredientes</div>';
+    if (isAdmin) updateCostSummary();
+    return;
+  }
+  document.getElementById('recipe-items').innerHTML =
+    recipeItems.map((r,i) => {
+      const lineCost = r.costPerUnit * r.quantity;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--rule);">
         <span style="flex:1;font-size:12px;">${r.name}</span>
-        <input class="fi" type="number" value="${r.quantity}" min="0.01" step="0.01" style="width:60px;padding:3px 6px;font-size:11px;" onchange="recipeItems[${i}].quantity=parseFloat(this.value)||1"/>
-        <span style="font-size:10px;color:var(--dim);width:30px;">${r.unit}</span>
+        <input class="fi" type="number" value="${r.quantity}" min="0.01" step="0.01" style="width:60px;padding:3px 6px;font-size:11px;"
+          onchange="recipeItems[${i}].quantity=parseFloat(this.value)||1;renderRecipeItems()"/>
+        <span style="font-size:10px;color:var(--dim);width:28px;">${r.unit}</span>
+        ${isAdmin && r.costPerUnit > 0
+          ? `<span style="font-size:10px;color:var(--sage);width:52px;text-align:right;">$${fmt(lineCost)}</span>`
+          : ''}
         <button class="btn bg bsm" style="color:var(--red);" onclick="recipeItems.splice(${i},1);renderRecipeItems()">✕</button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
+  if (isAdmin) updateCostSummary();
+}
+
+function updateCostSummary() {
+  const el = document.getElementById('recipe-cost-summary');
+  if (!el) return;
+  const total = recipeItems.reduce((s, r) => s + (r.costPerUnit * r.quantity), 0);
+  if (total === 0) { el.style.display = 'none'; return; }
+  const price = parseFloat(document.getElementById('p-price').value) || 0;
+  const margin = price > 0 ? ((price - total) / price * 100).toFixed(1) : null;
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-size:10px;color:var(--dim);margin-bottom:2px;">COSTO DE PRODUCCIÓN</div>
+        <div style="font-size:18px;font-weight:800;color:var(--rose);">$${fmt(total)}</div>
+      </div>
+      ${price > 0 ? `<div style="text-align:right;">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:2px;">MARGEN</div>
+        <div style="font-size:18px;font-weight:800;color:${margin>0?'var(--sage)':'var(--red)'};">${margin}%</div>
+        <div style="font-size:10px;color:var(--dim);">Ganancia: $${fmt(price - total)}</div>
+      </div>` : ''}
+    </div>`;
 }
 
 async function saveProduct() {
@@ -1731,6 +1811,16 @@ async function vInv() {
   document.getElementById('vc').innerHTML = `
 <div style="display:flex;gap:9px;margin-bottom:12px;flex-wrap:wrap;">
   <div class="sb2" style="flex:1;"><span style="color:var(--dim);">⌕</span><input placeholder="Buscar artículo…" oninput="filterInv(this.value)"/></div>
+  <select class="fs" id="inv-cat-filter" onchange="filterInv(document.querySelector('.sb2 input').value)" style="border-radius:var(--r8);padding:7px 10px;font-size:12px;">
+    <option value="">Todas las categorías</option>
+    <option value="flores">🌸 Flores</option>
+    <option value="bases">🏺 Bases</option>
+    <option value="papel_coreano">🎀 Papel Coreano</option>
+    <option value="elaboracion">✂️ Elaboración</option>
+    <option value="botella_vino">🍷 Botella de Vino</option>
+    <option value="peluches">🧸 Peluches</option>
+    <option value="otro">📦 Otro</option>
+  </select>
   <button class="btn bp" onclick="openInvModal()">＋ Agregar Artículo</button>
 </div>
 <div class="card" id="inv-table">
@@ -1741,19 +1831,25 @@ ${renderInvTable(items)}
 function renderInvTable(items) {
   const isAdmin = currentStaff?.role === 'ADMIN';
   if (items.length===0) return '<div class="empty-state">Sin artículos en inventario</div>';
+  const catLabel = {flores:'🌸 Flores',bases:'🏺 Bases',papel_coreano:'🎀 Papel Coreano',elaboracion:'✂️ Elaboración',botella_vino:'🍷 Vino',peluches:'🧸 Peluches',otro:'📦 Otro'};
   return `<table class="tbl"><thead><tr>
-    <th>Artículo</th><th>Cantidad</th><th>Mín.</th><th>Unidad</th>
-    ${isAdmin ? '<th>Costo</th><th>Proveedor</th>' : ''}
-    <th>Estado</th><th>Acciones</th></tr></thead><tbody>
+    <th>Artículo</th><th>Categoría</th><th>Cantidad</th><th>Mín.</th><th>Unidad</th>
+    ${isAdmin ? '<th>Costo</th><th>Uds/compra</th><th>Costo/ud</th><th>Proveedor</th>' : ''}
+    <th>Estado</th><th></th></tr></thead><tbody>
   ${items.map(i=>{const low=Number(i.quantity)<=Number(i.minStock);return`<tr>
     <td>
       ${i.photoUrl?`<img src="${photoSrc(i.photoUrl)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;"/>`:''}
       <strong>${i.name}</strong>${i.notes?`<div style="font-size:10px;color:var(--dim);">${i.notes}</div>`:''}
     </td>
+    <td style="font-size:11px;color:var(--mid);">${catLabel[i.category]||i.category||'—'}</td>
     <td class="${low?'inv-low':''}" style="font-weight:700;">${Number(i.quantity).toFixed(2)}</td>
     <td style="color:var(--dim);">${Number(i.minStock).toFixed(2)}</td>
     <td>${i.unit}</td>
-    ${isAdmin ? `<td style="color:var(--mid);">${i.cost?'$'+fmt(i.cost):'—'}</td><td style="color:var(--mid);font-size:11px;">${i.supplier||'—'}</td>` : ''}
+    ${isAdmin ? `
+    <td style="color:var(--mid);">${i.cost?'$'+fmt(i.cost):'—'}</td>
+    <td style="color:var(--mid);">${i.unitsPerPurchase||'—'}</td>
+    <td style="color:var(--sage);font-weight:700;">${i.cost&&i.unitsPerPurchase?'$'+fmt(Number(i.cost)/Number(i.unitsPerPurchase)):'—'}</td>
+    <td style="color:var(--mid);font-size:11px;">${i.supplier||'—'}</td>` : ''}
     <td>${low?`<span class="badge br2">⚠ Bajo</span>`:`<span class="badge bg2">OK</span>`}</td>
     <td><div style="display:flex;gap:4px;">
       <button class="btn bg bsm" onclick="adjustStock('${i.id}','${i.name}')">± Stock</button>
@@ -1764,8 +1860,11 @@ function renderInvTable(items) {
 }
 
 function filterInv(q) {
-  const el=document.getElementById('inv-table'); if(!el) return;
-  const f = q ? cachedInventory.filter(i=>i.name.toLowerCase().includes(q.toLowerCase())) : cachedInventory;
+  const el = document.getElementById('inv-table'); if (!el) return;
+  const cat = document.getElementById('inv-cat-filter')?.value || '';
+  let f = cachedInventory;
+  if (q) f = f.filter(i => i.name.toLowerCase().includes(q.toLowerCase()));
+  if (cat) f = f.filter(i => i.category === cat);
   el.innerHTML = renderInvTable(f);
 }
 
@@ -1773,10 +1872,13 @@ function openInvModal(item=null) {
   document.getElementById('m-inv-title').textContent = item ? 'Editar Artículo' : 'Agregar Artículo';
   document.getElementById('inv-id').value = item?.id||'';
   document.getElementById('inv-name').value = item?.name||'';
+  document.getElementById('inv-category').value = item?.category||'flores';
   document.getElementById('inv-unit').value = item?.unit||'pza';
   document.getElementById('inv-qty').value = item?.quantity||0;
   document.getElementById('inv-min').value = item?.minStock||0;
   document.getElementById('inv-cost').value = item?.cost||'';
+  document.getElementById('inv-units-per').value = item?.unitsPerPurchase||'';
+  document.getElementById('inv-cost-per-unit').value = item?.cost && item?.unitsPerPurchase ? (Number(item.cost)/Number(item.unitsPerPurchase)).toFixed(2) : '';
   document.getElementById('inv-supplier').value = item?.supplier||'';
   document.getElementById('inv-notes').value = item?.notes||'';
   // Reset photo
@@ -1798,6 +1900,13 @@ function openInvModal(item=null) {
   om('m-inv');
 }
 
+function calcCostPerUnit() {
+  const cost  = parseFloat(document.getElementById('inv-cost').value) || 0;
+  const units = parseFloat(document.getElementById('inv-units-per').value) || 0;
+  const field = document.getElementById('inv-cost-per-unit');
+  field.value = cost > 0 && units > 0 ? (cost / units).toFixed(2) : '';
+}
+
 async function saveInventoryItem() {
   const id = document.getElementById('inv-id').value;
   const name = document.getElementById('inv-name').value.trim();
@@ -1805,11 +1914,13 @@ async function saveInventoryItem() {
 
   const fd = new FormData();
   fd.append('name', name);
+  fd.append('category', document.getElementById('inv-category').value||'otro');
   fd.append('unit', document.getElementById('inv-unit').value);
   fd.append('quantity', document.getElementById('inv-qty').value||0);
   fd.append('minStock', document.getElementById('inv-min').value||0);
   if (currentStaff?.role === 'ADMIN') {
     fd.append('cost', document.getElementById('inv-cost').value||'');
+    fd.append('unitsPerPurchase', document.getElementById('inv-units-per').value||'');
     fd.append('supplier', document.getElementById('inv-supplier').value||'');
   }
   fd.append('notes', document.getElementById('inv-notes').value||'');
@@ -1838,7 +1949,7 @@ async function adjustStock(id, name) {
 // ════════════════════════════════════════════
 let atab='pagos';
 async function vAdmin() {
-  const tabs=[['pagos','💰 Pagos'],['diario','📊 Diario'],['mensual','📅 Mensual'],['rango','🗓 Rango'],['gastos','💸 Gastos'],['staff','👥 Staff'],['pin','🔑 PIN']];
+  const tabs=[['pagos','💰 Pagos'],['diario','📊 Diario'],['mensual','📅 Mensual'],['rango','🗓 Rango'],['gastos','💸 Gastos'],['productos','📦 Productos'],['staff','👥 Staff'],['pin','🔑 PIN']];
   document.getElementById('vc').innerHTML = `
 <div style="display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap;">
   ${tabs.map(([k,l])=>`<button id="atb-${k}" class="btn ${atab===k?'bp':'bg'} bsm" onclick="aTab('${k}')">${l}</button>`).join('')}
@@ -1919,6 +2030,76 @@ async function aRender(t) {
         ${exp.items.map(e=>`<tr><td style="color:var(--mid);">${new Date(e.date).toLocaleDateString('es')}</td><td><span class="badge ${e.type==='MENSUAL'?'bb':'ba2'}">${e.type==='MENSUAL'?'Fijo':'Misc.'}</span></td><td>${e.category}</td><td>${e.description}</td><td style="color:var(--red);font-weight:700;">$${fmt(e.amount)}</td><td><button class="btn bg bsm" style="color:var(--red);" onclick="deleteGasto('${e.id}')">✕</button></td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--dim);">Sin gastos este mes</td></tr>'}
         </tbody></table>
       </div>`;
+    }
+    else if (t==='productos') {
+      const [prods, inv] = await Promise.all([
+        api('GET','/api/products'),
+        api('GET','/api/inventory'),
+      ]);
+      // Build cost-per-unit map from inventory
+      const invMap = {};
+      inv.forEach(i => {
+        invMap[i.id] = i.cost && i.unitsPerPurchase
+          ? Number(i.cost) / Number(i.unitsPerPurchase)
+          : (i.cost ? Number(i.cost) : 0);
+      });
+      // Calculate cost for each product from its recipe
+      const rows = prods.map(p => {
+        const cost = (p.recipe||[]).reduce((s,r) => s + (invMap[r.inventoryItemId]||0) * Number(r.quantity), 0);
+        const price = Number(p.price||p.priceStd||0);
+        const margin = price > 0 ? ((price - cost) / price * 100) : null;
+        const profit = price - cost;
+        return { p, cost, price, margin, profit };
+      });
+      // Summary stats
+      const withCost = rows.filter(r => r.cost > 0);
+      const avgMargin = withCost.length ? withCost.reduce((s,r) => s + r.margin, 0) / withCost.length : 0;
+      const totalProfit = withCost.reduce((s,r) => s + r.profit, 0);
+
+      el.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div class="sc"><div class="sv">${prods.length}</div><div class="sl">Total productos</div></div>
+          <div class="sc"><div class="sv" style="color:var(--sage);">${avgMargin.toFixed(1)}%</div><div class="sl">Margen promedio</div></div>
+          <div class="sc"><div class="sv" style="color:var(--sage);">$${fmt(totalProfit)}</div><div class="sl">Ganancia estimada/ud</div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct">Desglose de Costos y Márgenes</span></div>
+          <table class="tbl"><thead><tr>
+            <th>Producto</th><th>Precio venta</th><th>Costo producción</th><th>Ganancia</th><th>Margen</th><th>Ingredientes</th>
+          </tr></thead><tbody>
+          ${rows.map(({p, cost, price, margin, profit}) => {
+            const hasRecipe = p.recipe?.length > 0;
+            const marginColor = margin === null ? 'var(--dim)' : margin >= 50 ? 'var(--sage)' : margin >= 25 ? 'var(--amber)' : 'var(--red)';
+            return `<tr>
+              <td>
+                ${p.photo1Url ? `<img src="${photoSrc(p.photo1Url)}" style="width:28px;height:28px;border-radius:5px;object-fit:cover;margin-right:6px;vertical-align:middle;"/>` : ''}
+                <strong>${p.name}</strong>
+                <div style="font-size:10px;color:var(--dim);">${p.code}</div>
+              </td>
+              <td style="font-weight:700;color:var(--sage);">$${fmt(price)}</td>
+              <td style="color:var(--rose);">${cost > 0 ? '$'+fmt(cost) : '<span style="color:var(--dim);">Sin receta</span>'}</td>
+              <td style="font-weight:700;color:${profit>=0?'var(--sage)':'var(--red)'};">${cost > 0 ? '$'+fmt(profit) : '—'}</td>
+              <td>
+                ${margin !== null
+                  ? `<span style="font-weight:800;color:${marginColor};">${margin.toFixed(1)}%</span>
+                     <div style="height:4px;background:var(--rule);border-radius:4px;margin-top:3px;width:80px;">
+                       <div style="height:4px;border-radius:4px;background:${marginColor};width:${Math.min(margin,100).toFixed(0)}%;"></div>
+                     </div>`
+                  : '<span style="color:var(--dim);">—</span>'}
+              </td>
+              <td style="font-size:11px;color:var(--mid);">
+                ${hasRecipe
+                  ? p.recipe.map(r => {
+                      const unitCost = invMap[r.inventoryItemId]||0;
+                      const lineCost = unitCost * Number(r.quantity);
+                      return `<div>${r.inventoryItem?.name||'—'} × ${r.quantity}${unitCost>0?' = $'+fmt(lineCost):''}</div>`;
+                    }).join('')
+                  : '<span style="color:var(--dim);">Sin ingredientes</span>'}
+              </td>
+            </tr>`;
+          }).join('')}
+          </tbody></table>
+        </div>`;
     }
     else if (t==='staff') {
       const staff=await api('GET','/api/staff');
@@ -2424,7 +2605,7 @@ function printOrder() {
 
   const html = [
     '<div class="hdr">',
-      '<div class="logo-area"><img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1774564961/YOUR_LOGO_URL" style="height:70px;width:auto;object-fit:contain;"/><div><div class="brand">FLORERÍA Y REGALOS <em>KAREL</em></div><div class="sub">Ciudad Juárez · Est. 1995</div></div></div>',
+      '<div class="logo-box"><div class="logo-area"><div class="flower">🌹</div><div><div class="brand">FLORERÍA Y REGALOS <em>KAREL</em></div><div class="sub">Ciudad Juárez · Est. 2008</div></div></div></div>',
       '<div class="hdr-info">AV. DE LA RAZA 5262, C.P. 32369, CIUDAD JUÁREZ<br>RFC: <b>GMB081001TH8</b> &nbsp;|&nbsp; WhatsApp: <b>(656) 130-3595</b></div>',
       `<div class="badge">${o.orderNumber}</div>`,
       `<div class="odate">Fecha de orden: ${new Date(o.createdAt).toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>`,
