@@ -1601,22 +1601,38 @@ function renderRecipeItems() {
 function updateCostSummary() {
   const el = document.getElementById('recipe-cost-summary');
   if (!el) return;
-  const total = recipeItems.reduce((s, r) => s + (r.costPerUnit * r.quantity), 0);
-  if (total === 0) { el.style.display = 'none'; return; }
+  const baseCost = recipeItems.reduce((s, r) => s + (r.costPerUnit * r.quantity), 0);
+  if (baseCost === 0) { el.style.display = 'none'; return; }
+  const TAX_RATE = 0.08;
+  const tax = baseCost * TAX_RATE;
+  const totalCost = baseCost + tax;
   const price = parseFloat(document.getElementById('p-price').value) || 0;
-  const margin = price > 0 ? ((price - total) / price * 100).toFixed(1) : null;
+  const margin = price > 0 ? ((price - totalCost) / price * 100).toFixed(1) : null;
+  const profit = price - totalCost;
+  const marginColor = margin === null ? 'var(--dim)' : margin >= 50 ? 'var(--sage)' : margin >= 25 ? 'var(--amber)' : 'var(--red)';
   el.style.display = 'block';
   el.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-      <div>
-        <div style="font-size:10px;color:var(--dim);margin-bottom:2px;">COSTO DE PRODUCCIÓN</div>
-        <div style="font-size:18px;font-weight:800;color:var(--rose);">$${fmt(total)}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim);">
+        <span>Costo ingredientes</span><span>$${fmt(baseCost)}</span>
       </div>
-      ${price > 0 ? `<div style="text-align:right;">
-        <div style="font-size:10px;color:var(--dim);margin-bottom:2px;">MARGEN</div>
-        <div style="font-size:18px;font-weight:800;color:${margin>0?'var(--sage)':'var(--red)'};">${margin}%</div>
-        <div style="font-size:10px;color:var(--dim);">Ganancia: $${fmt(price - total)}</div>
-      </div>` : ''}
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim);">
+        <span>IVA (8%)</span><span>$${fmt(tax)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:var(--rose);border-top:1px solid var(--rule);padding-top:6px;">
+        <span>Costo total</span><span>$${fmt(totalCost)}</span>
+      </div>
+      ${price > 0 ? `
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--ink2);border-radius:var(--r8);padding:8px 10px;margin-top:2px;">
+        <div>
+          <div style="font-size:10px;color:var(--dim);margin-bottom:1px;">GANANCIA</div>
+          <div style="font-size:16px;font-weight:800;color:${profit>=0?'var(--sage)':'var(--red)'};">$${fmt(profit)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--dim);margin-bottom:1px;">MARGEN</div>
+          <div style="font-size:16px;font-weight:800;color:${marginColor};">${margin}%</div>
+        </div>
+      </div>` : '<div style="font-size:10px;color:var(--dim);">Ingresa el precio de venta para ver el margen</div>'}
     </div>`;
 }
 
@@ -2048,10 +2064,13 @@ async function aRender(t) {
       </div>`;
     }
     else if (t==='productos') {
-      const [prods, inv] = await Promise.all([
+      const now = new Date();
+      const [prods, inv, exp] = await Promise.all([
         api('GET','/api/products'),
         api('GET','/api/inventory'),
+        api('GET',`/api/expenditures?month=${now.getMonth()+1}&year=${now.getFullYear()}`),
       ]);
+
       // Build cost-per-unit map from inventory
       const invMap = {};
       inv.forEach(i => {
@@ -2059,31 +2078,43 @@ async function aRender(t) {
           ? Number(i.cost) / Number(i.unitsPerPurchase)
           : (i.cost ? Number(i.cost) : 0);
       });
-      // Calculate cost for each product from its recipe
-      const rows = prods.map(p => {
-        const cost = (p.recipe||[]).reduce((s,r) => s + (invMap[r.inventoryItemId]||0) * Number(r.quantity), 0);
-        const price = Number(p.price||p.priceStd||0);
-        const margin = price > 0 ? ((price - cost) / price * 100) : null;
-        const profit = price - cost;
-        return { p, cost, price, margin, profit };
-      });
-      // Summary stats
-      const withCost = rows.filter(r => r.cost > 0);
-      const avgMargin = withCost.length ? withCost.reduce((s,r) => s + r.margin, 0) / withCost.length : 0;
-      const totalProfit = withCost.reduce((s,r) => s + r.profit, 0);
 
-      el.innerHTML = `
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+      const TAX = 0.08;
+      const totalGastos = exp.items.reduce((s,e) => s + Number(e.amount), 0);
+
+      // Load saved avg orders from localStorage
+      const savedOrders = parseInt(localStorage.getItem('karel_avg_orders') || '0');
+
+      function calcRows(avgOrders) {
+        const fixedPerOrder = avgOrders > 0 ? totalGastos / avgOrders : 0;
+        return prods.map(p => {
+          const baseCost = (p.recipe||[]).reduce((s,r) => s + (invMap[r.inventoryItemId]||0) * Number(r.quantity), 0);
+          const ingredientCost = baseCost * (1 + TAX);
+          const totalCost = ingredientCost + fixedPerOrder;
+          const price = Number(p.price||p.priceStd||0);
+          const margin = price > 0 ? ((price - totalCost) / price * 100) : null;
+          const profit = price - totalCost;
+          return { p, baseCost, ingredientCost, fixedPerOrder, totalCost, price, margin, profit };
+        });
+      }
+
+      function renderTable(avgOrders) {
+        const rows = calcRows(avgOrders);
+        const withCost = rows.filter(r => r.totalCost > 0);
+        const avgMargin = withCost.length ? withCost.reduce((s,r) => s + r.margin, 0) / withCost.length : 0;
+        const fixedPerOrder = avgOrders > 0 ? totalGastos / avgOrders : 0;
+
+        document.getElementById('prod-summary-cards').innerHTML = `
           <div class="sc"><div class="sv">${prods.length}</div><div class="sl">Total productos</div></div>
-          <div class="sc"><div class="sv" style="color:var(--sage);">${avgMargin.toFixed(1)}%</div><div class="sl">Margen promedio</div></div>
-          <div class="sc"><div class="sv" style="color:var(--sage);">$${fmt(totalProfit)}</div><div class="sl">Ganancia estimada/ud</div></div>
-        </div>
-        <div class="card">
-          <div class="ch"><span class="ct">Desglose de Costos y Márgenes</span></div>
+          <div class="sc"><div class="sv" style="color:var(--red);">$${fmt(totalGastos)}</div><div class="sl">Gastos fijos del mes</div></div>
+          <div class="sc"><div class="sv" style="color:var(--amber);">$${fmt(fixedPerOrder)}</div><div class="sl">Costo fijo por orden</div></div>
+          <div class="sc"><div class="sv" style="color:${avgMargin>=30?'var(--sage)':'var(--red)'};">${avgMargin.toFixed(1)}%</div><div class="sl">Margen real promedio</div></div>`;
+
+        document.getElementById('prod-table-wrap').innerHTML = `
           <table class="tbl"><thead><tr>
-            <th>Producto</th><th>Precio venta</th><th>Costo producción</th><th>Ganancia</th><th>Margen</th><th>Ingredientes</th>
+            <th>Producto</th><th>Precio</th><th>Ingredientes + IVA</th><th>Costo fijo</th><th>Costo total</th><th>Ganancia</th><th>Margen real</th>
           </tr></thead><tbody>
-          ${rows.map(({p, cost, price, margin, profit}) => {
+          ${rows.map(({p, baseCost, ingredientCost, fixedPerOrder, totalCost, price, margin, profit}) => {
             const hasRecipe = p.recipe?.length > 0;
             const marginColor = margin === null ? 'var(--dim)' : margin >= 50 ? 'var(--sage)' : margin >= 25 ? 'var(--amber)' : 'var(--red)';
             return `<tr>
@@ -2093,29 +2124,69 @@ async function aRender(t) {
                 <div style="font-size:10px;color:var(--dim);">${p.code}</div>
               </td>
               <td style="font-weight:700;color:var(--sage);">$${fmt(price)}</td>
-              <td style="color:var(--rose);">${cost > 0 ? '$'+fmt(cost) : '<span style="color:var(--dim);">Sin receta</span>'}</td>
-              <td style="font-weight:700;color:${profit>=0?'var(--sage)':'var(--red)'};">${cost > 0 ? '$'+fmt(profit) : '—'}</td>
+              <td style="color:var(--mid);">${hasRecipe ? `$${fmt(ingredientCost)}<div style="font-size:9px;color:var(--dim);">base $${fmt(baseCost)} + IVA $${fmt(ingredientCost-baseCost)}</div>` : '<span style="color:var(--dim);">Sin receta</span>'}</td>
+              <td style="color:var(--mid);">${fixedPerOrder > 0 ? '$'+fmt(fixedPerOrder) : '—'}</td>
+              <td style="color:var(--rose);font-weight:700;">${totalCost > 0 ? '$'+fmt(totalCost) : '—'}</td>
+              <td style="font-weight:700;color:${profit>=0?'var(--sage)':'var(--red)'};">${totalCost > 0 ? '$'+fmt(profit) : '—'}</td>
               <td>
                 ${margin !== null
                   ? `<span style="font-weight:800;color:${marginColor};">${margin.toFixed(1)}%</span>
-                     <div style="height:4px;background:var(--rule);border-radius:4px;margin-top:3px;width:80px;">
-                       <div style="height:4px;border-radius:4px;background:${marginColor};width:${Math.min(margin,100).toFixed(0)}%;"></div>
+                     <div style="height:4px;background:var(--rule);border-radius:4px;margin-top:3px;width:70px;">
+                       <div style="height:4px;border-radius:4px;background:${marginColor};width:${Math.min(Math.max(margin,0),100).toFixed(0)}%;"></div>
                      </div>`
                   : '<span style="color:var(--dim);">—</span>'}
               </td>
-              <td style="font-size:11px;color:var(--mid);">
-                ${hasRecipe
-                  ? p.recipe.map(r => {
-                      const unitCost = invMap[r.inventoryItemId]||0;
-                      const lineCost = unitCost * Number(r.quantity);
-                      return `<div>${r.inventoryItem?.name||'—'} × ${r.quantity}${unitCost>0?' = $'+fmt(lineCost):''}</div>`;
-                    }).join('')
-                  : '<span style="color:var(--dim);">Sin ingredientes</span>'}
-              </td>
             </tr>`;
           }).join('')}
-          </tbody></table>
+          </tbody></table>`;
+      }
+
+      el.innerHTML = `
+        <!-- Config box -->
+        <div class="card" style="margin-bottom:12px;">
+          <div class="ch"><span class="ct">⚙️ Configuración de costos fijos</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:flex-end;">
+            <div>
+              <div style="font-size:10px;color:var(--dim);margin-bottom:4px;">GASTOS DEL MES (${now.toLocaleDateString('es',{month:'long',year:'numeric'})})</div>
+              <div style="font-size:20px;font-weight:800;color:var(--red);">$${fmt(totalGastos)}</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px;">${exp.items.length} gastos registrados</div>
+            </div>
+            <div class="fg" style="margin:0;">
+              <label class="fl">Órdenes promedio por mes</label>
+              <input class="fi" id="avg-orders-input" type="number" placeholder="Ej: 150" value="${savedOrders||''}" min="1"
+                oninput="localStorage.setItem('karel_avg_orders',this.value);renderTable(parseInt(this.value)||0)"/>
+              <div style="font-size:10px;color:var(--dim);margin-top:3px;">Puedes ver tus órdenes reales en el reporte mensual</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--dim);margin-bottom:4px;">COSTO FIJO POR ORDEN</div>
+              <div style="font-size:20px;font-weight:800;color:var(--amber);" id="fixed-per-order-display">
+                ${savedOrders > 0 ? '$'+fmt(totalGastos/savedOrders) : '—'}
+              </div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px;">= Gastos ÷ Órdenes</div>
+            </div>
+          </div>
+        </div>
+        <!-- Summary cards -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;" id="prod-summary-cards"></div>
+        <!-- Table -->
+        <div class="card" id="prod-table-wrap">
+          <div class="ch"><span class="ct">Desglose de Costos y Márgenes Reales</span></div>
         </div>`;
+
+      // Patch renderTable to also update fixed-per-order-display
+      const _renderTable = renderTable;
+      window._prodRenderTable = function(avgOrders) {
+        const fpd = document.getElementById('fixed-per-order-display');
+        if (fpd) fpd.textContent = avgOrders > 0 && totalGastos > 0 ? '$'+fmt(totalGastos/avgOrders) : '—';
+        _renderTable(avgOrders);
+      };
+      // Make it accessible from oninput
+      el.querySelector('#avg-orders-input').oninput = function() {
+        localStorage.setItem('karel_avg_orders', this.value);
+        window._prodRenderTable(parseInt(this.value)||0);
+      };
+
+      renderTable(savedOrders);
     }
     else if (t==='staff') {
       const staff=await api('GET','/api/staff');
