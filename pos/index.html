@@ -1473,6 +1473,7 @@ function prodCard(p) {
     </div>
     <div style="display:flex;gap:5px;">
       <button class="btn bg bsm" style="flex:1;" onclick="openProductModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">✏️</button>
+      <button class="btn bg bsm" title="Duplicar producto" onclick="duplicateProduct(${JSON.stringify(p).replace(/"/g,'&quot;')})">📋</button>
       <button class="btn bg bsm" style="color:var(--red);" onclick="toast('Usa visibilidad para ocultar')">🗑</button>
     </div>
   </div>
@@ -1538,6 +1539,21 @@ async function openProductModal(product=null) {
   }
   renderRecipeItems();
   om('m-product');
+}
+
+function duplicateProduct(product) {
+  // Clone product but clear id, code, and mark as copy
+  const copy = {
+    ...product,
+    id: null,
+    code: '',
+    name: product.name + ' (copia)',
+    visible: false,
+    photo1Url: null,
+    photo2Url: null,
+  };
+  openProductModal(copy);
+  toast('Duplicado — edita los datos y guarda 📋');
 }
 
 function addRecipeItem() {
