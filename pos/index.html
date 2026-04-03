@@ -1427,12 +1427,61 @@ async function vChat() {
 }
 
 let activeChatSession = null;
+let chatPosInterval = null;
+let chatPosLastTime = new Date().toISOString();
+
 async function loadChat(id, el) {
   activeChatSession = id;
   document.querySelectorAll('.cconv').forEach(c=>c.classList.remove('on')); el?.classList.add('on');
+  // Update header
+  const header = document.querySelector('.cmh');
+  if (header) {
+    const session = document.querySelector(`.cconv.on .ccn`)?.textContent || 'Visitante';
+    header.innerHTML = `<div style="font-size:13px;font-weight:600;">${session}</div>
+      <button class="btn bg bsm" onclick="resolveChat('${id}')" style="color:var(--dim);font-size:11px;">✓ Resolver</button>`;
+  }
   const msgs = await api('GET',`/api/chat/sessions/${id}/messages`);
+  chatPosLastTime = msgs.length ? msgs[msgs.length-1].createdAt : new Date().toISOString();
   const el2 = document.getElementById('cmsgs');
-  if (el2) { el2.innerHTML = msgs.map(m=>`<div><div class="cmsg ${m.fromStaff?'out':'in'}">${m.text}</div><div class="cmt">${new Date(m.createdAt).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</div></div>`).join(''); el2.scrollTop = el2.scrollHeight; }
+  if (el2) {
+    el2.innerHTML = msgs.map(m=>`<div><div class="cmsg ${m.fromStaff?'out':'in'}">${m.text}</div><div class="cmt" style="${m.fromStaff?'text-align:right;':''}">${new Date(m.createdAt).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</div></div>`).join('');
+    el2.scrollTop = el2.scrollHeight;
+  }
+  // Start polling for new messages
+  clearInterval(chatPosInterval);
+  chatPosInterval = setInterval(pollPosChat, 4000);
+}
+
+async function pollPosChat() {
+  if (!activeChatSession) return;
+  try {
+    const msgs = await api('GET',`/api/chat/sessions/${activeChatSession}/messages/since?since=${encodeURIComponent(chatPosLastTime)}`);
+    const newMsgs = msgs.filter(m => !m.fromStaff); // only visitor messages
+    if (!newMsgs.length) return;
+    const el2 = document.getElementById('cmsgs');
+    newMsgs.forEach(m => {
+      chatPosLastTime = m.createdAt;
+      if (el2) {
+        const d = document.createElement('div');
+        d.innerHTML = `<div class="cmsg in">${m.text}</div><div class="cmt">${new Date(m.createdAt).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</div>`;
+        el2.appendChild(d);
+        el2.scrollTop = el2.scrollHeight;
+      }
+    });
+    // Flash the chat nav item
+    const chatNav = document.querySelector('[data-v="chat"] .nb');
+    if (chatNav) { chatNav.style.display='flex'; setTimeout(()=>chatNav.style.display='',3000); }
+  } catch(e) { /* silent */ }
+}
+
+async function resolveChat(id) {
+  try {
+    await api('PATCH',`/api/chat/sessions/${id}/resolve`,{});
+    clearInterval(chatPosInterval);
+    activeChatSession = null;
+    toast('Conversación resuelta ✓');
+    vChat();
+  } catch(e) { toastErr(e.message); }
 }
 
 async function sendChatMsg() {
@@ -1441,6 +1490,7 @@ async function sendChatMsg() {
   try {
     await api('POST',`/api/chat/sessions/${activeChatSession}/messages`,{text,fromStaff:true,staffId:currentStaff?.id});
     const m=document.getElementById('cmsgs'); if(m){const d=document.createElement('div');d.innerHTML=`<div class="cmsg out">${text}</div><div class="cmt" style="text-align:right;">${new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight;}
+    chatPosLastTime = new Date().toISOString();
   } catch(e) { toastErr(e.message); }
 }
 

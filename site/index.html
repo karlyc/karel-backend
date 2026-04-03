@@ -1594,19 +1594,25 @@ async function submitContact() {
 // ═══════════════════════════════════════════
 let chatSessionId = null;
 let chatOpen = false;
+let chatPollInterval = null;
+let chatLastMsgTime = new Date().toISOString();
+let chatAutoReplied = false;
 const visitorId = 'v_' + Math.random().toString(36).slice(2);
 
 function toggleChat() {
   chatOpen = !chatOpen;
   document.getElementById('chat-window').classList.toggle('open', chatOpen);
   if (chatOpen && !chatSessionId) initChatSession();
+  if (chatOpen) startChatPolling();
+  else stopChatPolling();
 }
 
 async function initChatSession() {
   try {
     const s = await apiPost('/api/chat/sessions', { visitorId, visitorName: 'Visitante web' });
     chatSessionId = s.id;
-  } catch(e) { /* silent — chat still works as WhatsApp fallback */ }
+    startChatPolling();
+  } catch(e) { /* silent */ }
 }
 
 async function sendChatMsg() {
@@ -1616,15 +1622,46 @@ async function sendChatMsg() {
   inp.value = '';
   appendChatMsg(text, 'out');
   try {
-    if (chatSessionId) {
-      await apiPost(`/api/chat/sessions`, { visitorId, text });
+    if (!chatSessionId) {
+      // Create session and send in one call
+      const s = await apiPost('/api/chat/sessions', { visitorId, visitorName: 'Visitante web', text });
+      chatSessionId = s.id;
+      chatLastMsgTime = new Date().toISOString();
+      startChatPolling();
+    } else {
+      await apiPost(`/api/chat/sessions/${chatSessionId}/messages`, { text, fromStaff: false });
+      chatLastMsgTime = new Date().toISOString();
     }
-    // Auto-reply
-    setTimeout(() => appendChatMsg('Gracias por tu mensaje 🌸 Un momento, te atendemos enseguida.', 'in'), 900);
+    // Show one-time auto-reply only if staff hasn't replied yet
+    if (!chatAutoReplied) {
+      chatAutoReplied = true;
+      setTimeout(() => appendChatMsg('Gracias por tu mensaje 🌸 Te atendemos en un momento.', 'in'), 900);
+    }
   } catch(e) {
-    // Fallback to WhatsApp
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`, '_blank');
   }
+}
+
+function startChatPolling() {
+  if (chatPollInterval || !chatSessionId) return;
+  chatPollInterval = setInterval(pollChatReplies, 5000); // every 5 seconds
+}
+
+function stopChatPolling() {
+  clearInterval(chatPollInterval);
+  chatPollInterval = null;
+}
+
+async function pollChatReplies() {
+  if (!chatSessionId || !chatOpen) return;
+  try {
+    const msgs = await apiGet(`/api/chat/sessions/${chatSessionId}/messages/since?since=${encodeURIComponent(chatLastMsgTime)}`);
+    const staffMsgs = msgs.filter(m => m.fromStaff);
+    staffMsgs.forEach(m => {
+      appendChatMsg(m.text, 'in');
+      chatLastMsgTime = m.createdAt;
+    });
+  } catch(e) { /* silent */ }
 }
 
 function appendChatMsg(text, dir) {
