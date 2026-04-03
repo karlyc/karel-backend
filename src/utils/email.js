@@ -296,4 +296,58 @@ async function sendDeliveryNotification(order, delivery) {
   }
 }
 
-module.exports = { sendOrderConfirmation, sendDeliveryNotification };
+module.exports = { sendOrderConfirmation, sendDeliveryNotification, sendContactEmail };
+
+async function sendContactEmail({ name, phone, email, subject, message }) {
+  if (!process.env.RESEND_API_KEY) return { skipped: true, reason: 'RESEND_API_KEY not set' };
+  const NOTIFY_EMAIL = process.env.CONTACT_EMAIL || 'facturacionkarel@hotmail.com';
+
+  const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f5f0ee;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f0ee;padding:32px 16px;">
+<tr><td align="center">
+<table width="520" cellpadding="0" cellspacing="0" style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+  <tr><td style="background:linear-gradient(135deg,#C4846A,#e0a080);padding:28px 36px;text-align:center;">
+    <div style="font-size:2rem;margin-bottom:6px;">💬</div>
+    <div style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:white;">Nuevo mensaje de contacto</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.85);margin-top:4px;">Florería y Regalos Karel — Sitio web</div>
+  </td></tr>
+  <tr><td style="padding:28px 36px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+      <tr><td style="padding:8px 0;font-size:13px;color:#888;width:100px;">Nombre</td><td style="padding:8px 0;font-size:13px;font-weight:600;">${name}</td></tr>
+      <tr><td style="padding:8px 0;font-size:13px;color:#888;">Teléfono</td><td style="padding:8px 0;font-size:13px;font-weight:600;">${phone || '—'}</td></tr>
+      <tr><td style="padding:8px 0;font-size:13px;color:#888;">Correo</td><td style="padding:8px 0;font-size:13px;font-weight:600;">${email || '—'}</td></tr>
+      <tr><td style="padding:8px 0;font-size:13px;color:#888;">Asunto</td><td style="padding:8px 0;font-size:13px;font-weight:600;">${subject || '—'}</td></tr>
+    </table>
+    <div style="background:#faf5f3;border-left:3px solid #C4846A;border-radius:0 8px 8px 0;padding:16px 20px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#C4846A;margin-bottom:8px;">Mensaje</div>
+      <div style="font-size:14px;color:#333;line-height:1.7;white-space:pre-wrap;">${message}</div>
+    </div>
+    ${email ? `<div style="margin-top:20px;text-align:center;">
+      <a href="mailto:${email}" style="background:#C4846A;color:white;padding:10px 24px;border-radius:100px;text-decoration:none;font-size:13px;font-weight:700;">Responder a ${name}</a>
+    </div>` : ''}
+  </td></tr>
+  <tr><td style="background:#2e2320;padding:16px 36px;text-align:center;">
+    <div style="font-size:11px;color:rgba(255,255,255,.5);">Florería y Regalos Karel · floreriakarel.com</div>
+  </td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>`;
+
+  try {
+    const result = await getResend().emails.send({
+      from: FROM,
+      to: NOTIFY_EMAIL,
+      replyTo: email || undefined,
+      subject: `📬 Nuevo contacto: ${subject || 'Mensaje del sitio web'} — ${name}`,
+      html,
+    });
+    console.log(`[Email] Contact form sent from ${name} (${email})`);
+    return { sent: true, id: result.data?.id };
+  } catch (err) {
+    console.error('[Email] Contact email failed:', err.message);
+    return { sent: false, error: err.message };
+  }
+}

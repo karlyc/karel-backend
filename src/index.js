@@ -21,6 +21,7 @@ const webhookRoutes = require('./routes/webhooks');
 const inventoryRoutes = require('./routes/inventory');
 const expenditureRoutes = require('./routes/expenditures');
 const reminderRoutes = require('./routes/reminders');
+const contactRoutes  = require('./routes/contact');
 const { setupChat } = require('./utils/socket');
 
 const app = express();
@@ -85,6 +86,7 @@ app.use('/api/chat',         chatRoutes);
 app.use('/api/inventory',    inventoryRoutes);
 app.use('/api/expenditures', expenditureRoutes);
 app.use('/api/reminders',    reminderRoutes);
+app.use('/api/contact',      contactRoutes);
 
 // ── Health check ──
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date() }));

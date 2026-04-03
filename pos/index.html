@@ -621,7 +621,9 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
       <div class="fg"><label class="fl">Código *</label><input class="fi" id="p-code"/></div>
     </div>
     <div class="fr">
-      <div class="fg"><label class="fl">Categoría</label><select class="fs" id="p-cat"></select></div>
+      <div class="fg"><label class="fl">Categorías</label>
+        <div id="p-cat-list" style="display:flex;flex-direction:column;gap:5px;max-height:120px;overflow-y:auto;border:1px solid var(--rule2);border-radius:var(--r8);padding:7px 10px;background:var(--ink3);"></div>
+      </div>
       <div class="fg"><label class="fl">Precio *</label><input class="fi" id="p-price" type="number" placeholder="$0.00" oninput="updateCostSummary()"/></div>
     </div>
     <div class="fr">
@@ -1507,7 +1509,19 @@ async function openProductModal(product=null) {
   // Load categories
   try {
     if (!cachedCategories.length) cachedCategories = await api('GET','/api/categories');
-    document.getElementById('p-cat').innerHTML = cachedCategories.map(c=>`<option value="${c.id}"${product?.categoryId===c.id?' selected':''}>${c.name}</option>`).join('');
+    // Get the categories this product already belongs to
+    const productCatIds = new Set(
+      cachedCategories.filter(c => c.products?.some(p2 => p2.id === product?.id)).map(c => c.id)
+    );
+    // Also include the primary categoryId
+    if (product?.categoryId) productCatIds.add(product.categoryId);
+    document.getElementById('p-cat-list').innerHTML = cachedCategories.length
+      ? cachedCategories.map(c => `
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;">
+          <input type="checkbox" value="${c.id}" ${productCatIds.has(c.id)?'checked':''} style="accent-color:var(--rose);width:14px;height:14px;"/>
+          <span>${c.name}</span>
+        </label>`).join('')
+      : '<div style="font-size:11px;color:var(--dim);">Sin categorías — créalas en la sección Categorías</div>';
   } catch(e) {}
   // Load inventory for recipe selector
   try {
@@ -1646,7 +1660,9 @@ async function saveProduct() {
   const fd = new FormData();
   fd.append('name', name);
   fd.append('code', code);
-  fd.append('categoryId', document.getElementById('p-cat').value);
+  // Use first checked category as primary categoryId
+  const checkedCats = [...document.querySelectorAll('#p-cat-list input[type=checkbox]:checked')].map(cb => cb.value);
+  fd.append('categoryId', checkedCats[0] || '');
   fd.append('price', price);
   fd.append('width',  document.getElementById('p-width').value  || '');
   fd.append('height', document.getElementById('p-height').value || '');
@@ -1663,13 +1679,40 @@ async function saveProduct() {
   const btn = document.querySelector('#m-product .btn.bp');
   if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
   try {
+    let savedProduct;
     if (id) {
-      await api('PUT', `/api/products/${id}`, fd, true);
+      savedProduct = await api('PUT', `/api/products/${id}`, fd, true);
       toast('Producto actualizado ✓');
     } else {
-      await api('POST', '/api/products', fd, true);
+      savedProduct = await api('POST', '/api/products', fd, true);
       toast('Producto creado ✓');
     }
+    const productId = savedProduct?.id || id;
+
+    // Assign product to each checked category via categories route
+    if (productId && checkedCats.length > 0) {
+      const allCats = cachedCategories.length ? cachedCategories : await api('GET','/api/categories');
+      await Promise.all(allCats.map(async cat => {
+        const shouldBeIn = checkedCats.includes(cat.id);
+        const currentIds = (cat.products||[]).map(p => p.id);
+        const alreadyIn = currentIds.includes(productId);
+        if (shouldBeIn && !alreadyIn) {
+          // Add product to this category
+          const newIds = [...currentIds, productId];
+          const fd2 = new FormData();
+          fd2.append('productIds', JSON.stringify(newIds));
+          await api('PUT', `/api/categories/${cat.id}`, fd2, true);
+        } else if (!shouldBeIn && alreadyIn) {
+          // Remove product from this category
+          const newIds = currentIds.filter(pid => pid !== productId);
+          const fd2 = new FormData();
+          fd2.append('productIds', JSON.stringify(newIds));
+          await api('PUT', `/api/categories/${cat.id}`, fd2, true);
+        }
+      }));
+      cachedCategories = [];
+    }
+
     cm('m-product');
     showView('productos');
   } catch(e) { toastErr(e.message); }

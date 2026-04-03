@@ -1535,15 +1535,29 @@ function sendConfirmWA() {
 // CONTACT FORM
 // ═══════════════════════════════════════════
 async function submitContact() {
-  const name  = document.getElementById('ct-name').value.trim();
-  const phone = document.getElementById('ct-phone').value.trim();
-  const email = document.getElementById('ct-email').value.trim();
-  const msg   = document.getElementById('ct-msg').value.trim();
-  if (!name || !msg) { showToast('Nombre y mensaje son requeridos', true); return; }
-  // Open WhatsApp with message (backend email integration can be added later)
-  const wa = `Hola Florería Karel 👋\n\nNombre: ${name}\nTeléfono: ${phone}\nCorreo: ${email}\n\nMensaje:\n${msg}`;
-  window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(wa)}`, '_blank');
-  showToast('Redirigiendo a WhatsApp… 💬');
+  const name    = document.getElementById('ct-name').value.trim();
+  const phone   = document.getElementById('ct-phone').value.trim();
+  const email   = document.getElementById('ct-email').value.trim();
+  const subject = document.getElementById('ct-subject').value.trim();
+  const message = document.getElementById('ct-msg').value.trim();
+  if (!name || !message) { showToast('Nombre y mensaje son requeridos', true); return; }
+
+  const btn = document.querySelector('#page-contacto .btn-rose');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
+
+  try {
+    await apiPost('/api/contact', { name, phone, email, subject, message });
+    // Clear form
+    ['ct-name','ct-phone','ct-email','ct-msg'].forEach(id => document.getElementById(id).value = '');
+    showToast('¡Mensaje enviado! Te contactaremos pronto 🌸');
+  } catch(e) {
+    // Fallback to WhatsApp if email fails
+    const wa = `Hola Florería Karel 👋\n\nNombre: ${name}\nTeléfono: ${phone}\nCorreo: ${email}\nAsunto: ${subject}\n\nMensaje:\n${message}`;
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(wa)}`, '_blank');
+    showToast('Redirigiendo a WhatsApp… 💬');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Enviar mensaje'; }
+  }
 }
 
 // ═══════════════════════════════════════════
