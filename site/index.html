@@ -174,11 +174,16 @@ nav.shadow{box-shadow:0 4px 32px rgba(46,35,32,.08);}
 .add-cart-btn:hover{background:#A8684E;}
 
 /* ── OCCASIONS ── */
-.occ-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px;}
-.occ-card{background:white;border-radius:14px;padding:24px 16px;text-align:center;cursor:pointer;border:2px solid transparent;transition:all .2s;}
-.occ-card:hover{border-color:#E8B4B8;transform:translateY(-2px);}
-.occ-icon{font-size:2.2rem;margin-bottom:10px;}
-.occ-name{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--text);}
+.occ-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:32px;}
+.occ-card{position:relative;border-radius:14px;overflow:hidden;height:160px;cursor:pointer;border:none;background:#1a1a1a;}
+.occ-card:hover .occ-card-img{transform:scale(1.05);}
+.occ-card:hover .occ-card-overlay{background:rgba(0,0,0,.35);}
+.occ-card-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease;}
+.occ-card-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);transition:background .3s;}
+.occ-card-body{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:16px;}
+.occ-name{font-family:'Playfair Display',serif;font-size:1.1rem;color:white;font-weight:700;text-shadow:0 1px 8px rgba(0,0,0,.4);margin-bottom:8px;}
+.occ-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.6);color:white;font-size:.72rem;font-weight:700;padding:5px 16px;border-radius:100px;letter-spacing:.06em;cursor:pointer;transition:all .2s;backdrop-filter:blur(4px);}
+.occ-card:hover .occ-btn{background:rgba(255,255,255,.35);}
 
 /* ── HOW TO ORDER ── */
 .steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:44px;position:relative;}
@@ -401,7 +406,7 @@ footer{background:#2E2320;color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
   .hero{grid-template-columns:1fr;min-height:auto;padding:40px 5vw;}
   .hero-img{display:none;}
   .footer-grid{grid-template-columns:1fr 1fr;}
-  .occ-grid{grid-template-columns:repeat(3,1fr);}
+  .occ-grid{grid-template-columns:repeat(2,1fr);}
   .steps-grid{grid-template-columns:1fr 1fr;gap:20px;}
   .steps-grid::before{display:none;}
   .contact-grid{grid-template-columns:1fr;}
@@ -415,7 +420,7 @@ footer{background:#2E2320;color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 @media(max-width:560px){
   nav{padding:0 16px;}
   .section{padding:56px 5vw;}
-  .occ-grid{grid-template-columns:repeat(2,1fr);}
+  .occ-grid{grid-template-columns:1fr;}
   .footer-grid{grid-template-columns:1fr;}
   .catalog-filters{gap:7px;}
   .tile-group.cols-3{grid-template-columns:1fr 1fr;}
@@ -1274,16 +1279,17 @@ function renderHomeProducts() {
 function renderCategoryCards() {
   const grid = document.getElementById('cat-cards-grid');
   if (!grid || !allCategories.length) return;
-  grid.innerHTML = allCategories.map((c, i) =>
-    '<div class="occ-card" onclick="showPage(&quot;catalog&quot;);setTimeout(function(){filterCatalog(&quot;' + c.id + '&quot;)},150)" style="padding:0;overflow:hidden;cursor:pointer;border-radius:14px;">' +
+  grid.innerHTML = allCategories.map(c =>
+    '<div class="occ-card" onclick="showPage(&quot;catalog&quot;);setTimeout(function(){filterCatalog(&quot;' + c.id + '&quot;)},150)">' +
     (c.photoUrl
-      ? '<div style="height:140px;overflow:hidden;border-radius:12px 12px 0 0;"><img src="' + photoSrc(c.photoUrl) + '" alt="' + escHtml(c.name) + '" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>'
-      : '<div style="height:100px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">🌸</div>') +
-    '<div style="padding:12px 14px 14px;"><div class="occ-name">' + escHtml(c.name) + '</div>' +
-    (c.description ? '<div style="font-size:.72rem;color:var(--muted);margin-top:4px;line-height:1.5;">' + escHtml(c.description) + '</div>' : '') +
+      ? '<img src="' + photoSrc(c.photoUrl) + '" alt="' + escHtml(c.name) + '" class="occ-card-img" loading="lazy"/>'
+      : '<div class="occ-card-img" style="background:linear-gradient(135deg,#FAEAE8,#E8B4B8);display:flex;align-items:center;justify-content:center;font-size:3rem;">🌸</div>') +
+    '<div class="occ-card-overlay"></div>' +
+    '<div class="occ-card-body">' +
+    '<div class="occ-name">' + escHtml(c.name) + '</div>' +
+    '<div class="occ-btn">Ver arreglos</div>' +
     '</div></div>'
   ).join('');
-  // Trigger reveal animation for new cards
   grid.querySelectorAll('.occ-card').forEach(el => el.style.opacity = '1');
 }
 
