@@ -792,7 +792,10 @@ footer{background:#2E2320;color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 
         <!-- Date + window (always shown) -->
         <div class="mfr" style="margin-bottom:0;">
-          <div class="mfg"><label class="mfl" data-es="Día de entrega *" data-en="Delivery date *">Día de entrega *</label><input class="mfi" type="date" id="d-date" min=""/></div>
+          <div class="mfg"><label class="mfl" data-es="Día de entrega *" data-en="Delivery date *">Día de entrega *</label>
+            <input class="mfi" type="date" id="d-date" min="" onchange="checkDeliveryDate(this.value)"/>
+            <div id="d-date-warn" style="font-size:11px;color:var(--rose);display:none;margin-top:3px;"></div>
+          </div>
           <div class="mfg"><label class="mfl" data-es="Horario" data-en="Time window">Horario</label>
             <select class="mfs" id="d-window">
               <option value="9:00-12:00">9:00 AM – 12:00 PM</option>
@@ -1062,6 +1065,33 @@ const minDate = tomorrow.toISOString().split('T')[0];
 document.querySelectorAll('input[type=date]').forEach(el => el.min = minDate);
 
 // ═══════════════════════════════════════════
+// CLOSED DATES
+// ═══════════════════════════════════════════
+let closedDates = new Set(); // set of 'YYYY-MM-DD' strings
+
+async function loadClosedDates() {
+  try {
+    const dates = await apiGet('/api/closed-dates');
+    closedDates = new Set(dates.map(d => d.date.split('T')[0]));
+  } catch(e) { closedDates = new Set(); }
+}
+
+function isDateClosed(dateStr) {
+  if (!dateStr) return false;
+  // Block Sundays
+  if (new Date(dateStr + 'T12:00').getDay() === 0) return true;
+  // Block closed dates from backend
+  return closedDates.has(dateStr);
+}
+
+function validateDeliveryDate(dateStr) {
+  if (!dateStr) return 'Por favor selecciona la fecha de entrega';
+  if (new Date(dateStr + 'T12:00').getDay() === 0) return 'No hacemos entregas los domingos 🌸';
+  if (closedDates.has(dateStr)) return 'No hacemos entregas en esa fecha 🌸';
+  return null; // valid
+}
+
+// ═══════════════════════════════════════════
 // PRODUCTS (cached)
 // ═══════════════════════════════════════════
 let allProducts = [];
@@ -1325,9 +1355,8 @@ function omNext(cur) {
   if (cur === 3) {
     if (!omState.deliveryType) { showToast('Por favor selecciona el tipo de entrega', true); return; }
     const date = document.getElementById('d-date').value;
-    if (!date) { showToast('Por favor selecciona la fecha de entrega', true); return; }
-    // Validate Sunday
-    if (new Date(date + 'T12:00').getDay() === 0) { showToast('No hacemos entregas los domingos 🌸', true); return; }
+    const dateErr = validateDeliveryDate(date);
+    if (dateErr) { showToast(dateErr, true); return; }
     // Validate required fields
     const dt = omState.deliveryType;
     if (dt === 'DOMICILIO_CASA' || dt === 'DOMICILIO_NEGOCIO') {
@@ -1657,7 +1686,22 @@ const occLabel = o => ({ CUMPLEANOS:'Cumpleaños', ANIVERSARIO:'Aniversario', FU
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
+function checkDeliveryDate(dateStr) {
+  const warn = document.getElementById('d-date-warn');
+  if (!warn) return;
+  const err = validateDeliveryDate(dateStr);
+  if (err) {
+    warn.textContent = '⚠ ' + err;
+    warn.style.display = 'block';
+    document.getElementById('d-date').style.borderColor = 'var(--rose)';
+  } else {
+    warn.style.display = 'none';
+    document.getElementById('d-date').style.borderColor = '';
+  }
+}
+
 loadProducts();
+loadClosedDates();
 updateCartUI();
 </script>
 </body>

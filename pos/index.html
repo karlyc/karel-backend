@@ -2024,7 +2024,7 @@ async function adjustStock(id, name) {
 // ════════════════════════════════════════════
 let atab='pagos';
 async function vAdmin() {
-  const tabs=[['pagos','💰 Pagos'],['diario','📊 Diario'],['mensual','📅 Mensual'],['rango','🗓 Rango'],['gastos','💸 Gastos'],['productos','📦 Productos'],['staff','👥 Staff'],['pin','🔑 PIN']];
+  const tabs=[['pagos','💰 Pagos'],['diario','📊 Diario'],['mensual','📅 Mensual'],['rango','🗓 Rango'],['gastos','💸 Gastos'],['productos','📦 Productos'],['fechas','🚫 Fechas'],['staff','👥 Staff'],['pin','🔑 PIN']];
   document.getElementById('vc').innerHTML = `
 <div style="display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap;">
   ${tabs.map(([k,l])=>`<button id="atb-${k}" class="btn ${atab===k?'bp':'bg'} bsm" onclick="aTab('${k}')">${l}</button>`).join('')}
@@ -2231,6 +2231,58 @@ async function aRender(t) {
 
       renderTable(savedOrders);
     }
+    else if (t==='fechas') {
+      const closed = await api('GET','/api/closed-dates');
+      const today = new Date().toISOString().split('T')[0];
+
+      // Separate upcoming vs past
+      const upcoming = closed.filter(d => d.date.split('T')[0] >= today);
+      const past     = closed.filter(d => d.date.split('T')[0] <  today);
+
+      function renderClosedList(list) {
+        if (!list.length) return '<div style="font-size:12px;color:var(--dim);padding:8px 0;">Sin fechas registradas</div>';
+        return list.map(d => {
+          const dateStr = new Date(d.date + (d.date.includes('T') ? '' : 'T12:00:00Z'))
+            .toLocaleDateString('es-MX', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--rule);">
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:13px;">${dateStr}</div>
+              <div style="font-size:11px;color:var(--dim);margin-top:2px;">${d.reason || 'Sin motivo especificado'}</div>
+            </div>
+            <button class="btn bg bsm" style="color:var(--red);" onclick="deleteClosedDate('${d.id}')">✕ Quitar</button>
+          </div>`;
+        }).join('');
+      }
+
+      el.innerHTML = `
+        <div class="card" style="margin-bottom:12px;">
+          <div class="ch"><span class="ct">➕ Agregar fecha cerrada</span></div>
+          <div class="fr" style="align-items:flex-end;gap:10px;flex-wrap:wrap;">
+            <div class="fg" style="margin:0;flex:1;min-width:140px;">
+              <label class="fl">Fecha *</label>
+              <input class="fi" type="date" id="cd-date" min="${today}"/>
+            </div>
+            <div class="fg" style="margin:0;flex:2;min-width:180px;">
+              <label class="fl">Motivo (opcional)</label>
+              <input class="fi" id="cd-reason" placeholder="Ej: Navidad, Año Nuevo, Día Festivo…"/>
+            </div>
+            <button class="btn bp" onclick="addClosedDate()" style="flex-shrink:0;">Agregar</button>
+          </div>
+          <div style="font-size:11px;color:var(--dim);margin-top:10px;">
+            💡 Los domingos ya están bloqueados automáticamente. Agrega aquí días festivos o vacaciones.
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:12px;">
+          <div class="ch"><span class="ct">📅 Próximas fechas cerradas</span><span class="badge br2">${upcoming.length}</span></div>
+          <div id="cd-upcoming">${renderClosedList(upcoming)}</div>
+        </div>
+
+        ${past.length ? `<div class="card">
+          <div class="ch"><span class="ct" style="color:var(--dim);">Fechas pasadas</span></div>
+          <div id="cd-past">${renderClosedList(past)}</div>
+        </div>` : ''}`;
+    }
     else if (t==='staff') {
       const staff=await api('GET','/api/staff');
       el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:11px;"><button class="btn bp" onclick="toast('Formulario de staff próximamente')">＋ Agregar</button></div>
@@ -2245,6 +2297,27 @@ async function aRender(t) {
 }
 
 let gastoMonth = new Date().getMonth() + 1, gastoYear = new Date().getFullYear();
+async function addClosedDate() {
+  const date   = document.getElementById('cd-date').value;
+  const reason = document.getElementById('cd-reason').value.trim();
+  if (!date) { toastErr('Selecciona una fecha'); return; }
+  try {
+    await api('POST', '/api/closed-dates', { date, reason });
+    toast('Fecha bloqueada ✓');
+    document.getElementById('cd-date').value = '';
+    document.getElementById('cd-reason').value = '';
+    await aRender('fechas');
+  } catch(e) { toastErr(e.message); }
+}
+
+async function deleteClosedDate(id) {
+  try {
+    await api('DELETE', `/api/closed-dates/${id}`);
+    toast('Fecha eliminada ✓');
+    await aRender('fechas');
+  } catch(e) { toastErr(e.message); }
+}
+
 async function aGastosMes(delta) {
   gastoMonth += delta;
   if (gastoMonth > 12) { gastoMonth=1; gastoYear++; }

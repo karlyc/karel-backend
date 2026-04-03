@@ -36,9 +36,8 @@ enum ClientSource {
   GOOGLE 
   FACEBOOK 
   REFERRAL 
-  OTHER
+  OTHER 
   }
-
 enum LoyaltyTier  { 
   REGULAR 
   FREQUENT 
@@ -134,12 +133,13 @@ enum OrderStatus   {
   POR_ENTREGAR 
   COMPLETADA 
   CANCELADA 
-}
+  }
+
 enum PaymentStatus { 
   PENDIENTE 
   PAGO_RECIBIDO 
   PAGADA 
-}
+  }
 enum PaymentMethod { 
   EFECTIVO 
   TRANSFERENCIA 
@@ -150,19 +150,21 @@ enum PaymentMethod {
   CHEQUE 
   ZELLE 
   STRIPE 
-}
+  }
+
 enum DeliveryType  { 
   DOMICILIO_CASA 
   DOMICILIO_NEGOCIO 
   RECOGER_TIENDA 
-}
+  }
+
 enum Occasion      { 
   CUMPLEANOS 
   ANIVERSARIO 
   FUNERAL 
   AMOR 
   OTRA 
-}
+  }
 
 model Order {
   id               String        @id @default(cuid())
@@ -256,7 +258,7 @@ model Task {
 enum ExpenditureType { 
   MENSUAL 
   MISCELANEA 
-}
+ }
 
 model Expenditure {
   id          String          @id @default(cuid())
@@ -301,4 +303,11 @@ model ChatMessage {
   text      String
   createdAt DateTime    @default(now())
   session   ChatSession @relation(fields: [sessionId], references: [id])
+}
+
+model ClosedDate {
+  id        String   @id @default(cuid())
+  date      DateTime @db.Date
+  reason    String?
+  createdAt DateTime @default(now())
 }
