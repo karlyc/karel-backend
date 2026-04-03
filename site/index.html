@@ -443,6 +443,30 @@ footer{background:#2E2320;color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 .pd-add-btn:hover{background:#A8684E;}
 .pd-close-btn{width:44px;height:44px;border-radius:12px;border:1.5px solid var(--border);background:transparent;font-size:1.1rem;cursor:pointer;color:var(--muted);}
 
+/* ── SLIDESHOW ── */
+.slideshow{position:relative;width:100%;overflow:hidden;background:#1a1a1a;height:92vh;max-height:700px;}
+.slideshow-track{display:flex;height:100%;transition:transform .6s cubic-bezier(.4,0,.2,1);}
+.slide{position:relative;min-width:100%;height:100%;overflow:hidden;flex-shrink:0;}
+.slide-img{width:100%;height:100%;object-fit:cover;display:block;}
+.slide-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(46,35,32,.15) 0%,rgba(46,35,32,.55) 100%);}
+.slide-content{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px 6vw;color:white;}
+.slide-eyebrow{font-size:.7rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.8);margin-bottom:16px;}
+.slide-heading{font-family:'Playfair Display',serif;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.1;color:white;margin-bottom:28px;text-shadow:0 2px 20px rgba(0,0,0,.3);}
+.slide-heading em{color:#E8B4B8;font-style:italic;}
+.slide-btn{background:#E8B4B8;color:#2E2320;padding:14px 32px;border-radius:100px;font-weight:800;font-size:.88rem;border:none;cursor:pointer;transition:all .2s;letter-spacing:.04em;}
+.slide-btn:hover{background:white;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2);}
+.slide-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);color:white;width:48px;height:48px;border-radius:50%;font-size:1.2rem;cursor:pointer;backdrop-filter:blur(4px);transition:all .2s;z-index:10;}
+.slide-arrow:hover{background:rgba(255,255,255,.3);}
+.slide-arrow-prev{left:20px;}
+.slide-arrow-next{right:20px;}
+.slide-dots{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10;}
+.slide-dot{width:8px;height:8px;border-radius:50%;border:2px solid rgba(255,255,255,.6);background:transparent;cursor:pointer;transition:all .2s;padding:0;}
+.slide-dot.active{background:white;border-color:white;width:24px;border-radius:100px;}
+@media(max-width:600px){
+  .slideshow{height:70vh;max-height:500px;}
+  .slide-arrow{width:36px;height:36px;font-size:1rem;}
+}
+
 </style>
 </head>
 <body>
@@ -488,6 +512,98 @@ footer{background:#2E2320;color:rgba(255,255,255,.7);padding:60px 6vw 32px;}
 
 <!-- ════════════ PAGE: HOME ════════════ -->
 <div class="page active" id="page-home">
+
+  <!-- SLIDESHOW -->
+  <div class="slideshow" id="home-slideshow">
+    <div class="slideshow-track" id="slideshow-track">
+
+      <div class="slide">
+        <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775253142/PHOTO-2026-04-03-15-50-39_bvmhqg.jpg" alt="Flores que hablan por ti" class="slide-img"/>
+        <div class="slide-overlay"></div>
+        <div class="slide-content">
+          <div class="slide-eyebrow">Florería y Regalos Karel</div>
+          <h2 class="slide-heading">Flores que <em>hablan por ti</em></h2>
+          <button class="slide-btn" onclick="showPage('catalog')">Ver catálogo →</button>
+        </div>
+      </div>
+
+      <div class="slide">
+        <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775253197/WhatsApp_Image_2026-04-03_at_15.50.40_ykchme.jpg" alt="Para cada ocasión especial" class="slide-img"/>
+        <div class="slide-overlay"></div>
+        <div class="slide-content">
+          <div class="slide-eyebrow">Ciudad Juárez · Est. 1995</div>
+          <h2 class="slide-heading">Para cada <em>ocasión especial</em></h2>
+          <button class="slide-btn" onclick="showPage('catalog')">Ordenar ahora →</button>
+        </div>
+      </div>
+
+      <div class="slide">
+        <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775253671/WhatsApp_Image_2026-04-03_at_15.58.21_6_dovm0j.jpg" alt="Entrega el mismo día" class="slide-img"/>
+        <div class="slide-overlay"></div>
+        <div class="slide-content">
+          <div class="slide-eyebrow">Florería y Regalos Karel</div>
+          <h2 class="slide-heading">Entrega el <em>mismo día</em></h2>
+          <button class="slide-btn" onclick="openOrderModal()">Ordenar ahora →</button>
+        </div>
+      </div>
+
+      <div class="slide">
+        <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775253670/WhatsApp_Image_2026-04-03_at_15.58.21_3_u6piac.jpg" alt="Arreglos elaborados con amor" class="slide-img"/>
+        <div class="slide-overlay"></div>
+        <div class="slide-content">
+          <div class="slide-eyebrow">Hecho con amor en Juárez</div>
+          <h2 class="slide-heading">Arreglos elaborados <em>con amor</em></h2>
+          <button class="slide-btn" onclick="showPage('catalog')">Ver catálogo →</button>
+        </div>
+      </div>
+
+      <div class="slide">
+        <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775253670/WhatsApp_Image_2026-04-03_at_16.00.26_2_szlrl3.jpg" alt="El regalo perfecto te espera" class="slide-img"/>
+        <div class="slide-overlay"></div>
+        <div class="slide-content">
+          <div class="slide-eyebrow">Ciudad Juárez · Est. 1995</div>
+          <h2 class="slide-heading">El regalo perfecto <em>te espera</em></h2>
+          <button class="slide-btn" onclick="showPage('catalog')">Ver catálogo →</button>
+        </div>
+      </div>
+
+      <div class="slide">
+        <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775253670/WhatsApp_Image_2026-04-03_at_15.58.21_5_gwhmkd.jpg" alt="Sorprende a quien más quieres" class="slide-img"/>
+        <div class="slide-overlay"></div>
+        <div class="slide-content">
+          <div class="slide-eyebrow">Florería y Regalos Karel</div>
+          <h2 class="slide-heading">Sorprende a quien <em>más quieres</em></h2>
+          <button class="slide-btn" onclick="openOrderModal()">Ordenar ahora →</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Arrows -->
+    <button class="slide-arrow slide-arrow-prev" onclick="slidePrev()" aria-label="Anterior">&#8592;</button>
+    <button class="slide-arrow slide-arrow-next" onclick="slideNext()" aria-label="Siguiente">&#8594;</button>
+
+    <!-- Dots -->
+    <div class="slide-dots" id="slide-dots">
+      <button class="slide-dot active" onclick="slideTo(0)"></button>
+      <button class="slide-dot" onclick="slideTo(1)"></button>
+      <button class="slide-dot" onclick="slideTo(2)"></button>
+      <button class="slide-dot" onclick="slideTo(3)"></button>
+      <button class="slide-dot" onclick="slideTo(4)"></button>
+      <button class="slide-dot" onclick="slideTo(5)"></button>
+    </div>
+  </div>
+
+  <!-- DISEÑOS DE TEMPORADA -->
+  <section class="section" id="sec-temporada" style="display:none;">
+    <div class="rv"><div class="s-eyebrow">Colección especial</div></div>
+    <h2 class="s-title rv d1">Diseños de <em>temporada</em></h2>
+    <p class="s-sub rv d2">Arreglos especialmente seleccionados para esta temporada.</p>
+    <div class="products-grid" id="temporada-products"></div>
+    <div style="text-align:center;margin-top:28px;" class="rv">
+      <button class="btn-outline" onclick="showPage('catalog')" data-es="Ver todos →" data-en="See all →">Ver todos →</button>
+    </div>
+  </section>
 
   <!-- HERO -->
   <section class="hero">
@@ -1106,10 +1222,31 @@ async function loadProducts() {
     allProducts = prods;
     allCategories = cats;
     renderHomeProducts();
+    renderTemporada();
   } catch(e) {
     document.getElementById('home-products').innerHTML =
       '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">No se pudieron cargar los productos. Verifica la conexión.</div>';
   }
+}
+
+function renderTemporada() {
+  // Find a category whose name contains "temporada" (case-insensitive)
+  const cat = allCategories.find(c => c.name.toLowerCase().includes('temporada'));
+  const sec  = document.getElementById('sec-temporada');
+  const grid = document.getElementById('temporada-products');
+  if (!cat || !sec || !grid) return;
+
+  // Get products that belong to this category
+  const prods = allProducts.filter(p =>
+    p.categoryId === cat.id || p.category?.id === cat.id
+  );
+
+  if (prods.length === 0) { sec.style.display = 'none'; return; }
+
+  sec.style.display = 'block';
+  grid.innerHTML = prods.map(p => productCard(p)).join('');
+  // Re-observe new cards for reveal animation
+  grid.querySelectorAll('.prod-card').forEach(el => { el.style.opacity = '1'; });
 }
 
 function productCard(p) {
@@ -1736,6 +1873,39 @@ function checkDeliveryDate(dateStr) {
     document.getElementById('d-date').style.borderColor = '';
   }
 }
+
+// ═══════════════════════════════════════════
+// SLIDESHOW
+// ═══════════════════════════════════════════
+let slideIndex = 0;
+let slideTimer = null;
+
+function slideTo(n) {
+  const slides = document.querySelectorAll('.slide');
+  const dots   = document.querySelectorAll('.slide-dot');
+  slideIndex = (n + slides.length) % slides.length;
+  document.getElementById('slideshow-track').style.transform = `translateX(-${slideIndex * 100}%)`;
+  dots.forEach((d, i) => d.classList.toggle('active', i === slideIndex));
+}
+function slideNext() { slideTo(slideIndex + 1); resetSlideTimer(); }
+function slidePrev() { slideTo(slideIndex - 1); resetSlideTimer(); }
+function resetSlideTimer() {
+  clearInterval(slideTimer);
+  slideTimer = setInterval(() => slideTo(slideIndex + 1), 6000);
+}
+resetSlideTimer();
+
+// Touch/swipe support
+(function() {
+  const el = document.getElementById('home-slideshow');
+  if (!el) return;
+  let startX = 0;
+  el.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+  el.addEventListener('touchend', e => {
+    const diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) { diff > 0 ? slideNext() : slidePrev(); }
+  });
+})();
 
 loadProducts();
 loadClosedDates();
