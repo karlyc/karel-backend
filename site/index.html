@@ -1099,7 +1099,7 @@ const API_BASE = (window.location.hostname === 'localhost' || window.location.ho
   : 'https://karel-backend-production.up.railway.app'; // ← update after deploy
 
 const WA_NUMBER = '526561303595';
-const STRIPE_PK = 'pk_test_YOUR_STRIPE_PUBLIC_KEY'; // ← update with your Stripe key
+const STRIPE_PK = 'pk_live_51TIGQW9DkJxg2MOcv38zvykuQTmPGn7OT9BR4z9WlDOB89CkyxzHyyKKvQPSYRyU1ZZPO1PWXDVND46K4Ekd6yqI00f3otOAtH'; // ← update with your Stripe key
 const SHIPPING_FEE = 125;
 const IVA_RATE = 0.16;
 
@@ -1610,80 +1610,86 @@ async function processPayment() {
   document.getElementById('stripe-error').textContent = '';
 
   try {
-    // 1. Find or create client
     const firstName = document.getElementById('o-first').value.trim();
     const lastName  = document.getElementById('o-last').value.trim();
     const phone     = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
     const email     = document.getElementById('o-email').value.trim();
+    const dt        = omState.deliveryType;
+    const isFuneral = dt === 'FUNERAL';
+    const isPickup  = dt === 'RECOGER_TIENDA';
+    const sub       = cartSubtotal();
+    const ship      = isPickup ? 0 : SHIPPING_FEE;
+    const tax       = (sub + ship) * IVA_RATE;
+    const total     = sub + ship + tax;
 
+    // 1. Create PaymentIntent and charge card FIRST
+    let paymentIntentId = null;
+    if (stripe && cardElement) {
+      btn.textContent = 'Procesando pago…';
+      const piRes = await apiPost('/api/stripe/create-payment-intent', {
+        amount: total,
+        currency: 'mxn',
+        metadata: { customerName: firstName + ' ' + lastName, email },
+      });
+      const { error, paymentIntent } = await stripe.confirmCardPayment(piRes.clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: { name: firstName + ' ' + lastName, email },
+        },
+      });
+      if (error) {
+        document.getElementById('stripe-error').textContent = error.message;
+        btn.disabled = false; btn.textContent = 'Pagar y confirmar →';
+        return;
+      }
+      paymentIntentId = paymentIntent.id;
+    }
+
+    // 2. Find or create client
+    btn.textContent = 'Guardando pedido…';
     let clientId = null;
     try {
-      const existing = await apiGet(`/api/clients?search=${encodeURIComponent(document.getElementById('o-phone').value.trim())}`);
+      const existing = await apiGet('/api/clients?search=' + encodeURIComponent(document.getElementById('o-phone').value.trim()));
       if (existing.length) clientId = existing[0].id;
     } catch(e) {}
-
     if (!clientId) {
       const cl = await apiPost('/api/clients', { firstName, lastNameP: lastName, phone: document.getElementById('o-phone').value.trim(), email, source: 'WEB' });
       clientId = cl.id;
     }
 
-    // 2. Build order payload
-    const dt = omState.deliveryType;
-    const isFuneral = dt === 'FUNERAL';
-    const isPickup  = dt === 'RECOGER_TIENDA';
-    const sub = cartSubtotal();
-    const ship = isPickup ? 0 : SHIPPING_FEE;
-    const tax  = (sub + ship) * IVA_RATE;
-    const total = sub + ship + tax;
-
+    // 3. Create order — payment already confirmed
     const orderPayload = {
       clientId,
-      deliveryDate:    document.getElementById('d-date').value,
-      deliveryType:    isFuneral ? 'DOMICILIO_CASA' : dt,
-      deliveryWindow:  document.getElementById('d-window').value,
-      deliveryFee:     ship,
-      recipientName:   isFuneral ? document.getElementById('d-difunto').value : (isPickup ? firstName : document.getElementById('d-rname').value),
-      recipientPhone:  isPickup ? phone : (document.getElementById('d-rphone')?.value || ''),
+      deliveryDate:     document.getElementById('d-date').value,
+      deliveryType:     isFuneral ? 'DOMICILIO_CASA' : dt,
+      deliveryWindow:   document.getElementById('d-window').value,
+      deliveryFee:      ship,
+      recipientName:    isFuneral ? document.getElementById('d-difunto').value : (isPickup ? firstName : document.getElementById('d-rname').value),
+      recipientPhone:   isPickup ? phone : (document.getElementById('d-rphone')?.value || ''),
       recipientAddress: isFuneral ? document.getElementById('d-fun-addr').value : (isPickup ? '' : document.getElementById('d-street').value),
       recipientColonia: isFuneral ? document.getElementById('d-fun-col').value : (document.getElementById('d-colonia')?.value || ''),
-      recipientNotes:  isFuneral ? document.getElementById('d-banda').value : (document.getElementById('d-notes')?.value || ''),
-      businessName:    dt === 'DOMICILIO_NEGOCIO' ? (document.getElementById('d-biz')?.value || '') : '',
-      businessDept:    dt === 'DOMICILIO_NEGOCIO' ? (document.getElementById('d-dept')?.value || '') : '',
-      messageFrom:     document.getElementById('d-anon')?.checked ? 'Anónimo' : (document.getElementById('d-from')?.value || firstName),
-      messageText:     document.getElementById('d-msg')?.value || '',
-      messageAnon:     document.getElementById('d-anon')?.checked || false,
-      occasion:        omState.occasion || 'OTRA',
-      items: cart.map(i => ({ productId: i.productId, tier: i.tier, quantity: i.qty })),
-      paymentType:     'RECIBIDO',
-      paymentMethod:   'STRIPE',
-      advance:         0,
-      needsInvoice:    false,
-      notifyVia:       omState.notifyVia,
-      source:          'WEB',
+      recipientNotes:   isFuneral ? document.getElementById('d-banda').value : (document.getElementById('d-notes')?.value || ''),
+      businessName:     dt === 'DOMICILIO_NEGOCIO' ? (document.getElementById('d-biz')?.value || '') : '',
+      businessDept:     dt === 'DOMICILIO_NEGOCIO' ? (document.getElementById('d-dept')?.value || '') : '',
+      messageFrom:      document.getElementById('d-anon')?.checked ? 'Anónimo' : (document.getElementById('d-from')?.value || firstName),
+      messageText:      document.getElementById('d-msg')?.value || '',
+      messageAnon:      document.getElementById('d-anon')?.checked || false,
+      occasion:         omState.occasion || 'OTRA',
+      items:            cart.map(i => ({ productId: i.productId, quantity: i.qty })),
+      paymentType:      'RECIBIDO',
+      paymentMethod:    'STRIPE',
+      paymentStatus:    'PAGADA',
+      stripePaymentId:  paymentIntentId || null,
+      advance:          0,
+      needsInvoice:     false,
+      notifyVia:        omState.notifyVia,
+      source:           'WEB',
     };
 
-    // 3. Create order in backend
     const order = await apiPost('/api/orders', orderPayload);
     omState.confirmedOrder = order;
 
-    // 4. Process Stripe payment (create PaymentIntent via backend, confirm with card)
-    if (stripe && cardElement) {
-      try {
-        // In production: call /api/stripe/create-payment-intent first
-        // For now, confirm with test card
-        const { error } = await stripe.createPaymentMethod({
-          type: 'card',
-          card: cardElement,
-          billing_details: { name: `${firstName} ${lastName}`, email },
-        });
-        if (error) throw new Error(error.message);
-      } catch(stripeErr) {
-        // Log stripe error but don't block if test mode
-        console.warn('Stripe:', stripeErr.message);
-      }
-    }
-
-    // 5. Show confirmation
+    // 4. Show confirmation
     document.getElementById('conf-num').textContent = order.orderNumber;
     cart = []; updateCartUI();
     omGo(6);

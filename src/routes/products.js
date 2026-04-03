@@ -17,8 +17,8 @@ async function handlePhoto(file, folder) {
 router.get('/', async (req, res) => {
   const { visible, categoryId, search } = req.query;
   const where = {};
-  if (visible === 'true')  where.visible = true;
-  if (visible === 'false') where.visible = false;
+  if (visible === 'true')   where.visible = true;
+  if (visible === 'false')  where.visible = false;
   if (categoryId) where.categoryId = categoryId;
   if (search) where.OR = [
     { name: { contains: search, mode: 'insensitive' } },
@@ -60,7 +60,7 @@ router.post('/', requireAuth, requireOffice,
       else delete data.width;
       if (data.height) data.height = parseFloat(data.height);
       else delete data.height;
-      data.visible = data.visible === 'true' || data.visible === true;
+      data.visible  = data.visible  === 'true' || data.visible  === true;
 
       const photo1 = await handlePhoto(req.files?.photo1?.[0], 'karel/products');
       const photo2 = await handlePhoto(req.files?.photo2?.[0], 'karel/products');
@@ -99,7 +99,7 @@ router.put('/:id', requireAuth, requireOffice,
       if (data.price)  data.price  = parseFloat(data.price);
       if (data.width)  data.width  = parseFloat(data.width);  else if ('width'  in data) data.width  = null;
       if (data.height) data.height = parseFloat(data.height); else if ('height' in data) data.height = null;
-      if (data.visible !== undefined) data.visible = data.visible === 'true' || data.visible === true;
+      if (data.visible  !== undefined) data.visible  = data.visible  === 'true' || data.visible  === true;
 
       const photo1 = await handlePhoto(req.files?.photo1?.[0], 'karel/products');
       const photo2 = await handlePhoto(req.files?.photo2?.[0], 'karel/products');

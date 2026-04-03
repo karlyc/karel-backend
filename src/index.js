@@ -23,6 +23,7 @@ const expenditureRoutes = require('./routes/expenditures');
 const reminderRoutes = require('./routes/reminders');
 const contactRoutes    = require('./routes/contact');
 const closedDatesRoutes = require('./routes/closedDates');
+const stripeRoutes      = require('./routes/stripe');
 const { setupChat } = require('./utils/socket');
 
 const app = express();
@@ -89,6 +90,7 @@ app.use('/api/expenditures', expenditureRoutes);
 app.use('/api/reminders',    reminderRoutes);
 app.use('/api/contact',       contactRoutes);
 app.use('/api/closed-dates',  closedDatesRoutes);
+app.use('/api/stripe',        stripeRoutes);
 
 // ── Health check ──
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date() }));
