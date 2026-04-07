@@ -38,6 +38,7 @@ enum ClientSource {
   REFERRAL 
   OTHER 
   }
+
 enum LoyaltyTier  { 
   REGULAR 
   FREQUENT 
@@ -136,10 +137,10 @@ enum OrderStatus   {
   }
 
 enum PaymentStatus { 
-  PENDIENTE 
-  PAGO_RECIBIDO 
-  PAGADA 
-  }
+ PENDIENTE 
+ PAGO_RECIBIDO 
+ PAGADA 
+ }
 
 enum PaymentMethod { 
   EFECTIVO 
@@ -150,14 +151,16 @@ enum PaymentMethod {
   LINK_PAGO 
   CHEQUE 
   ZELLE 
-  STRIPE 
+  STRIPE
   }
+
 enum DeliveryType  { 
   DOMICILIO_CASA 
   DOMICILIO_NEGOCIO 
   RECOGER_TIENDA 
   }
-enum Occasion      { 
+
+enum Occasion { 
   CUMPLEANOS 
   ANIVERSARIO 
   FUNERAL 
@@ -257,7 +260,7 @@ model Task {
 enum ExpenditureType { 
   MENSUAL 
   MISCELANEA 
- }
+  }
 
 model Expenditure {
   id          String          @id @default(cuid())
@@ -309,4 +312,25 @@ model ClosedDate {
   date      DateTime @db.Date
   reason    String?
   createdAt DateTime @default(now())
+}
+
+model Customer {
+  id         String    @id @default(cuid())
+  email      String?   @unique
+  phone      String?   @unique
+  firstName  String?
+  lastName   String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  otps       CustomerOTP[]
+}
+
+model CustomerOTP {
+  id         String   @id @default(cuid())
+  customerId String
+  code       String
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 }
