@@ -72,7 +72,7 @@ nav{background:white;border-bottom:1px solid var(--border);position:sticky;top:0
 .nav-logo img{height:52px;width:auto;object-fit:contain;}
 .nav-actions{position:absolute;right:32px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:16px;}
 .nav-actions-left{position:absolute;left:32px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:16px;}
-.nav-links{display:flex;justify-content:center;gap:32px;list-style:none;padding:12px 32px;}
+.nav-links{display:flex;justify-content:center;gap:32px;list-style:none;border-top:1px solid var(--border);padding:12px 32px;}
 .nav-links a{font-size:.72rem;font-weight:500;color:#888;text-decoration:none;letter-spacing:.12em;text-transform:uppercase;transition:color .2s;}
 .nav-links a:hover{color:#ffaedc;}
 .icon-btn{background:none;border:none;cursor:pointer;color:var(--text);font-size:1rem;padding:4px;transition:opacity .2s;display:flex;align-items:center;}
@@ -152,7 +152,7 @@ nav{background:white;border-bottom:1px solid var(--border);position:sticky;top:0
 .prod-cat{font-size:.65rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
 .prod-name{font-family:'Playfair Display',serif;font-size:1rem;font-weight:400;color:#1a1a1a;margin-bottom:5px;line-height:1.3;}
 .prod-price{font-size:.82rem;font-weight:500;color:#1a1a1a;}
-.add-cart-btn{margin-top:10px;background:#e7b1ff;color:black;border:none;padding:9px 20px;font-size:.65rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:background .2s;border-radius: 8px;}
+.add-cart-btn{margin-top:10px;background:#e7b1ff;color:black;border:none;padding:9px 20px;font-size:.65rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:background .2s;width:100%;border-radius:8px;}
 .add-cart-btn:hover{background:#d167ff;}
 
 /* ── TEMPORADA ── */
@@ -231,12 +231,12 @@ nav{background:white;border-bottom:1px solid var(--border);position:sticky;top:0
 .map-embed iframe{width:100%;height:100%;border:none;}
 
 /* ── CATALOG PAGE ── */
-.catalog-header{padding:60px 6vw 40px;border-bottom:1px solid var(--border);background: #f1dafe;}
+.catalog-header{padding:60px 6vw 40px;border-bottom:1px solid var(--border);background:#f1dafe;}
 .catalog-filters{padding:20px 6vw;background:white;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;position:sticky;top:104px;z-index:100;}
 .filter-label{font-size:.65rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-right:8px;}
 .filter-pill{padding:7px 18px;border:1px solid var(--border);font-size:.7rem;font-weight:500;color:var(--mid);cursor:pointer;transition:all .15s;background:white;letter-spacing:.06em;}
 .filter-pill:hover{border-color:var(--text);color:var(--text-on);}
-.filter-pill.active{background:#ffbced;color:var(--text-on);border-color:var(--text);}
+.filter-pill.active{background:var(--text);color:var(--text-on);border-color:var(--text);}
 .filter-select{padding:7px 14px;border:1px solid var(--border);font-size:.7rem;font-weight:500;color:var(--mid);cursor:pointer;background:white;outline:none;margin-left:auto;font-family:'Jost',sans-serif;}
 .catalog-body{padding:40px 6vw;}
 .catalog-section-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#1a1a1a;margin:40px 0 20px;padding-bottom:12px;border-bottom:1px solid var(--border);}
@@ -404,17 +404,17 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 .chat-close{background:none;border:none;color:rgba(26,26,26,.6);cursor:pointer;font-size:.9rem;padding:2px;}
 .chat-msgs{height:220px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--cream);}
 .chat-bubble{max-width:80%;padding:8px 12px;font-size:.8rem;line-height:1.5;}
-.chat-bubble.in{background:white;color;align-self:flex-start;border:1px solid var(--border);}
-.chat-bubble.out{background:#e39dff;color:var(--text-on);align-self:flex-end;}
+.chat-bubble.in{background:white;color:var(--text);align-self:flex-start;border:1px solid var(--border);}
+.chat-bubble.out{background:var(--text);color:var(--text-on);align-self:flex-end;}
 .chat-inp{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);}
 .chat-inp input{flex:1;border:none;border-bottom:1px solid var(--border);padding:6px 0;font-family:'Jost',sans-serif;font-size:.82rem;outline:none;background:transparent;}
 .chat-inp button{background:#e39dff;color:white;border:none;width:30px;height:30px;cursor:pointer;font-size:.8rem;transition:background .2s;}
 .chat-inp button:hover{background:#c97de0;}
 
 /* ── TOAST ── */
-#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:#ffbced;color:var(--text-on);padding:10px 22px;font-size:.78rem;font-weight:500;letter-spacing:.06em;z-index:9999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--text);color:var(--text-on);padding:10px 22px;font-size:.78rem;font-weight:500;letter-spacing:.06em;z-index:9999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-#toast.err{background:#c97de0;}
+#toast.err{background:var(--accent);}
 
 /* ── REVEAL ── */
 .rv{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease;}
@@ -466,6 +466,65 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
   .pd-imgs{grid-template-columns:1fr;}
   .pd-img.single{aspect-ratio:4/3;}
 }
+
+/* ── AUTH MODAL ── */
+.auth-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;}
+.auth-overlay.open{display:flex;}
+.auth-modal{background:white;width:100%;max-width:440px;padding:40px 36px;position:relative;}
+.auth-close{position:absolute;top:16px;right:16px;background:none;border:1px solid var(--border);width:28px;height:28px;cursor:pointer;font-size:.8rem;color:var(--mid);display:flex;align-items:center;justify-content:center;}
+.auth-close:hover{border-color:var(--text);}
+.auth-logo{text-align:center;margin-bottom:24px;}
+.auth-logo img{height:40px;}
+.auth-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:400;color:#1a1a1a;margin-bottom:6px;text-align:center;}
+.auth-sub{font-size:.8rem;color:var(--muted);text-align:center;margin-bottom:28px;line-height:1.6;}
+.auth-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:24px;}
+.auth-tab{flex:1;padding:10px;background:none;border:none;font-family:'Jost',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;}
+.auth-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.auth-screen{display:none;}
+.auth-screen.active{display:block;}
+.auth-or{text-align:center;font-size:.72rem;color:var(--muted);margin:16px 0;position:relative;}
+.auth-or::before,.auth-or::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--border);}
+.auth-or::before{left:0;}.auth-or::after{right:0;}
+.auth-input-wrap{position:relative;margin-bottom:16px;}
+.auth-input{width:100%;padding:12px 0;background:transparent;border:none;border-bottom:1px solid var(--border);font-family:'Jost',sans-serif;font-size:.9rem;color:#1a1a1a;outline:none;transition:border-color .2s;}
+.auth-input:focus{border-color:var(--accent);}
+.auth-label{font-size:.62rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px;}
+.auth-btn{width:100%;background:#e39dff;color:white;border:none;padding:13px;font-family:'Jost',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:background .2s;margin-top:8px;}
+.auth-btn:hover{background:#c97de0;}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed;}
+.auth-switch{text-align:center;font-size:.78rem;color:var(--muted);margin-top:16px;}
+.auth-switch a{color:var(--accent);cursor:pointer;text-decoration:none;}
+.auth-switch a:hover{text-decoration:underline;}
+.otp-inputs{display:flex;gap:10px;justify-content:center;margin:20px 0;}
+.otp-input{width:44px;height:52px;border:1.5px solid var(--border);border-radius:0;text-align:center;font-size:1.4rem;font-weight:600;font-family:'Jost',sans-serif;color:#1a1a1a;outline:none;transition:border-color .2s;}
+.otp-input:focus{border-color:var(--accent);}
+.auth-resend{text-align:center;font-size:.75rem;color:var(--muted);margin-top:12px;}
+.auth-resend button{background:none;border:none;color:var(--accent);cursor:pointer;font-size:.75rem;}
+.auth-countdown{font-weight:600;}
+
+/* ── PROFILE PAGE ── */
+.profile-header{padding:48px 6vw 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:20px;}
+.profile-avatar{width:64px;height:64px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;}
+.profile-name{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#1a1a1a;}
+.profile-contact{font-size:.8rem;color:var(--muted);margin-top:3px;}
+.profile-signout{margin-left:auto;background:none;border:1px solid var(--border);padding:8px 16px;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;color:var(--muted);font-family:'Jost',sans-serif;transition:all .2s;}
+.profile-signout:hover{border-color:var(--text);color:#1a1a1a;}
+.profile-body{padding:40px 6vw;}
+.profile-section-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:400;color:#1a1a1a;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.order-card{border:1px solid var(--border);padding:20px;margin-bottom:14px;cursor:pointer;transition:border-color .2s;}
+.order-card:hover{border-color:var(--accent);}
+.order-card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.order-num{font-weight:700;font-size:.9rem;color:#1a1a1a;}
+.order-date{font-size:.75rem;color:var(--muted);}
+.order-status{font-size:.65rem;font-weight:700;padding:4px 10px;letter-spacing:.08em;text-transform:uppercase;}
+.status-PAGADA{background:#f0fdf4;color:#16a34a;}
+.status-PENDIENTE{background:#fefce8;color:#ca8a04;}
+.status-ENTREGADA{background:var(--accent-light);color:var(--accent);}
+.status-CANCELADA{background:#fef2f2;color:#dc2626;}
+.order-items{font-size:.78rem;color:var(--muted);line-height:1.7;}
+.order-total{font-size:.88rem;font-weight:600;color:#1a1a1a;margin-top:8px;}
+.profile-empty{text-align:center;padding:48px 24px;color:var(--muted);}
+.profile-empty-icon{font-size:2.5rem;margin-bottom:12px;opacity:.4;}
 </style>
 </head>
 <body>
@@ -495,6 +554,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       <button class="cart-btn icon-btn" onclick="openCart()" title="Carrito">
         🛒<span class="cart-count" id="cart-count">0</span>
       </button>
+      <button class="icon-btn" onclick="openAuthModal()" id="account-btn" title="Mi cuenta">👤</button>
       <a class="cta-nav" href="#" onclick="openOrderModal();return false;" data-es="Ordenar" data-en="Order">Ordenar</a>
     </div>
   </div>
@@ -503,6 +563,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     <li><a href="#" onclick="showPage('catalog');return false;" data-es="Catálogo" data-en="Catalog">Catálogo</a></li>
     <li><a href="#" onclick="showPage('eventos');return false;" data-es="Eventos" data-en="Events">Eventos</a></li>
     <li><a href="#" onclick="showPage('contacto');return false;" data-es="Contacto" data-en="Contact">Contacto</a></li>
+    <li><a href="#" onclick="currentCustomer?showPage('perfil'):openAuthModal();return false;" data-es="Mi cuenta" data-en="My account">Mi cuenta</a></li>
   </ul>
 </nav>
 
@@ -513,6 +574,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
   <a href="#" onclick="showPage('catalog');toggleMenu();return false;" data-es="Catálogo" data-en="Catalog">Catálogo</a>
   <a href="#" onclick="showPage('eventos');toggleMenu();return false;" data-es="Eventos" data-en="Events">Eventos</a>
   <a href="#" onclick="showPage('contacto');toggleMenu();return false;" data-es="Contacto" data-en="Contact">Contacto</a>
+  <a href="#" onclick="(currentCustomer?showPage('perfil'):openAuthModal());toggleMenu();return false;" data-es="Mi cuenta" data-en="My account">Mi cuenta</a>
   <a href="#" onclick="openOrderModal();toggleMenu();return false;" data-es="Ordenar ahora" data-en="Order now">Ordenar ahora</a>
 </div>
 
@@ -595,18 +657,6 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     </div>
   </section>
 
-    <!-- CATEGORIES -->
-  <section class="section" style="padding-bottom:0;">
-    <div class="text-center rv">
-      <span class="s-label">Para cada momento</span>
-      <h2 class="s-title">¿Cuál es la <em>ocasión?</em></h2>
-    </div>
-  </section>
-  <div class="occ-grid" id="cat-cards-grid">
-    <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">Cargando categorías…</div>
-  </div>
-  
-
   <!-- POPULAR PRODUCTS -->
   <section class="section" id="sec-products" style="border-top:1px solid var(--border);">
     <div class="text-center rv">
@@ -621,7 +671,6 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     </div>
   </section>
 
-
   <!-- NOT SURE CTA 
   <div class="cta-strip rv">
     <span class="s-label">¿No sabes qué elegir?</span>
@@ -629,7 +678,18 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     <p>Cuéntanos la ocasión y nosotros creamos el arreglo perfecto para ese momento especial.</p>
     <button class="btn-primary" onclick="openOrderModal()">Hacer un pedido</button>
   </div>
--->
+  -->
+
+  <!-- CATEGORIES -->
+  <section class="section" style="padding-bottom:0;">
+    <div class="text-center rv">
+      <span class="s-label">Para cada momento</span>
+      <h2 class="s-title">¿Cuál es la <em>ocasión?</em></h2>
+    </div>
+  </section>
+  <div class="occ-grid" id="cat-cards-grid">
+    <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">Cargando categorías…</div>
+  </div>
 
   <!-- HOW TO ORDER -->
   <section class="section section-alt">
@@ -756,6 +816,94 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
   </section>
 </div>
 
+<!-- ════ PAGE: PERFIL ════ -->
+<div class="page" id="page-perfil">
+  <div class="profile-header">
+    <div class="profile-avatar">🌸</div>
+    <div>
+      <div class="profile-name" id="profile-name">Mi cuenta</div>
+      <div class="profile-contact" id="profile-contact"></div>
+    </div>
+    <button class="profile-signout" onclick="signOut()">Cerrar sesión</button>
+  </div>
+  <div class="profile-body">
+    <div class="profile-section-title">Mis pedidos</div>
+    <div id="profile-orders">
+      <div class="profile-empty">
+        <div class="profile-empty-icon">🌸</div>
+        <div>Cargando pedidos…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="auth-overlay" id="auth-overlay" onclick="if(event.target===this)closeAuthModal()">
+  <div class="auth-modal">
+    <button class="auth-close" onclick="closeAuthModal()">✕</button>
+    <div class="auth-logo">
+      <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1773958184/000LOGO_mrylkc.png" alt="Karel"/>
+    </div>
+
+    <!-- SCREEN: IDENTIFY -->
+    <div class="auth-screen active" id="auth-identify">
+      <h2 class="auth-title">Bienvenida</h2>
+      <p class="auth-sub">Inicia sesión o crea una cuenta con tu correo o teléfono.</p>
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthMethod('email')">📧 Correo</button>
+        <button class="auth-tab" onclick="switchAuthMethod('phone')">📱 Teléfono</button>
+      </div>
+      <div id="auth-email-wrap">
+        <label class="auth-label">Correo electrónico</label>
+        <input class="auth-input" id="auth-email-input" type="email" placeholder="tu@correo.com" onkeydown="if(event.key==='Enter')requestOTP()"/>
+      </div>
+      <div id="auth-phone-wrap" style="display:none;">
+        <label class="auth-label">Teléfono</label>
+        <div style="display:flex;gap:8px;">
+          <select class="auth-input" id="auth-phone-code" style="width:90px;flex-shrink:0;">
+            <option value="+52">🇲🇽 +52</option>
+            <option value="+1">🇺🇸 +1</option>
+          </select>
+          <input class="auth-input" id="auth-phone-input" type="tel" placeholder="656 000 0000" style="flex:1;" onkeydown="if(event.key==='Enter')requestOTP()"/>
+        </div>
+      </div>
+      <button class="auth-btn" id="auth-send-btn" onclick="requestOTP()">Recibir código →</button>
+      <p class="auth-switch">Al continuar aceptas nuestros <a>términos y condiciones</a></p>
+    </div>
+
+    <!-- SCREEN: OTP -->
+    <div class="auth-screen" id="auth-otp">
+      <h2 class="auth-title">Código de verificación</h2>
+      <p class="auth-sub" id="auth-otp-sub">Ingresa el código que enviamos a tu correo.</p>
+      <div class="otp-inputs">
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,0)" onkeydown="otpKey(event,0)"/>
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,1)" onkeydown="otpKey(event,1)"/>
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,2)" onkeydown="otpKey(event,2)"/>
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,3)" onkeydown="otpKey(event,3)"/>
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,4)" onkeydown="otpKey(event,4)"/>
+        <input class="otp-input" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,5)" onkeydown="otpKey(event,5)"/>
+      </div>
+      <button class="auth-btn" onclick="verifyOTP()">Verificar código →</button>
+      <div class="auth-resend">
+        ¿No recibiste el código?
+        <button id="auth-resend-btn" onclick="resendOTP()" disabled>Reenviar (<span class="auth-countdown" id="auth-countdown">60</span>s)</button>
+      </div>
+      <p class="auth-switch"><a onclick="showAuthScreen('auth-identify')">← Cambiar correo/teléfono</a></p>
+    </div>
+
+    <!-- SCREEN: COMPLETE PROFILE (new users) -->
+    <div class="auth-screen" id="auth-complete">
+      <h2 class="auth-title">Casi listo</h2>
+      <p class="auth-sub">Cuéntanos tu nombre para personalizar tu experiencia.</p>
+      <label class="auth-label">Nombre *</label>
+      <input class="auth-input" id="auth-firstname" placeholder="Tu nombre" style="margin-bottom:12px;"/>
+      <label class="auth-label">Apellido</label>
+      <input class="auth-input" id="auth-lastname" placeholder="Tu apellido" style="margin-bottom:16px;"/>
+      <button class="auth-btn" onclick="completeProfile()">Entrar a mi cuenta →</button>
+    </div>
+  </div>
+</div>
+
 <!-- ════ FOOTER ════ -->
 <footer>
   <div class="footer-grid">
@@ -804,7 +952,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       <div class="pd-dims" id="pd-dims" style="display:none"></div>
       <div class="pd-desc" id="pd-desc" style="display:none"></div>
       <div class="pd-actions">
-        <button class="pd-add-btn" onclick="addToCartFromDetail()"> Agregar al carrito</button>
+        <button class="pd-add-btn" onclick="addToCartFromDetail()">Agregar al carrito</button>
         <button class="pd-close-btn" onclick="closePD()">✕</button>
       </div>
     </div>
@@ -980,7 +1128,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <h2 class="om-step-title">Pago <em>seguro</em></h2>
         <div class="sum-block" id="pay-summary">
           <div class="sum-row"><span class="sum-label">Subtotal</span><span id="ps-sub">—</span></div>
-          <div class="sum-row"><span class="sum-label">IVA (8%)</span><span id="ps-tax">—</span></div>
+          <div class="sum-row"><span class="sum-label">IVA (16%)</span><span id="ps-tax">—</span></div>
           <div class="sum-row"><span class="sum-label" id="ps-ship-label">Envío</span><span id="ps-ship">—</span></div>
           <div class="sum-total"><span>Total</span><span class="price" id="ps-total">—</span></div>
         </div>
@@ -1041,7 +1189,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 // ═══════════════════════════════════════════
 const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:3000'
-  : 'https://karel-backend-production.up.railway.app'; // ← update after deploy
+  : 'https://karel-backend-production.up.railway.app';
 
 const WA_NUMBER = '526561303595';
 const STRIPE_PK = 'pk_live_51TIGQW9DkJxg2MOcv38zvykuQTmPGn7OT9BR4z9WlDOB89CkyxzHyyKKvQPSYRyU1ZZPO1PWXDVND46K4Ekd6yqI00f3otOAtH'; // ← update with your Stripe key
@@ -1208,7 +1356,7 @@ function productCard(p) {
       <div class="prod-cat">${p.category?.name || ''}</div>
       <div class="prod-name">${escHtml(p.name)}</div>
       <div class="prod-price">$${fmt(p.price || p.priceStd)}</div>
-      <button class="add-cart-btn" onclick="event.stopPropagation();addToCart('${p.id}')" data-es="Agregar al carrito" data-en="Add to cart">Agregar</button>
+      <button class="add-cart-btn" onclick="event.stopPropagation();addToCart('${p.id}')" data-es="Agregar al carrito" data-en="Add to cart">Agregar al carrito</button>
     </div>
   </div>`;
 }
@@ -1919,9 +2067,321 @@ resetSlideTimer();
   });
 })();
 
+// ═══════════════════════════════════════════
+// CUSTOMER AUTH
+// ═══════════════════════════════════════════
+let authMethod = 'email'; // 'email' | 'phone'
+let authIdentifier = '';  // the email or phone being verified
+let authCountdownTimer = null;
+let currentCustomer = null; // { id, firstName, lastName, email, phone, token }
+
+// ── Auth state persistence ──
+function saveAuthState(customer) {
+  try { localStorage.setItem('karel_customer', JSON.stringify(customer)); } catch(e) {}
+}
+function loadAuthState() {
+  try {
+    const s = localStorage.getItem('karel_customer');
+    return s ? JSON.parse(s) : null;
+  } catch(e) { return null; }
+}
+function clearAuthState() {
+  try { localStorage.removeItem('karel_customer'); } catch(e) {}
+}
+
+// ── On load: restore session ──
+function initAuth() {
+  const saved = loadAuthState();
+  if (saved?.token) {
+    currentCustomer = saved;
+    updateAuthUI();
+  }
+}
+
+// ── UI helpers ──
+function updateAuthUI() {
+  const btn = document.getElementById('account-btn');
+  if (!btn) return;
+  if (currentCustomer) {
+    const initials = (currentCustomer.firstName?.[0] || '?').toUpperCase();
+    btn.textContent = initials;
+    btn.style.cssText = 'background:#e39dff;color:white;border:none;width:32px;height:32px;border-radius:50%;font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    btn.onclick = () => showPage('perfil');
+    // Update profile page
+    document.getElementById('profile-name').textContent =
+      [currentCustomer.firstName, currentCustomer.lastName].filter(Boolean).join(' ') || 'Mi cuenta';
+    document.getElementById('profile-contact').textContent =
+      currentCustomer.email || currentCustomer.phone || '';
+  } else {
+    btn.textContent = '👤';
+    btn.style.cssText = '';
+    btn.onclick = openAuthModal;
+  }
+}
+
+function openAuthModal() {
+  if (currentCustomer) { showPage('perfil'); return; }
+  document.getElementById('auth-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  showAuthScreen('auth-identify');
+}
+
+function closeAuthModal() {
+  document.getElementById('auth-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  clearOTPInputs();
+  stopCountdown();
+}
+
+function showAuthScreen(id) {
+  document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function switchAuthMethod(method) {
+  authMethod = method;
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&method==='email')||(i===1&&method==='phone')));
+  document.getElementById('auth-email-wrap').style.display = method === 'email' ? 'block' : 'none';
+  document.getElementById('auth-phone-wrap').style.display = method === 'phone' ? 'block' : 'none';
+}
+
+// ── Step 1: Request OTP ──
+async function requestOTP() {
+  const btn = document.getElementById('auth-send-btn');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  try {
+    if (authMethod === 'email') {
+      authIdentifier = document.getElementById('auth-email-input').value.trim();
+      if (!authIdentifier || !/\S+@\S+\.\S+/.test(authIdentifier)) {
+        showToast('Ingresa un correo válido', true); return;
+      }
+    } else {
+      const code = document.getElementById('auth-phone-code').value;
+      const num  = document.getElementById('auth-phone-input').value.trim();
+      if (!num) { showToast('Ingresa tu teléfono', true); return; }
+      authIdentifier = code + num;
+    }
+
+    await apiPost('/api/auth/customer/request-otp', {
+      [authMethod]: authIdentifier,
+    });
+
+    document.getElementById('auth-otp-sub').textContent =
+      authMethod === 'email'
+        ? `Enviamos un código de 6 dígitos a ${authIdentifier}`
+        : `Enviamos un código de 6 dígitos por SMS a ${authIdentifier}`;
+
+    showAuthScreen('auth-otp');
+    startCountdown();
+    clearOTPInputs();
+    setTimeout(() => document.querySelector('.otp-input')?.focus(), 100);
+
+  } catch(e) {
+    showToast(e.message || 'Error al enviar el código', true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Recibir código →';
+  }
+}
+
+// ── Step 2: Verify OTP ──
+async function verifyOTP() {
+  const code = Array.from(document.querySelectorAll('.otp-input')).map(i => i.value).join('');
+  if (code.length < 6) { showToast('Ingresa los 6 dígitos del código', true); return; }
+
+  const btn = document.querySelector('#auth-otp .auth-btn');
+  btn.disabled = true; btn.textContent = 'Verificando…';
+
+  try {
+    const res = await apiPost('/api/auth/customer/verify-otp', {
+      [authMethod]: authIdentifier,
+      code,
+    });
+
+    // res: { token, customer, isNew }
+    currentCustomer = { ...res.customer, token: res.token };
+    saveAuthState(currentCustomer);
+
+    if (res.isNew || !res.customer.firstName) {
+      // New user — ask for name
+      showAuthScreen('auth-complete');
+    } else {
+      // Existing user — go straight in
+      closeAuthModal();
+      updateAuthUI();
+      showToast(`¡Bienvenida, ${res.customer.firstName}! 🌸`);
+      showPage('perfil');
+      loadProfileOrders();
+    }
+  } catch(e) {
+    showToast(e.message || 'Código incorrecto o expirado', true);
+    document.querySelectorAll('.otp-input').forEach(i => i.style.borderColor = 'var(--accent)');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Verificar código →';
+  }
+}
+
+// ── Step 3: Complete profile (new users) ──
+async function completeProfile() {
+  const firstName = document.getElementById('auth-firstname').value.trim();
+  if (!firstName) { showToast('Tu nombre es requerido', true); return; }
+  const lastName = document.getElementById('auth-lastname').value.trim();
+
+  const btn = document.querySelector('#auth-complete .auth-btn');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+
+  try {
+    const res = await apiPost('/api/customers/me/profile', {
+      firstName, lastName,
+    }, currentCustomer.token);
+
+    currentCustomer = { ...currentCustomer, firstName, lastName };
+    saveAuthState(currentCustomer);
+    closeAuthModal();
+    updateAuthUI();
+    showToast(`¡Bienvenida, ${firstName}! 🌸`);
+    showPage('perfil');
+    loadProfileOrders();
+  } catch(e) {
+    showToast(e.message || 'Error al guardar', true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Entrar a mi cuenta →';
+  }
+}
+
+// ── Resend OTP ──
+async function resendOTP() {
+  try {
+    await apiPost('/api/auth/customer/request-otp', {
+      [authMethod]: authIdentifier,
+    });
+    showToast('Código reenviado 🌸');
+    clearOTPInputs();
+    startCountdown();
+  } catch(e) { showToast('Error al reenviar', true); }
+}
+
+// ── Sign out ──
+function signOut() {
+  currentCustomer = null;
+  clearAuthState();
+  updateAuthUI();
+  showPage('home');
+  showToast('Sesión cerrada');
+}
+
+// ── OTP input helpers ──
+function otpInput(el, idx) {
+  const val = el.value.replace(/\D/g, '');
+  el.value = val.slice(-1);
+  // Reset border color
+  el.style.borderColor = '';
+  // Auto advance
+  if (val && idx < 5) {
+    document.querySelectorAll('.otp-input')[idx + 1]?.focus();
+  }
+  // Auto submit when all filled
+  const all = Array.from(document.querySelectorAll('.otp-input')).map(i => i.value);
+  if (all.every(v => v) && all.join('').length === 6) verifyOTP();
+}
+function otpKey(e, idx) {
+  if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+    document.querySelectorAll('.otp-input')[idx - 1]?.focus();
+  }
+}
+function clearOTPInputs() {
+  document.querySelectorAll('.otp-input').forEach(i => { i.value = ''; i.style.borderColor = ''; });
+}
+
+// ── Countdown timer ──
+function startCountdown() {
+  let secs = 60;
+  const btn = document.getElementById('auth-resend-btn');
+  const cd  = document.getElementById('auth-countdown');
+  btn.disabled = true;
+  stopCountdown();
+  authCountdownTimer = setInterval(() => {
+    secs--;
+    if (cd) cd.textContent = secs;
+    if (secs <= 0) {
+      stopCountdown();
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Reenviar'; }
+    }
+  }, 1000);
+}
+function stopCountdown() {
+  clearInterval(authCountdownTimer);
+  authCountdownTimer = null;
+}
+
+// ── Load profile orders ──
+async function loadProfileOrders() {
+  if (!currentCustomer?.token) return;
+  const container = document.getElementById('profile-orders');
+  container.innerHTML = '<div class="profile-empty"><div class="profile-empty-icon">🌸</div><div>Cargando pedidos…</div></div>';
+
+  try {
+    const orders = await apiGetAuth('/api/customers/me/orders', currentCustomer.token);
+
+    if (!orders.length) {
+      container.innerHTML = `<div class="profile-empty">
+        <div class="profile-empty-icon">🛒</div>
+        <div style="margin-bottom:16px;">Aún no tienes pedidos</div>
+        <button class="btn-primary" onclick="showPage('catalog')">Ver catálogo</button>
+      </div>`;
+      return;
+    }
+
+    container.innerHTML = orders.map(o => `
+      <div class="order-card">
+        <div class="order-card-head">
+          <div>
+            <div class="order-num">#${o.orderNumber}</div>
+            <div class="order-date">${new Date(o.createdAt).toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'})}</div>
+          </div>
+          <span class="order-status status-${o.paymentStatus || 'PENDIENTE'}">${o.paymentStatus || 'PENDIENTE'}</span>
+        </div>
+        <div class="order-items">${(o.items||[]).map(i => `${i.product?.name || 'Producto'} ×${i.quantity}`).join(' · ')}</div>
+        <div class="order-total">Total: $${fmt(o.total || 0)}</div>
+      </div>`).join('');
+
+  } catch(e) {
+    container.innerHTML = '<div class="profile-empty"><div>No se pudieron cargar tus pedidos.</div></div>';
+  }
+}
+
+// ── Auth API helper (with token) ──
+async function apiGetAuth(path, token) {
+  const r = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!r.ok) throw new Error(`Error ${r.status}`);
+  return r.json();
+}
+async function apiPostAuth(path, body, token) {
+  const r = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) { const e = await r.json().catch(()=>{}); throw new Error(e?.error || `Error ${r.status}`); }
+  return r.json();
+}
+
+// Override showPage to load orders when visiting profile
+const _origShowPage = showPage;
+function showPage(name) {
+  _origShowPage(name);
+  if (name === 'perfil') {
+    if (!currentCustomer) { openAuthModal(); return; }
+    loadProfileOrders();
+  }
+}
+
 loadProducts();
 loadClosedDates();
 updateCartUI();
+initAuth();
 
 </script>
 </body>
