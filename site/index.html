@@ -1245,6 +1245,10 @@ function showPage(name) {
   document.getElementById('page-' + name).classList.add('active');
   window.scrollTo(0, 0);
   if (name === 'catalog') loadCatalog();
+  if (name === 'perfil') {
+    if (!currentCustomer) { openAuthModal(); return; }
+    loadProfileOrders();
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -2368,15 +2372,6 @@ async function apiPostAuth(path, body, token) {
   return r.json();
 }
 
-// Override showPage to load orders when visiting profile
-const _origShowPage = showPage;
-function showPage(name) {
-  _origShowPage(name);
-  if (name === 'perfil') {
-    if (!currentCustomer) { openAuthModal(); return; }
-    loadProfileOrders();
-  }
-}
 
 loadProducts();
 loadClosedDates();

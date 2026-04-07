@@ -74,30 +74,30 @@ router.post('/request-otp', async (req, res) => {
 
     // Send OTP
     if (email) {
-      await resend.emails.send({
-        from: FROM_EMAIL,
-        to: email,
-        subject: `${code} — Tu código de acceso · Florería Karel`,
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;">
-            <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1773958184/000LOGO_mrylkc.png" alt="Florería Karel" style="height:48px;margin-bottom:24px;"/>
-            <h2 style="font-size:24px;color:#1a1a1a;margin-bottom:8px;">Tu código de acceso</h2>
-            <p style="color:#888;margin-bottom:24px;">Ingresa este código en la página para iniciar sesión:</p>
-            <div style="background:#f5d0ea;border-radius:8px;padding:24px;text-align:center;margin-bottom:24px;">
-              <span style="font-size:40px;font-weight:700;letter-spacing:12px;color:#8100b9;">${code}</span>
+      if (!process.env.RESEND_API_KEY) {
+        console.warn(`[OTP] No RESEND_API_KEY set. Code for ${email}: ${code}`);
+      } else {
+        await resend.emails.send({
+          from: FROM_EMAIL,
+          to: email,
+          subject: `${code} — Tu código de acceso · Florería Karel`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;">
+              <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1773958184/000LOGO_mrylkc.png" alt="Florería Karel" style="height:48px;margin-bottom:24px;"/>
+              <h2 style="font-size:24px;color:#1a1a1a;margin-bottom:8px;">Tu código de acceso</h2>
+              <p style="color:#888;margin-bottom:24px;">Ingresa este código en la página para iniciar sesión:</p>
+              <div style="background:#f5d0ea;border-radius:8px;padding:24px;text-align:center;margin-bottom:24px;">
+                <span style="font-size:40px;font-weight:700;letter-spacing:12px;color:#8100b9;">${code}</span>
+              </div>
+              <p style="color:#888;font-size:13px;">Este código expira en 10 minutos. Si no solicitaste este código, puedes ignorar este correo.</p>
+              <hr style="border:none;border-top:1px solid #f5d0ea;margin:24px 0;"/>
+              <p style="color:#ccc;font-size:12px;">Florería y Regalos Karel · Av. de la Raza 5262, Ciudad Juárez</p>
             </div>
-            <p style="color:#888;font-size:13px;">Este código expira en 10 minutos. Si no solicitaste este código, puedes ignorar este correo.</p>
-            <hr style="border:none;border-top:1px solid #f5d0ea;margin:24px 0;"/>
-            <p style="color:#ccc;font-size:12px;">Florería y Regalos Karel · Av. de la Raza 5262, Ciudad Juárez</p>
-          </div>
-        `,
-      });
+          `,
+        });
+      }
     } else {
-      // SMS via Resend is not supported — log and return success
-      // In production you'd use Twilio or similar for SMS
       console.log(`[OTP] Phone ${phone}: ${code}`);
-      // For now we just return success — customer would need to check server logs
-      // You can integrate Twilio here later
     }
 
     res.json({ ok: true, method: email ? 'email' : 'phone' });
