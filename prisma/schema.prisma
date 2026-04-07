@@ -9,12 +9,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum StaffRole { 
-  ADMIN 
-  OFFICE 
-  FLORISTA 
-  REPARTIDOR 
-  }
+enum StaffRole {
+  ADMIN
+  OFFICE
+  FLORISTA
+  REPARTIDOR
+}
 
 model Staff {
   id        String    @id @default(cuid())
@@ -37,7 +37,8 @@ enum ClientSource {
   FACEBOOK 
   REFERRAL 
   OTHER 
-}
+  }
+
 enum LoyaltyTier  { 
   REGULAR 
   FREQUENT 
@@ -140,6 +141,7 @@ enum PaymentStatus {
   PAGO_RECIBIDO 
   PAGADA 
   }
+
 enum PaymentMethod { 
   EFECTIVO 
   TRANSFERENCIA 
@@ -151,7 +153,7 @@ enum PaymentMethod {
   ZELLE 
   STRIPE 
   }
-enum DeliveryType  { 
+enum DeliveryType  {
   DOMICILIO_CASA 
   DOMICILIO_NEGOCIO 
   RECOGER_TIENDA 
@@ -257,7 +259,7 @@ model Task {
 enum ExpenditureType { 
   MENSUAL 
   MISCELANEA 
-  }
+ }
 
 model Expenditure {
   id          String          @id @default(cuid())

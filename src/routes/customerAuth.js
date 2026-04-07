@@ -222,19 +222,19 @@ router.get('/orders', requireCustomer, async (req, res) => {
     const whereClause = [];
 
     if (customer.email) {
-      whereClause.push({ email: customer.email });
+      const email = customer.email.toLowerCase().trim();
+      whereClause.push({ email: { equals: email, mode: 'insensitive' } });
     }
 
     if (customer.phone) {
       const raw = customer.phone.replace(/\s/g, '');
       const digits = raw.replace(/\D/g, '');
-      // Try all variants to match however the phone was saved
       const variants = new Set([
-        raw,                              // +526561234567
-        digits,                           // 526561234567
-        digits.replace(/^52/, ''),        // 6561234567
-        '+' + digits,                     // +526561234567
-        '+52' + digits.replace(/^52/, ''), // +526561234567 (normalized)
+        raw,
+        digits,
+        digits.replace(/^52/, ''),
+        '+' + digits,
+        '+52' + digits.replace(/^52/, ''),
       ]);
       [...variants].filter(Boolean).forEach(v => whereClause.push({ phone: v }));
     }
@@ -245,7 +245,21 @@ router.get('/orders', requireCustomer, async (req, res) => {
       where: { OR: whereClause },
     });
 
-    if (!client) return res.json([]);
+    if (!client) {
+      // Log what we tried vs what exists to help debug
+      console.log('[orders] Customer:', JSON.stringify({ id: customer.id, email: customer.email, phone: customer.phone }));
+      console.log('[orders] Tried whereClause:', JSON.stringify(whereClause));
+      // Find any client with similar phone to help debug
+      const allClients = await prisma.client.findMany({
+        where: customer.phone ? {
+          phone: { contains: customer.phone.replace(/\D/g, '').slice(-8) }
+        } : {},
+        select: { id: true, phone: true, phoneCode: true, email: true, firstName: true },
+        take: 5,
+      });
+      console.log('[orders] Similar clients found:', JSON.stringify(allClients));
+      return res.json([]);
+    }
 
     const orders = await prisma.order.findMany({
       where: { clientId: client.id },
