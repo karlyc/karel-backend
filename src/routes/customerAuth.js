@@ -214,16 +214,30 @@ router.get('/', requireCustomer, async (req, res) => {
 // ── GET /api/customers/me/orders ──
 router.get('/orders', requireCustomer, async (req, res) => {
   try {
-    // Find client by email or phone matching the customer
     const customer = await prisma.customer.findUnique({
       where: { id: req.customerId },
     });
     if (!customer) return res.json([]);
 
-    // Match to Client record by email or phone
     const whereClause = [];
-    if (customer.email) whereClause.push({ email: customer.email });
-    if (customer.phone) whereClause.push({ phone: customer.phone.replace(/^\+52/, '') });
+
+    if (customer.email) {
+      whereClause.push({ email: customer.email });
+    }
+
+    if (customer.phone) {
+      const raw = customer.phone.replace(/\s/g, '');
+      const digits = raw.replace(/\D/g, '');
+      // Try all variants to match however the phone was saved
+      const variants = new Set([
+        raw,                              // +526561234567
+        digits,                           // 526561234567
+        digits.replace(/^52/, ''),        // 6561234567
+        '+' + digits,                     // +526561234567
+        '+52' + digits.replace(/^52/, ''), // +526561234567 (normalized)
+      ]);
+      [...variants].filter(Boolean).forEach(v => whereClause.push({ phone: v }));
+    }
 
     if (!whereClause.length) return res.json([]);
 
@@ -236,16 +250,15 @@ router.get('/orders', requireCustomer, async (req, res) => {
     const orders = await prisma.order.findMany({
       where: { clientId: client.id },
       include: {
-        items: {
-          include: { product: { select: { name: true } } },
-        },
+        items: { include: { product: { select: { name: true } } } },
       },
       orderBy: { createdAt: 'desc' },
-      take: 20,
+      take: 50,
     });
 
     res.json(orders);
   } catch(err) {
+    console.error('[customerAuth] me/orders error:', err);
     res.status(500).json({ error: err.message });
   }
 });

@@ -20,6 +20,7 @@
 <script src="https://js.stripe.com/v3/"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script type="application/ld+json">
+
 {
   "@context": "https://schema.org",
   "@type": "Florist",
@@ -41,8 +42,10 @@
   ],
   "sameAs": ["https://www.instagram.com/floreriakarel","https://www.facebook.com/floreriayregaloskarel"]
 }
+
 </script>
 <style>
+
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
   --white:#FFFFFF;
@@ -530,10 +533,10 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 .order-total{font-size:.88rem;font-weight:600;color:#1a1a1a;margin-top:8px;}
 .profile-empty{text-align:center;padding:48px 24px;color:var(--muted);}
 .profile-empty-icon{font-size:2.5rem;margin-bottom:12px;opacity:.4;}
+
 </style>
 </head>
 <body>
-
 <!-- ANNOUNCE -->
 <div class="announce">
   <span>🚚 <span data-es="Entrega el mismo día — ordena antes de la 1 PM" data-en="Same-day delivery — order before 1 PM">Entrega el mismo día — ordena antes de la 1 PM</span></span>
@@ -813,7 +816,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <div class="c-item"><div><div class="c-lab">Dirección</div><div class="c-val">Av. de la Raza 5262, Del. Norte, 32369<br/>Ciudad Juárez, Chih.</div></div></div>
         <div class="c-item"><div><div class="c-lab">Teléfono</div><div class="c-val"><a href="tel:6566111124">656 611 1124</a></div></div></div>
         <div class="c-item"><div><div class="c-lab">WhatsApp</div><div class="c-val"><a href="https://wa.me/526561303595" target="_blank">656 130 3595</a></div></div></div>
-        <div class="c-item"><div><div class="c-lab">Correo</div><div class="c-val"><a href="mailto:facturacionkarel@hotmail.com">facturacionkarel@hotmail.com</a></div></div></div>
+        <div class="c-item"><div><div class="c-lab">Correo</div><div class="c-val"><a href="/cdn-cgi/l/email-protection#086e696b7c7d7a696b61676663697a6d644860677c65696164266b6765"><span class="__cf_email__" data-cfemail="7e181f1d0a0b0c1f1d171110151f0c1b123e16110a131f1712501d1113">[email&#160;protected]</span></a></div></div></div>
         <div class="map-embed">
           <iframe src="https://maps.google.com/maps?q=Av+de+la+Raza+5262,+Del+Nte,+32369+Ciudad+Ju%C3%A1rez,+Chih&output=embed" allowfullscreen loading="lazy"></iframe>
         </div>
@@ -1188,7 +1191,9 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 
 <div id="toast"></div>
 
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
 <script>
+
 
 // ═══════════════════════════════════════════
 // CONFIG
@@ -1807,11 +1812,12 @@ async function processPayment() {
     btn.textContent = 'Guardando pedido…';
     let clientId = null;
     try {
-      const existing = await apiGet('/api/clients?search=' + encodeURIComponent(document.getElementById('o-phone').value.trim()));
+      const fullPhone = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
+      const existing = await apiGet('/api/clients?search=' + encodeURIComponent(fullPhone));
       if (existing.length) clientId = existing[0].id;
     } catch(e) {}
     if (!clientId) {
-      const cl = await apiPost('/api/clients', { firstName, lastNameP: lastName, phone: document.getElementById('o-phone').value.trim(), email, source: 'WEB' });
+      const cl = await apiPost('/api/clients', { firstName, lastNameP: lastName, phone: fullPhone, email, source: 'WEB' });
       clientId = cl.id;
     }
 
@@ -1823,7 +1829,7 @@ async function processPayment() {
       deliveryWindow:   document.getElementById('d-window').value,
       deliveryFee:      ship,
       recipientName:    isFuneral ? document.getElementById('d-difunto').value : (isPickup ? firstName : document.getElementById('d-rname').value),
-      recipientPhone:   isPickup ? phone : (document.getElementById('d-rphone')?.value || ''),
+      recipientPhone:   isPickup ? fullPhone : (document.getElementById('d-rphone')?.value || ''),
       recipientAddress: isFuneral ? document.getElementById('d-fun-addr').value : (isPickup ? '' : document.getElementById('d-street').value),
       recipientColonia: isFuneral ? document.getElementById('d-fun-col').value : (document.getElementById('d-colonia')?.value || ''),
       recipientNotes:   isFuneral ? document.getElementById('d-banda').value : (document.getElementById('d-notes')?.value || ''),
@@ -2114,8 +2120,9 @@ function updateAuthUI() {
   if (!btn) return;
   if (currentCustomer) {
     const initials = (currentCustomer.firstName?.[0] || '?').toUpperCase();
-    btn.textContent = initials;
-    btn.style.cssText = 'background:#e39dff;color:white;border:none;width:32px;height:32px;border-radius:50%;font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    btn.innerHTML = `<img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775584637/user_e0ntvd.png" style="width:20px;height:20px;" alt="Mi cuenta"/>`;
+    btn.style.cssText = 'background:var(--accent-light);border:2px solid var(--accent);border-radius:50%;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:4px;';
+    btn.title = currentCustomer.firstName || 'Mi cuenta';
     btn.onclick = () => showPage('perfil');
     // Update profile page
     document.getElementById('profile-name').textContent =
@@ -2342,18 +2349,29 @@ async function loadProfileOrders() {
       return;
     }
 
-    container.innerHTML = orders.map(o => `
-      <div class="order-card">
+    container.innerHTML = orders.map(o => {
+      const status = o.orderStatus || o.paymentStatus || 'EN_PROCESO';
+      const statusLabels = {
+        EN_PROCESO: 'En proceso', POR_ENTREGAR: 'Por entregar',
+        COMPLETADA: 'Entregado', CANCELADA: 'Cancelado',
+        PAGADA: 'Pagado', PENDIENTE: 'Pendiente',
+        PAGO_RECIBIDO: 'Pagado',
+      };
+      const items = (o.items||[]).map(i => `${i.product?.name || 'Producto'} ×${i.quantity}`).join(' · ');
+      const date = new Date(o.createdAt).toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
+      const delivDate = o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString('es-MX',{day:'numeric',month:'long'}) : null;
+      return `<div class="order-card">
         <div class="order-card-head">
           <div>
             <div class="order-num">#${o.orderNumber}</div>
-            <div class="order-date">${new Date(o.createdAt).toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'})}</div>
+            <div class="order-date">${date}${delivDate ? ` · Entrega: ${delivDate}` : ''}</div>
           </div>
-          <span class="order-status status-${o.paymentStatus || 'PENDIENTE'}">${o.paymentStatus || 'PENDIENTE'}</span>
+          <span class="order-status status-${status}">${statusLabels[status] || status}</span>
         </div>
-        <div class="order-items">${(o.items||[]).map(i => `${i.product?.name || 'Producto'} ×${i.quantity}`).join(' · ')}</div>
+        ${items ? `<div class="order-items">${items}</div>` : ''}
         <div class="order-total">Total: $${fmt(o.total || 0)}</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
   } catch(e) {
     container.innerHTML = '<div class="profile-empty"><div>No se pudieron cargar tus pedidos.</div></div>';
@@ -2378,11 +2396,11 @@ async function apiPostAuth(path, body, token) {
   return r.json();
 }
 
-
 loadProducts();
 loadClosedDates();
 updateCartUI();
 initAuth();
+
 
 </script>
 </body>

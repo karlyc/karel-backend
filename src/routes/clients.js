@@ -60,10 +60,25 @@ router.post('/', [
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   try {
-    const existing = await prisma.client.findUnique({ where: { phone: req.body.phone } });
+    let data = { ...req.body };
+
+    // Normalize phone: if it comes with a country code prefix, split it out
+    if (data.phone && !data.phoneCode) {
+      const phone = data.phone.trim();
+      const match = phone.match(/^(\+\d{1,3})(\d+)$/);
+      if (match) {
+        data.phoneCode = match[1];  // e.g. "+52"
+        data.phone     = match[2];  // e.g. "6561234567"
+      } else {
+        data.phoneCode = '+52';
+        data.phone     = phone.replace(/\D/g, '');
+      }
+    }
+
+    const existing = await prisma.client.findUnique({ where: { phone: data.phone } });
     if (existing) return res.status(409).json({ error: 'Phone already registered', client: existing });
 
-    const client = await prisma.client.create({ data: req.body });
+    const client = await prisma.client.create({ data });
     res.status(201).json(client);
   } catch (err) {
     res.status(500).json({ error: 'Failed to create client' });
