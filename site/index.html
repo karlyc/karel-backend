@@ -2231,7 +2231,7 @@ async function completeProfile() {
   btn.disabled = true; btn.textContent = 'Guardando…';
 
   try {
-    const res = await apiPost('/api/customers/me/profile', {
+    const res = await apiPostAuth('/api/customers/me/profile', {
       firstName, lastName,
     }, currentCustomer.token);
 

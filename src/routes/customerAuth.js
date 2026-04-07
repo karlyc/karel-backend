@@ -170,7 +170,7 @@ router.post('/verify-otp', async (req, res) => {
 });
 
 // ── POST /api/customers/me/profile ──
-router.post('/me/profile', requireCustomer, async (req, res) => {
+router.post('/profile', requireCustomer, async (req, res) => {
   try {
     const { firstName, lastName } = req.body;
     if (!firstName) return res.status(400).json({ error: 'Nombre requerido' });
@@ -193,7 +193,7 @@ router.post('/me/profile', requireCustomer, async (req, res) => {
 });
 
 // ── GET /api/customers/me ──
-router.get('/me', requireCustomer, async (req, res) => {
+router.get('/', requireCustomer, async (req, res) => {
   try {
     const customer = await prisma.customer.findUnique({
       where: { id: req.customerId },
@@ -212,7 +212,7 @@ router.get('/me', requireCustomer, async (req, res) => {
 });
 
 // ── GET /api/customers/me/orders ──
-router.get('/me/orders', requireCustomer, async (req, res) => {
+router.get('/orders', requireCustomer, async (req, res) => {
   try {
     // Find client by email or phone matching the customer
     const customer = await prisma.customer.findUnique({
