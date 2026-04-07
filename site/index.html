@@ -72,10 +72,15 @@ nav{background:white;border-bottom:1px solid var(--border);position:sticky;top:0
 .nav-logo img{height:52px;width:auto;object-fit:contain;}
 .nav-actions{position:absolute;right:32px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:16px;}
 .nav-actions-left{position:absolute;left:32px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:16px;}
-.nav-links{display:flex;justify-content:center;gap:32px;list-style:none;border-top:1px solid var(--border);padding:12px 32px;}
+.nav-links{display:flex;justify-content:center;gap:32px;list-style:none;padding:12px 32px;}
 .nav-links a{font-size:.72rem;font-weight:500;color:#888;text-decoration:none;letter-spacing:.12em;text-transform:uppercase;transition:color .2s;}
 .nav-links a:hover{color:#ffaedc;}
 .icon-btn{background:none;border:none;cursor:pointer;color:var(--text);font-size:1rem;padding:4px;transition:opacity .2s;display:flex;align-items:center;}
+@media (max-width:560px){
+  .nav-actions{gap:10px}
+  .icon-btn{ font-size: 1.2rem;}
+  .cta-nav{padding:8px 14px;font-size:.65rem;}
+}
 .icon-btn:hover{opacity:.6;}
 .cart-btn{position:relative;}
 .cart-count{position:absolute;top:-4px;right:-4px;background:var(--accent);color:white;font-size:.55rem;font-weight:700;width:16px;height:16px;border-radius:50%;display:none;align-items:center;justify-content:center;}
@@ -236,7 +241,7 @@ nav{background:white;border-bottom:1px solid var(--border);position:sticky;top:0
 .filter-label{font-size:.65rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-right:8px;}
 .filter-pill{padding:7px 18px;border:1px solid var(--border);font-size:.7rem;font-weight:500;color:var(--mid);cursor:pointer;transition:all .15s;background:white;letter-spacing:.06em;}
 .filter-pill:hover{border-color:var(--text);color:var(--text-on);}
-.filter-pill.active{background:var(--text);color:var(--text-on);border-color:var(--text);}
+.filter-pill.active{background:#f1dafe;color:var(--text-on);border-color:var(--text);}
 .filter-select{padding:7px 14px;border:1px solid var(--border);font-size:.7rem;font-weight:500;color:var(--mid);cursor:pointer;background:white;outline:none;margin-left:auto;font-family:'Jost',sans-serif;}
 .catalog-body{padding:40px 6vw;}
 .catalog-section-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#1a1a1a;margin:40px 0 20px;padding-bottom:12px;border-bottom:1px solid var(--border);}
@@ -405,14 +410,14 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 .chat-msgs{height:220px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--cream);}
 .chat-bubble{max-width:80%;padding:8px 12px;font-size:.8rem;line-height:1.5;}
 .chat-bubble.in{background:white;color:var(--text);align-self:flex-start;border:1px solid var(--border);}
-.chat-bubble.out{background:var(--text);color:var(--text-on);align-self:flex-end;}
+.chat-bubble.out{background:#f1dafe;color:var(--text-on);align-self:flex-end;}
 .chat-inp{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);}
 .chat-inp input{flex:1;border:none;border-bottom:1px solid var(--border);padding:6px 0;font-family:'Jost',sans-serif;font-size:.82rem;outline:none;background:transparent;}
 .chat-inp button{background:#e39dff;color:white;border:none;width:30px;height:30px;cursor:pointer;font-size:.8rem;transition:background .2s;}
 .chat-inp button:hover{background:#c97de0;}
 
 /* ── TOAST ── */
-#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--text);color:var(--text-on);padding:10px 22px;font-size:.78rem;font-weight:500;letter-spacing:.06em;z-index:9999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:#f1dafe;color:var(--text-on);padding:10px 22px;font-size:.78rem;font-weight:500;letter-spacing:.06em;z-index:9999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 #toast.err{background:var(--accent);}
 
@@ -552,9 +557,10 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     </a>
     <div class="nav-actions">
       <button class="cart-btn icon-btn" onclick="openCart()" title="Carrito">
-        🛒<span class="cart-count" id="cart-count">0</span>
+       <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775584638/shopping-cart_ujk1cw.png" style="width:20px;height:20px;" alt="Carrito"/>
+       <span class="cart-count" id="cart-count">0</span>
       </button>
-      <button class="icon-btn" onclick="openAuthModal()" id="account-btn" title="Mi cuenta">👤</button>
+      <button class="icon-btn" onclick="openAuthModal()" id="account-btn" title="Mi cuenta"><img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775584637/user_e0ntvd.png" style="width:20px;height:20px;" alt="Mi cuenta"/></button>
       <a class="cta-nav" href="#" onclick="openOrderModal();return false;" data-es="Ordenar" data-en="Order">Ordenar</a>
     </div>
   </div>
@@ -1177,7 +1183,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       <button onclick="sendChatMsg()">→</button>
     </div>
   </div>
-  <button class="chat-fab-btn" onclick="toggleChat()" title="Chat">💬</button>
+  <button class="chat-fab-btn" onclick="toggleChat()" title="Chat"><img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775586026/messages-question_1_qs7t6w.png" style="width:20px;height:20px;" alt="Chat"/></button>
 </div>
 
 <div id="toast"></div>
