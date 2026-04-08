@@ -6,6 +6,7 @@ const { requireAuth, requireAdmin, requireOffice } = require('../middleware/auth
 const { generateOrderNumber, computeLoyaltyTier } = require('../utils/orders');
 const { upload, uploadToCloudinary, isCloudinaryConfigured } = require('../utils/upload');
 const { sendOrderConfirmation } = require('../utils/email');
+const { sendOrderConfirmation: sendWAConfirmation, sendShopNewOrder } = require('../utils/whatsapp');
 // ── GET /api/orders ──
 // List orders with filtering and search
 router.get('/', requireAuth, async (req, res) => {
@@ -261,6 +262,11 @@ router.post('/', upload.single('paymentProof'), [
     if (fullOrder?.client?.email) {
       sendOrderConfirmation(fullOrder).catch(e => console.error('[Email] Order confirmation failed:', e.message));
     }
+    // WhatsApp notifications (fire and forget)
+    if (fullOrder?.client?.phone) {
+      sendWAConfirmation(fullOrder, fullOrder.client).catch(e => console.error('[WA] Customer confirmation failed:', e.message));
+    }
+    sendShopNewOrder(fullOrder, fullOrder.client).catch(e => console.error('[WA] Shop notification failed:', e.message));
 
     res.status(201).json(order);
   } catch (err) {
@@ -283,6 +289,20 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
       data: { orderStatus },
     });
     req.io?.emit('order:statusChange', { id: order.id, orderStatus });
+
+    // Send WhatsApp delivery confirmation when marked as COMPLETADA
+    if (orderStatus === 'COMPLETADA') {
+      const { sendDeliveryConfirmation } = require('../utils/whatsapp');
+      const fullOrder = await prisma.order.findUnique({
+        where: { id: order.id },
+        include: { client: true, items: { include: { product: { select: { name: true } } } } },
+      });
+      if (fullOrder?.client?.phone) {
+        sendDeliveryConfirmation(fullOrder, fullOrder.client)
+          .catch(e => console.error('[WA] Delivery confirmation failed:', e.message));
+      }
+    }
+
     res.json(order);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update status' });
