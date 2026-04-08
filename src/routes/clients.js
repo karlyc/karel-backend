@@ -7,13 +7,21 @@ const { requireAuth } = require('../middleware/auth');
 // GET /api/clients?search=... (public — used by website checkout)
 router.get('/', async (req, res) => {
   const { search } = req.query;
-  const where = search ? {
-    OR: [
+  let where = {};
+  if (search) {
+    const digits = search.replace(/\D/g, '');
+    const conditions = [
       { phone: { contains: search } },
       { firstName: { contains: search, mode: 'insensitive' } },
       { lastNameP: { contains: search, mode: 'insensitive' } },
-    ]
-  } : {};
+      { email: { contains: search, mode: 'insensitive' } },
+    ];
+    // Also search by just the digits (handles +52 prefix mismatch)
+    if (digits && digits !== search) {
+      conditions.push({ phone: { contains: digits.slice(-10) } });
+    }
+    where = { OR: conditions };
+  }
   try {
     const clients = await prisma.client.findMany({
       where,
