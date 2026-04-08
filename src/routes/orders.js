@@ -118,6 +118,10 @@ router.post('/', upload.single('paymentProof'), [
     subtotal: bodySubtotal, total: bodyTotal,
   } = bodyData;
 
+  // Normalize occasion to valid enum values
+  const validOccasions = ['CUMPLEANOS', 'ANIVERSARIO', 'FUNERAL', 'AMOR', 'OTRA'];
+  const normalizedOccasion = validOccasions.includes(occasion) ? occasion : 'OTRA';
+
   if (!clientId) return res.status(400).json({ error: 'Client is required' });
   if (!deliveryDate) return res.status(400).json({ error: 'Delivery date is required' });
   if (!deliveryType) return res.status(400).json({ error: 'Delivery type is required' });
@@ -172,7 +176,7 @@ router.post('/', upload.single('paymentProof'), [
           orderNumber,
           source: 'POS',
           clientId,
-          occasion,
+          occasion: normalizedOccasion,
           hasBanda,
           generateReminder,
           deliveryType,
@@ -228,7 +232,7 @@ router.post('/', upload.single('paymentProof'), [
             clientId,
             clientName: `${client.firstName} ${client.lastNameP}`,
             clientPhone: client.phone || '',
-            occasion,
+            occasion: normalizedOccasion,
             eventDate: nextYear,
             orderId: created.id,
           },
