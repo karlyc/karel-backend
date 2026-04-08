@@ -21,6 +21,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script type="application/ld+json">
 
+
 {
   "@context": "https://schema.org",
   "@type": "Florist",
@@ -43,8 +44,10 @@
   "sameAs": ["https://www.instagram.com/floreriakarel","https://www.facebook.com/floreriayregaloskarel"]
 }
 
+
 </script>
 <style>
+
 
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -490,9 +493,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 .auth-logo img{height:40px;}
 .auth-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:400;color:#1a1a1a;margin-bottom:6px;text-align:center;}
 .auth-sub{font-size:.8rem;color:var(--muted);text-align:center;margin-bottom:28px;line-height:1.6;}
-.auth-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:24px;}
-.auth-tab{flex:1;padding:10px;background:none;border:none;font-family:'Jost',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;}
-.auth-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
 .auth-screen{display:none;}
 .auth-screen.active{display:block;}
 .auth-or{text-align:center;font-size:.72rem;color:var(--muted);margin:16px 0;position:relative;}
@@ -538,6 +539,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 .order-total{font-size:.88rem;font-weight:600;color:#1a1a1a;margin-top:8px;}
 .profile-empty{text-align:center;padding:48px 24px;color:var(--muted);}
 .profile-empty-icon{font-size:2.5rem;margin-bottom:12px;opacity:.4;}
+
 
 </style>
 </head>
@@ -861,25 +863,13 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     <!-- SCREEN: IDENTIFY -->
     <div class="auth-screen active" id="auth-identify">
       <h2 class="auth-title">Bienvenida</h2>
-      <p class="auth-sub">Inicia sesión o crea una cuenta con tu correo o teléfono.</p>
-      <div class="auth-tabs">
-        <button class="auth-tab active" onclick="switchAuthMethod('email')">📧 Correo</button>
-        <button class="auth-tab" onclick="switchAuthMethod('phone')">📱 Teléfono</button>
-      </div>
+      <p class="auth-sub">Ingresa tu correo y te enviamos un código de acceso.</p>
+
       <div id="auth-email-wrap">
         <label class="auth-label">Correo electrónico</label>
         <input class="auth-input" id="auth-email-input" type="email" placeholder="tu@correo.com" onkeydown="if(event.key==='Enter')requestOTP()"/>
       </div>
-      <div id="auth-phone-wrap" style="display:none;">
-        <label class="auth-label">Teléfono</label>
-        <div style="display:flex;gap:8px;">
-          <select class="auth-input" id="auth-phone-code" style="width:90px;flex-shrink:0;">
-            <option value="+52">🇲🇽 +52</option>
-            <option value="+1">🇺🇸 +1</option>
-          </select>
-          <input class="auth-input" id="auth-phone-input" type="tel" placeholder="656 000 0000" style="flex:1;" onkeydown="if(event.key==='Enter')requestOTP()"/>
-        </div>
-      </div>
+
       <button class="auth-btn" id="auth-send-btn" onclick="requestOTP()">Recibir código →</button>
       <p class="auth-switch">Al continuar aceptas nuestros <a>términos y condiciones</a></p>
     </div>
@@ -2090,7 +2080,6 @@ resetSlideTimer();
 // ═══════════════════════════════════════════
 // CUSTOMER AUTH
 // ═══════════════════════════════════════════
-let authMethod = 'email'; // 'email' | 'phone'
 let authIdentifier = '';  // the email or phone being verified
 let authCountdownTimer = null;
 let currentCustomer = null; // { id, firstName, lastName, email, phone, token }
@@ -2159,12 +2148,6 @@ function showAuthScreen(id) {
   document.getElementById(id).classList.add('active');
 }
 
-function switchAuthMethod(method) {
-  authMethod = method;
-  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&method==='email')||(i===1&&method==='phone')));
-  document.getElementById('auth-email-wrap').style.display = method === 'email' ? 'block' : 'none';
-  document.getElementById('auth-phone-wrap').style.display = method === 'phone' ? 'block' : 'none';
-}
 
 // ── Step 1: Request OTP ──
 async function requestOTP() {
@@ -2172,26 +2155,15 @@ async function requestOTP() {
   btn.disabled = true; btn.textContent = 'Enviando…';
 
   try {
-    if (authMethod === 'email') {
-      authIdentifier = document.getElementById('auth-email-input').value.trim();
-      if (!authIdentifier || !/\S+@\S+\.\S+/.test(authIdentifier)) {
-        showToast('Ingresa un correo válido', true); return;
-      }
-    } else {
-      const code = document.getElementById('auth-phone-code').value;
-      const num  = document.getElementById('auth-phone-input').value.trim();
-      if (!num) { showToast('Ingresa tu teléfono', true); return; }
-      authIdentifier = code + num;
+    authIdentifier = document.getElementById('auth-email-input').value.trim();
+    if (!authIdentifier || !/\S+@\S+\.\S+/.test(authIdentifier)) {
+      showToast('Ingresa un correo válido', true); return;
     }
 
-    await apiPost('/api/auth/customer/request-otp', {
-      [authMethod]: authIdentifier,
-    });
+    await apiPost('/api/auth/customer/request-otp', { email: authIdentifier });
 
     document.getElementById('auth-otp-sub').textContent =
-      authMethod === 'email'
-        ? `Enviamos un código de 6 dígitos a ${authIdentifier}`
-        : `Enviamos un código de 6 dígitos por SMS a ${authIdentifier}`;
+      `Enviamos un código de 6 dígitos a ${authIdentifier}`;
 
     showAuthScreen('auth-otp');
     startCountdown();
@@ -2215,7 +2187,7 @@ async function verifyOTP() {
 
   try {
     const res = await apiPost('/api/auth/customer/verify-otp', {
-      [authMethod]: authIdentifier,
+      email: authIdentifier,
       code,
     });
 
@@ -2273,9 +2245,7 @@ async function completeProfile() {
 // ── Resend OTP ──
 async function resendOTP() {
   try {
-    await apiPost('/api/auth/customer/request-otp', {
-      [authMethod]: authIdentifier,
-    });
+    await apiPost('/api/auth/customer/request-otp', { email: authIdentifier });
     showToast('Código reenviado 🌸');
     clearOTPInputs();
     startCountdown();
