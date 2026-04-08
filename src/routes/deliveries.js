@@ -144,4 +144,25 @@ router.post('/:orderId/confirm', requireAuth, upload.single('photo'), async (req
   }
 });
 
+// POST /api/deliveries/:orderId/notify-email
+// Manually trigger delivery email notification from POS
+router.post('/:orderId/notify-email', requireAuth, async (req, res) => {
+  try {
+    const { receivedBy } = req.body;
+    const fullOrder = await prisma.order.findUnique({
+      where: { id: req.params.orderId },
+      include: { client: true, items: { include: { product: { select: { name: true } } } }, delivery: true },
+    });
+    if (!fullOrder) return res.status(404).json({ error: 'Pedido no encontrado' });
+    if (!fullOrder.client?.email) return res.status(400).json({ error: 'El cliente no tiene correo registrado' });
+
+    const delivery = fullOrder.delivery || { receivedBy, deliveredAt: new Date() };
+    await sendDeliveryNotification(fullOrder, delivery);
+    res.json({ ok: true });
+  } catch(err) {
+    console.error('[notify-email] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

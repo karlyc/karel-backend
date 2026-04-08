@@ -31,7 +31,7 @@ model Staff {
 
 enum ClientSource { 
   WEB 
-  IN_STORE 
+  IN_STORE
   INSTAGRAM 
   GOOGLE 
   FACEBOOK 
@@ -43,7 +43,7 @@ enum LoyaltyTier  {
   REGULAR 
   FREQUENT 
   VIP 
-  PLATINUM 
+  PLATINUM
   }
 
 model Client {
@@ -130,7 +130,7 @@ model RecipeItem {
 }
 
 enum OrderStatus   { 
-  EN_PROCESO
+  EN_PROCESO 
   POR_ENTREGAR 
   COMPLETADA 
   CANCELADA 
@@ -159,7 +159,8 @@ enum DeliveryType  {
   DOMICILIO_NEGOCIO 
   RECOGER_TIENDA 
   }
-enum Occasion { 
+
+enum Occasion      { 
   CUMPLEANOS 
   ANIVERSARIO 
   FUNERAL 

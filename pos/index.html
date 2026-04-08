@@ -3113,14 +3113,11 @@ async function confirmDelivery() {
     // Fetch the order to get client notification preference + contact info
     const order = await api('GET', `/api/orders/${orderId}`);
 
-    // Send notification based on stored preference
+    // Send notification — backend handles email automatically
+    // Just show success, the backend confirm endpoint sends the email
     const notifyVia = order.notifyVia || 'none';
-    if (notifyVia === 'whatsapp' && order.client?.phone) {
-      // Trigger automatic WhatsApp via Twilio — no manual WA needed
-      // The PATCH /status to COMPLETADA already fires the Twilio message from the backend
-      toast('Notificación enviada por WhatsApp ✓');
-    } else if (notifyVia === 'email' && order.client?.email) {
-      sendDeliveryNotificationEmail(order, receivedBy);
+    if (notifyVia === 'email' && order.client?.email) {
+      await sendDeliveryNotificationEmail(order, receivedBy);
     }
 
     // Update lastCreatedOrder so the receipt shows the delivery info
@@ -3152,25 +3149,14 @@ function sendDeliveryNotificationWA(order, receivedBy) {
   toast('Notificación WhatsApp enviada ✓');
 }
 
-function sendDeliveryNotificationEmail(order, receivedBy) {
-  const clientName = order.client?.firstName || 'Cliente';
-  const time = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-  const subject = encodeURIComponent(`Tu pedido ${order.orderNumber} fue entregado ✅`);
-  const body = encodeURIComponent([
-    `Hola ${clientName},`,
-    '',
-    `Tu pedido ${order.orderNumber} de Florería y Regalos Karel fue entregado exitosamente.`,
-    '',
-    `Recibió: ${receivedBy}`,
-    `Hora: ${time}`,
-    '',
-    '¡Gracias por tu preferencia!',
-    '',
-    'Florería y Regalos Karel',
-    'Tel: 656 611 1124 · WhatsApp: (656) 130-3595',
-  ].join('\n'));
-  window.open(`mailto:${order.client.email}?subject=${subject}&body=${body}`, '_blank');
-  toast('Notificación por email enviada ✓');
+async function sendDeliveryNotificationEmail(order, receivedBy) {
+  try {
+    await api('POST', `/api/deliveries/${order.id}/notify-email`, { receivedBy });
+    toast('Notificación por email enviada ✓');
+  } catch(e) {
+    console.error('[Email] Delivery notification failed:', e.message);
+    toastErr('No se pudo enviar el email de notificación');
+  }
 }
 
 async function uploadProofAfterOrder() {
