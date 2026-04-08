@@ -865,25 +865,13 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     <!-- SCREEN: IDENTIFY -->
     <div class="auth-screen active" id="auth-identify">
       <h2 class="auth-title">Bienvenida</h2>
-      <p class="auth-sub">Inicia sesión o crea una cuenta con tu correo o teléfono.</p>
-      <div class="auth-tabs">
-        <button class="auth-tab active" onclick="switchAuthMethod('email')">📧 Correo</button>
-        <button class="auth-tab" onclick="switchAuthMethod('phone')">📱 Teléfono</button>
-      </div>
+      <p class="auth-sub">Ingresa tu correo y te enviamos un código de acceso.</p>
+
       <div id="auth-email-wrap">
         <label class="auth-label">Correo electrónico</label>
         <input class="auth-input" id="auth-email-input" type="email" placeholder="tu@correo.com" onkeydown="if(event.key==='Enter')requestOTP()"/>
       </div>
-      <div id="auth-phone-wrap" style="display:none;">
-        <label class="auth-label">Teléfono</label>
-        <div style="display:flex;gap:8px;">
-          <select class="auth-input" id="auth-phone-code" style="width:90px;flex-shrink:0;">
-            <option value="+52">🇲🇽 +52</option>
-            <option value="+1">🇺🇸 +1</option>
-          </select>
-          <input class="auth-input" id="auth-phone-input" type="tel" placeholder="656 000 0000" style="flex:1;" onkeydown="if(event.key==='Enter')requestOTP()"/>
-        </div>
-      </div>
+
       <button class="auth-btn" id="auth-send-btn" onclick="requestOTP()">Recibir código →</button>
       <p class="auth-switch">Al continuar aceptas nuestros <a>términos y condiciones</a></p>
     </div>
@@ -1113,8 +1101,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <div class="om-step-label">Paso 4 de 6</div>
         <h2 class="om-step-title">Tus <em>datos</em></h2>
 
-        <!-- Auth choice shown when not logged in -->
-        <div id="om-auth-choice" style="display:none;margin-bottom:20px;padding:16px;background:var(--cream);border:1px solid var(--border);border-radius:4px;">
+        <div id="om-auth-choice" style="display:none;margin-bottom:20px;padding:16px;background:var(--cream);border:1px solid var(--border);">
           <p style="font-size:.82rem;color:var(--mid);margin-bottom:12px;">¿Tienes una cuenta? Inicia sesión para ver tu historial de pedidos.</p>
           <div style="display:flex;gap:10px;">
             <button class="om-next" style="flex:1;padding:10px;font-size:.7rem;" onclick="omLoginFromStep4()">Iniciar sesión</button>
@@ -1179,7 +1166,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
           <h2 class="confirm-title">¡Pedido confirmado!</h2>
           <div class="confirm-num" id="conf-num">—</div>
           <p class="confirm-note">Te enviamos un correo de confirmación. Nos pondremos en contacto para coordinar los detalles de entrega.</p>
-          <button class="confirm-wa" onclick="sendConfirmWA()">💬 Ver pedido en WhatsApp</button>
+          <button class="confirm-wa" onclick="sendConfirmWA()">💬 Hablar con la florería por WhatsApp</button>
         </div>
       </div>
       <div class="om-foot"><span></span><button class="om-next" onclick="closeOrderModal();">Cerrar</button></div>
@@ -1213,6 +1200,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
 <script>
+
 
 
 
@@ -1657,7 +1645,7 @@ function omNext(cur) {
 function omBack(cur) { omGo(cur - 1); }
 
 // Delivery type show/hide
-// ── Step 4 login/guest helpers ──
+// Step 4 helpers
 function initStep4() {
   const choice = document.getElementById('om-auth-choice');
   const form   = document.getElementById('om-customer-form');
@@ -1682,16 +1670,9 @@ function initStep4() {
     omState.linkedClientId = null;
   }
 }
-
-function omLoginFromStep4() {
-  omState._returnToStep = 4;
-  closeOrderModal();
-  openAuthModal();
-}
-
+function omLoginFromStep4() { omState._returnToStep = 4; closeOrderModal(); openAuthModal(); }
 function omContinueAsGuest() {
-  omState.isGuest = true;
-  omState.linkedClientId = null;
+  omState.isGuest = true; omState.linkedClientId = null;
   const choice = document.getElementById('om-auth-choice');
   const form   = document.getElementById('om-customer-form');
   if (choice) choice.style.display = 'none';
@@ -1941,7 +1922,7 @@ async function processPayment() {
 function sendConfirmWA() {
   if (!omState.confirmedOrder) return;
   const o = omState.confirmedOrder;
-  const msg = `🌸 *Pedido ${o.orderNumber} — Florería Karel*\n\nTu pedido ha sido confirmado y está siendo procesado.\n\n¿Tienes alguna pregunta? Escríbenos aquí.`;
+  const msg = 'Hola! Tengo una pregunta sobre el pedido #' + o.orderNumber;
   window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -2231,23 +2212,18 @@ function showAuthScreen(id) {
 async function requestOTP() {
   const btn = document.getElementById('auth-send-btn');
   btn.disabled = true; btn.textContent = 'Enviando…';
-
   try {
     authIdentifier = document.getElementById('auth-email-input').value.trim();
-    if (!authIdentifier || !/\S+@\S+\.\S+/.test(authIdentifier)) {
+    if (!authIdentifier || authIdentifier.indexOf('@') < 1) {
       showToast('Ingresa un correo válido', true); return;
     }
-
     await apiPost('/api/auth/customer/request-otp', { email: authIdentifier });
-
     document.getElementById('auth-otp-sub').textContent =
-      `Enviamos un código de 6 dígitos a ${authIdentifier}`;
-
+      'Enviamos un código de 6 dígitos a ' + authIdentifier;
     showAuthScreen('auth-otp');
     startCountdown();
     clearOTPInputs();
     setTimeout(() => document.querySelector('.otp-input')?.focus(), 100);
-
   } catch(e) {
     showToast(e.message || 'Error al enviar el código', true);
   } finally {
@@ -2255,7 +2231,6 @@ async function requestOTP() {
   }
 }
 
-// ── Step 2: Verify OTP ──
 async function verifyOTP() {
   const code = Array.from(document.querySelectorAll('.otp-input')).map(i => i.value).join('');
   if (code.length < 6) { showToast('Ingresa los 6 dígitos del código', true); return; }
@@ -2286,10 +2261,7 @@ async function verifyOTP() {
         document.getElementById('order-overlay').classList.add('open');
         document.body.style.overflow = 'hidden';
         omGo(4);
-      } else {
-        showPage('perfil');
-        loadProfileOrders();
-      }
+      } else { showPage('perfil'); loadProfileOrders(); }
     }
   } catch(e) {
     showToast(e.message || 'Código incorrecto o expirado', true);
@@ -2323,10 +2295,7 @@ async function completeProfile() {
       document.getElementById('order-overlay').classList.add('open');
       document.body.style.overflow = 'hidden';
       omGo(4);
-    } else {
-      showPage('perfil');
-      loadProfileOrders();
-    }
+    } else { showPage('perfil'); loadProfileOrders(); }
   } catch(e) {
     showToast(e.message || 'Error al guardar', true);
   } finally {
@@ -2466,6 +2435,7 @@ loadProducts();
 loadClosedDates();
 updateCartUI();
 initAuth();
+
 
 
 

@@ -13,7 +13,7 @@ enum StaffRole {
   ADMIN 
   OFFICE 
   FLORISTA 
-  REPARTIDOR
+  REPARTIDOR 
   }
 
 model Staff {
@@ -167,8 +167,6 @@ enum Occasion      {
   AMOR 
   OTRA 
   }
-
-
 model Order {
   id               String        @id @default(cuid())
   orderNumber      String        @unique
