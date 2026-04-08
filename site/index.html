@@ -1805,16 +1805,16 @@ async function processPayment() {
 
     // 2. Find or create client
     btn.textContent = 'Guardando pedido…';
-    let clientId = null;
-    try {
+     let clientId = null;
       const fullPhone = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
-      const existing = await apiGet('/api/clients?search=' + encodeURIComponent(fullPhone));
-      if (existing.length) clientId = existing[0].id;
-    } catch(e) {}
-    if (!clientId) {
-      const cl = await apiPost('/api/clients', { firstName, lastNameP: lastName, phone: fullPhone, email, source: 'WEB' });
+      try {
+        const existing = await apiGet('/api/clients?search=' + encodeURIComponent(fullPhone));
+        if (existing.length) clientId = existing[0].id;
+      } catch(e) {}
+      if (!clientId) {
+        const cl = await apiPost('/api/clients', { firstName, lastNameP: lastName, phone: fullPhone, email, source: 'WEB' });
       clientId = cl.id;
-    }
+      }
 
     // 3. Create order — payment already confirmed
     const orderPayload = {
