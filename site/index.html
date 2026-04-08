@@ -493,7 +493,9 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 .auth-logo img{height:40px;}
 .auth-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:400;color:#1a1a1a;margin-bottom:6px;text-align:center;}
 .auth-sub{font-size:.8rem;color:var(--muted);text-align:center;margin-bottom:28px;line-height:1.6;}
-
+.auth-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:24px;}
+.auth-tab{flex:1;padding:10px;background:none;border:none;font-family:'Jost',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;}
+.auth-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 .auth-screen{display:none;}
 .auth-screen.active{display:block;}
 .auth-or{text-align:center;font-size:.72rem;color:var(--muted);margin:16px 0;position:relative;}
@@ -863,13 +865,25 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     <!-- SCREEN: IDENTIFY -->
     <div class="auth-screen active" id="auth-identify">
       <h2 class="auth-title">Bienvenida</h2>
-      <p class="auth-sub">Ingresa tu correo y te enviamos un código de acceso.</p>
-
+      <p class="auth-sub">Inicia sesión o crea una cuenta con tu correo o teléfono.</p>
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthMethod('email')">📧 Correo</button>
+        <button class="auth-tab" onclick="switchAuthMethod('phone')">📱 Teléfono</button>
+      </div>
       <div id="auth-email-wrap">
         <label class="auth-label">Correo electrónico</label>
         <input class="auth-input" id="auth-email-input" type="email" placeholder="tu@correo.com" onkeydown="if(event.key==='Enter')requestOTP()"/>
       </div>
-
+      <div id="auth-phone-wrap" style="display:none;">
+        <label class="auth-label">Teléfono</label>
+        <div style="display:flex;gap:8px;">
+          <select class="auth-input" id="auth-phone-code" style="width:90px;flex-shrink:0;">
+            <option value="+52">🇲🇽 +52</option>
+            <option value="+1">🇺🇸 +1</option>
+          </select>
+          <input class="auth-input" id="auth-phone-input" type="tel" placeholder="656 000 0000" style="flex:1;" onkeydown="if(event.key==='Enter')requestOTP()"/>
+        </div>
+      </div>
       <button class="auth-btn" id="auth-send-btn" onclick="requestOTP()">Recibir código →</button>
       <p class="auth-switch">Al continuar aceptas nuestros <a>términos y condiciones</a></p>
     </div>
@@ -1098,6 +1112,17 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       <div class="om-body">
         <div class="om-step-label">Paso 4 de 6</div>
         <h2 class="om-step-title">Tus <em>datos</em></h2>
+
+        <!-- Auth choice shown when not logged in -->
+        <div id="om-auth-choice" style="display:none;margin-bottom:20px;padding:16px;background:var(--cream);border:1px solid var(--border);border-radius:4px;">
+          <p style="font-size:.82rem;color:var(--mid);margin-bottom:12px;">¿Tienes una cuenta? Inicia sesión para ver tu historial de pedidos.</p>
+          <div style="display:flex;gap:10px;">
+            <button class="om-next" style="flex:1;padding:10px;font-size:.7rem;" onclick="omLoginFromStep4()">Iniciar sesión</button>
+            <button class="om-back" style="flex:1;padding:10px;" onclick="omContinueAsGuest()">Continuar como invitado →</button>
+          </div>
+        </div>
+
+        <div id="om-customer-form" style="display:none;">
         <div class="mfr">
           <div class="mfg"><label class="mfl">Nombre *</label><input class="mfi" id="o-first" placeholder="Tu nombre"/></div>
           <div class="mfg"><label class="mfl">Apellido *</label><input class="mfi" id="o-last" placeholder="Tu apellido"/></div>
@@ -1120,6 +1145,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
             <div class="tile" onclick="selTile(this,'notif','none')"><div class="tile-icon" style="font-size:1.1rem;">🔕</div><div class="tile-label">No notificar</div></div>
           </div>
         </div>
+        </div><!-- /om-customer-form -->
       </div>
       <div class="om-foot"><button class="om-back" onclick="omBack(4)">← Atrás</button><button class="om-next" onclick="omNext(4)">Siguiente →</button></div>
     </div>
@@ -1131,7 +1157,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <h2 class="om-step-title">Pago <em>seguro</em></h2>
         <div class="sum-block" id="pay-summary">
           <div class="sum-row"><span class="sum-label">Subtotal</span><span id="ps-sub">—</span></div>
-          <div class="sum-row"><span class="sum-label">IVA (8%)</span><span id="ps-tax">—</span></div>
+          <div class="sum-row"><span class="sum-label">IVA (16%)</span><span id="ps-tax">—</span></div>
           <div class="sum-row"><span class="sum-label" id="ps-ship-label">Envío</span><span id="ps-ship">—</span></div>
           <div class="sum-total"><span>Total</span><span class="price" id="ps-total">—</span></div>
         </div>
@@ -1189,6 +1215,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 <script>
 
 
+
 // ═══════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════
@@ -1197,8 +1224,7 @@ const API_BASE = (window.location.hostname === 'localhost' || window.location.ho
   : 'https://karel-backend-production.up.railway.app';
 
 const WA_NUMBER = '526561303595';
-const STRIPE_PK ='pk_test_51TIGQc7lh4AQO7n6PD1gCIX5Q7PiNR3jBdWeHzYC1JUW0RiEW1PUHbDr6dueX82heIevhRCa6hguuBTAPtgWrhs400uGbQVWMS';
-//const STRIPE_PK = 'pk_live_51TIGQW9DkJxg2MOcv38zvykuQTmPGn7OT9BR4z9WlDOB89CkyxzHyyKKvQPSYRyU1ZZPO1PWXDVND46K4Ekd6yqI00f3otOAtH'; // ← update with your Stripe key
+const STRIPE_PK = 'pk_live_51TIGQW9DkJxg2MOcv38zvykuQTmPGn7OT9BR4z9WlDOB89CkyxzHyyKKvQPSYRyU1ZZPO1PWXDVND46K4Ekd6yqI00f3otOAtH'; // ← update with your Stripe key
 const SHIPPING_FEE = 125;
 const IVA_RATE = 0.08;
 
@@ -1542,6 +1568,9 @@ let omState = {
   notifyVia: 'whatsapp',
   currentStep: 1,
   confirmedOrder: null,
+  linkedClientId: null,
+  isGuest: false,
+  _returnToStep: null,
 };
 let stripe = null;
 let cardElement = null;
@@ -1587,6 +1616,7 @@ function omGo(step) {
     if (!d) continue;
     d.className = 'om-dot' + (i < step ? ' done' : i === step ? ' active' : '');
   }
+  if (step === 4) initStep4();
   if (step === 5) initStripe();
   if (step === 5) renderPaySummary();
 }
@@ -1626,6 +1656,47 @@ function omNext(cur) {
 function omBack(cur) { omGo(cur - 1); }
 
 // Delivery type show/hide
+// ── Step 4 login/guest helpers ──
+function initStep4() {
+  const choice = document.getElementById('om-auth-choice');
+  const form   = document.getElementById('om-customer-form');
+  if (currentCustomer) {
+    if (choice) choice.style.display = 'none';
+    if (form)   form.style.display = 'block';
+    const fn = document.getElementById('o-first');
+    const ln = document.getElementById('o-last');
+    const em = document.getElementById('o-email');
+    if (fn && !fn.value) fn.value = currentCustomer.firstName || '';
+    if (ln && !ln.value) ln.value = currentCustomer.lastName  || '';
+    if (em && !em.value) em.value = currentCustomer.email     || '';
+    omState.isGuest = false;
+    if (currentCustomer.email && !omState.linkedClientId) {
+      apiGet('/api/clients?search=' + encodeURIComponent(currentCustomer.email))
+        .then(r => { if (r.length) omState.linkedClientId = r[0].id; })
+        .catch(() => {});
+    }
+  } else {
+    if (choice) choice.style.display = 'block';
+    if (form)   form.style.display = 'none';
+    omState.linkedClientId = null;
+  }
+}
+
+function omLoginFromStep4() {
+  omState._returnToStep = 4;
+  closeOrderModal();
+  openAuthModal();
+}
+
+function omContinueAsGuest() {
+  omState.isGuest = true;
+  omState.linkedClientId = null;
+  const choice = document.getElementById('om-auth-choice');
+  const form   = document.getElementById('om-customer-form');
+  if (choice) choice.style.display = 'none';
+  if (form)   form.style.display = 'block';
+}
+
 function selTile(el, group, val) {
   const cont = el.closest('.tile-group');
   cont.querySelectorAll('.tile').forEach(t => t.classList.remove('sel'));
@@ -1805,16 +1876,21 @@ async function processPayment() {
 
     // 2. Find or create client
     btn.textContent = 'Guardando pedido…';
-     let clientId = null;
-      const fullPhone = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
+    let clientId = omState.linkedClientId || null;
+    const fullPhone = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
+    if (!clientId) {
       try {
-        const existing = await apiGet('/api/clients?search=' + encodeURIComponent(fullPhone));
-        if (existing.length) clientId = existing[0].id;
-      } catch(e) {}
-      if (!clientId) {
         const cl = await apiPost('/api/clients', { firstName, lastNameP: lastName, phone: fullPhone, email, source: 'WEB' });
-      clientId = cl.id;
+        clientId = cl.id;
+      } catch(e) {
+        if (e.message && (e.message.includes('409') || e.message.includes('already') || e.message.includes('Conflict'))) {
+          showToast('Este teléfono ya está registrado. Inicia sesión para continuar.', true);
+          btn.disabled = false; btn.textContent = 'Pagar y confirmar →';
+          return;
+        }
+        throw e;
       }
+    }
 
     // 3. Create order — payment already confirmed
     const orderPayload = {
@@ -2204,8 +2280,15 @@ async function verifyOTP() {
       closeAuthModal();
       updateAuthUI();
       showToast(`¡Bienvenida, ${res.customer.firstName}! 🌸`);
-      showPage('perfil');
-      loadProfileOrders();
+      if (omState._returnToStep === 4) {
+        omState._returnToStep = null;
+        document.getElementById('order-overlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+        omGo(4);
+      } else {
+        showPage('perfil');
+        loadProfileOrders();
+      }
     }
   } catch(e) {
     showToast(e.message || 'Código incorrecto o expirado', true);
@@ -2234,8 +2317,15 @@ async function completeProfile() {
     closeAuthModal();
     updateAuthUI();
     showToast(`¡Bienvenida, ${firstName}! 🌸`);
-    showPage('perfil');
-    loadProfileOrders();
+    if (omState._returnToStep === 4) {
+      omState._returnToStep = null;
+      document.getElementById('order-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      omGo(4);
+    } else {
+      showPage('perfil');
+      loadProfileOrders();
+    }
   } catch(e) {
     showToast(e.message || 'Error al guardar', true);
   } finally {
@@ -2375,6 +2465,7 @@ loadProducts();
 loadClosedDates();
 updateCartUI();
 initAuth();
+
 
 
 </script>
