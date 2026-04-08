@@ -3122,7 +3122,6 @@ async function confirmDelivery() {
     } else if (notifyVia === 'email' && order.client?.email) {
       sendDeliveryNotificationEmail(order, receivedBy);
     }
-    }
 
     // Update lastCreatedOrder so the receipt shows the delivery info
     lastCreatedOrder = { ...order, delivery: result.delivery || { receivedBy, deliveredAt: new Date() } };
