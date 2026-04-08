@@ -1858,19 +1858,42 @@ async function processPayment() {
 
     // 2. Find or create client
     btn.textContent = 'Guardando pedido…';
-    let clientId = omState.linkedClientId || null;
+    let clientId = null;
     const fullPhone = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
+
+    // If logged in, find client by email first
+    if (currentCustomer?.email) {
+      try {
+        const found = await apiGet('/api/clients?search=' + encodeURIComponent(currentCustomer.email));
+        if (found.length) clientId = found[0].id;
+      } catch(e) {}
+    }
+
+    // If still no clientId, try by phone
+    if (!clientId && fullPhone) {
+      try {
+        const found = await apiGet('/api/clients?search=' + encodeURIComponent(fullPhone));
+        if (found.length) clientId = found[0].id;
+      } catch(e) {}
+    }
+
+    // If still no clientId, create new client
     if (!clientId) {
       try {
         const cl = await apiPost('/api/clients', { firstName, lastNameP: lastName, phone: fullPhone, email, source: 'WEB' });
         clientId = cl.id;
       } catch(e) {
         if (e.message && (e.message.includes('409') || e.message.includes('already') || e.message.includes('Conflict'))) {
-          showToast('Este teléfono ya está registrado. Inicia sesión para continuar.', true);
-          btn.disabled = false; btn.textContent = 'Pagar y confirmar →';
-          return;
+          // Last resort: search again more broadly
+          try {
+            const found = await apiGet('/api/clients?search=' + encodeURIComponent(firstName));
+            const match = found.find(c => c.phone === fullPhone.replace(/[^0-9]/g,'') || c.email === email);
+            if (match) { clientId = match.id; }
+            else throw new Error('No se pudo identificar al cliente. Verifica tus datos.');
+          } catch(e2) { throw new Error('No se pudo identificar al cliente. Verifica tus datos.'); }
+        } else {
+          throw e;
         }
-        throw e;
       }
     }
 
