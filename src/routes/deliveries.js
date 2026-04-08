@@ -93,9 +93,16 @@ router.post('/:orderId/confirm', requireAuth, upload.single('photo'), async (req
       }
     }
 
-    const delivery = await prisma.delivery.update({
+    // Verify order exists first
+    const order = await prisma.order.findUnique({ where: { id: req.params.orderId } });
+    if (!order) {
+      return res.status(404).json({ error: `Pedido no encontrado: ${req.params.orderId}` });
+    }
+
+    const delivery = await prisma.delivery.upsert({
       where: { orderId: req.params.orderId },
-      data: { receivedBy: receivedBy.trim(), deliveredAt: new Date(), photoUrl, notificationSent: false },
+      create: { orderId: req.params.orderId, receivedBy: receivedBy.trim(), deliveredAt: new Date(), photoUrl, notificationSent: false },
+      update: { receivedBy: receivedBy.trim(), deliveredAt: new Date(), photoUrl, notificationSent: false },
     });
 
     await prisma.order.update({
@@ -105,28 +112,33 @@ router.post('/:orderId/confirm', requireAuth, upload.single('photo'), async (req
 
     req.io?.emit('delivery:confirmed', { orderId: req.params.orderId, receivedBy, deliveredAt: delivery.deliveredAt });
 
-    // Send delivery notification email if client has email and notifyVia includes email
-    const fullOrder = await prisma.order.findUnique({
-      where: { id: req.params.orderId },
-      include: { client: true, items: { include: { product: { select: { name: true } } } } },
-    });
-    if (fullOrder?.client?.email && fullOrder?.notifyVia === 'email') {
-      sendDeliveryNotification(fullOrder, delivery)
-        .catch(e => console.error('[Email] Delivery notification failed:', e.message));
-    }
-    // WhatsApp delivery notification — send if client has phone and requested WA, or as fallback
-    if (fullOrder?.client?.phone) {
-      const notifyVia = fullOrder?.notifyVia || '';
-      if (notifyVia === 'whatsapp' || notifyVia === 'none' || !notifyVia) {
-        const { sendDeliveryConfirmation } = require('../utils/whatsapp');
-        sendDeliveryConfirmation(fullOrder, fullOrder.client)
-          .catch(e => console.error('[WA] Delivery notification failed:', e.message));
+    // Send notifications — wrapped so they never crash the response
+    try {
+      const fullOrder = await prisma.order.findUnique({
+        where: { id: req.params.orderId },
+        include: { client: true, items: { include: { product: { select: { name: true } } } } },
+      });
+
+      if (fullOrder?.client?.email && fullOrder?.notifyVia === 'email') {
+        sendDeliveryNotification(fullOrder, delivery)
+          .catch(e => console.error('[Email] Delivery notification failed:', e.message));
       }
+
+      if (fullOrder?.client?.phone) {
+        const notifyVia = fullOrder?.notifyVia || '';
+        if (notifyVia === 'whatsapp' || notifyVia === 'none' || !notifyVia) {
+          const { sendDeliveryConfirmation } = require('../utils/whatsapp');
+          sendDeliveryConfirmation(fullOrder, fullOrder.client)
+            .catch(e => console.error('[WA] Delivery notification failed:', e.message));
+        }
+      }
+    } catch(notifErr) {
+      console.error('[Delivery] Notification error (non-fatal):', notifErr.message);
     }
 
     res.json({ delivery });
   } catch(err) {
-    console.error('Delivery confirm error:', err);
+    console.error('[Delivery confirm] Error:', err.message, '| orderId:', req.params.orderId);
     res.status(500).json({ error: err.message });
   }
 });
