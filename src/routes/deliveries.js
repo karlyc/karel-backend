@@ -119,7 +119,8 @@ router.post('/:orderId/confirm', requireAuth, upload.single('photo'), async (req
         include: { client: true, items: { include: { product: { select: { name: true } } } } },
       });
 
-      if (fullOrder?.client?.email && fullOrder?.notifyVia === 'email') {
+      // Always send email confirmation if client has email
+      if (fullOrder?.client?.email) {
         sendDeliveryNotification(fullOrder, delivery)
           .catch(e => console.error('[Email] Delivery notification failed:', e.message));
       }

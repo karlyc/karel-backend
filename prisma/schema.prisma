@@ -130,10 +130,10 @@ model RecipeItem {
 }
 
 enum OrderStatus   { 
-  EN_PROCESO 
+  EN_PROCESO
   POR_ENTREGAR 
   COMPLETADA 
-  CANCELADA
+  CANCELADA 
   }
 
 enum PaymentStatus { 
@@ -158,8 +158,7 @@ enum DeliveryType  {
   DOMICILIO_CASA 
   DOMICILIO_NEGOCIO 
   RECOGER_TIENDA 
-  } 
-
+  }
 enum Occasion { 
   CUMPLEANOS 
   ANIVERSARIO 
