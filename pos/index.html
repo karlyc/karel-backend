@@ -3113,13 +3113,7 @@ async function confirmDelivery() {
     // Fetch the order to get client notification preference + contact info
     const order = await api('GET', `/api/orders/${orderId}`);
 
-    // Send notification — backend handles email automatically
-    // Just show success, the backend confirm endpoint sends the email
-    const notifyVia = order.notifyVia || 'none';
-    if (notifyVia === 'email' && order.client?.email) {
-      await sendDeliveryNotificationEmail(order, receivedBy);
-    }
-
+    // Backend confirm endpoint handles email automatically
     // Update lastCreatedOrder so the receipt shows the delivery info
     lastCreatedOrder = { ...order, delivery: result.delivery || { receivedBy, deliveredAt: new Date() } };
 
