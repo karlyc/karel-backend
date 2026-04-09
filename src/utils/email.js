@@ -38,12 +38,22 @@ function buildReceiptHTML(order) {
     ? 'Crédito (pendiente de pago)'
     : (payMap[order.paymentMethod] || order.paymentMethod || '—');
 
-  const productRows = (order.items || []).map(i => `
-    <tr>
-      <td style="padding:10px 12px;border-bottom:1px solid #f5f5f5;font-size:13px;">${i.product?.name || '—'}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #f5f5f5;font-size:13px;text-align:center;">${i.quantity}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #f5f5f5;font-size:13px;text-align:right;font-weight:700;">$${fmt(i.unitPrice)}</td>
-    </tr>`).join('');
+  const productRows = (order.items || []).map(i => {
+    const photoUrl = i.product?.photo1Url;
+    const imgCell = photoUrl
+      ? `<td style="padding:8px 12px;border-bottom:1px solid #f5f5f5;width:56px;">
+           <img src="${photoUrl}" width="44" height="44" style="border-radius:6px;object-fit:cover;display:block;" alt="${i.product?.name||''}"/>
+         </td>`
+      : `<td style="padding:8px 12px;border-bottom:1px solid #f5f5f5;width:56px;">
+           <div style="width:44px;height:44px;background:#f5f0ee;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;">🌸</div>
+         </td>`;
+    return `<tr>
+      ${imgCell}
+      <td style="padding:8px 12px;border-bottom:1px solid #f5f5f5;font-size:13px;">${i.product?.name || '—'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f5f5f5;font-size:13px;text-align:center;">${i.quantity}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f5f5f5;font-size:13px;text-align:right;font-weight:700;">$${fmt(i.unitPrice)}</td>
+    </tr>`;
+  }).join('');
 
   const orderDate = new Date(order.createdAt).toLocaleDateString('es-MX', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -147,6 +157,7 @@ function buildReceiptHTML(order) {
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:10px;overflow:hidden;margin-bottom:16px;">
       <thead>
         <tr style="background:#faf5f3;">
+          <th style="padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#888;text-align:left;width:56px;"></th>
           <th style="padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#888;text-align:left;">Producto</th>
           <th style="padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#888;text-align:center;">Cant.</th>
           <th style="padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#888;text-align:right;">Precio</th>

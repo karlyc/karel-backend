@@ -367,4 +367,26 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// POST /api/orders/:id/send-confirmation-email
+// Manually resend order confirmation email from POS
+router.post('/:id/send-confirmation-email', requireAuth, async (req, res) => {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: {
+        client: true,
+        items: { include: { product: { select: { name: true, photo1Url: true } } } },
+      },
+    });
+    if (!order) return res.status(404).json({ error: 'Pedido no encontrado' });
+    if (!order.client?.email) return res.status(400).json({ error: 'El cliente no tiene correo registrado' });
+
+    await sendOrderConfirmation(order);
+    res.json({ ok: true });
+  } catch(err) {
+    console.error('[send-confirmation-email] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

@@ -2918,66 +2918,16 @@ function printOrder() {
   setTimeout(() => { win.focus(); win.print(); }, 800);
 }
 
-function emailOrder() {
+async function emailOrder() {
   if (!lastCreatedOrder) return;
   const o = lastCreatedOrder;
-  // Open print window — user can print to PDF and email it
-  // Also open mailto with the full text summary
-  const subject = encodeURIComponent(`Pedido ${o.orderNumber} — Florería y Regalos Karel`);
-
-  const winLabel = fmtWindow(o.deliveryWindow);
-  const isPickup = o.deliveryType === 'RECOGER_TIENDA';
-  const clientName = [o.client?.firstName, o.client?.middleName, o.client?.lastNameP, o.client?.lastNameM].filter(Boolean).join(' ') || '—';
-  const items = (o.items||[]).map(i=>`  • ${i.product?.name||'—'} × ${i.quantity}  $${fmt(i.unitPrice)}`).join('\n');
-  const deliveryAddr = isPickup
-    ? 'Recoger en tienda — Av. de la Raza 5262, Villa del Norte, C.P. 32369'
-    : [o.recipientAddress, o.recipientColonia].filter(Boolean).join(', ');
-  const payMap = { EFECTIVO:'Efectivo', TRANSFERENCIA:'Transferencia', TERMINAL:'Terminal', CASHAPP:'CashApp', APPLE_PAY:'Apple Pay', LINK_PAGO:'Link de pago', CHEQUE:'Cheque', ZELLE:'Zelle', STRIPE:'Stripe' };
-  const payLabel = o.paymentStatus === 'PENDIENTE' ? 'Crédito (pendiente)' : (payMap[o.paymentMethod] || '—');
-
-  const bodyText = [
-    `Estimado/a ${o.client?.firstName||'Cliente'},`,
-    '',
-    `Su pedido ${o.orderNumber} ha sido registrado en Florería y Regalos Karel.`,
-    '',
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-    `PEDIDO: ${o.orderNumber}`,
-    `Fecha: ${new Date(o.createdAt).toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`,
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-    '',
-    'CLIENTE',
-    `  ${clientName}`,
-    `  Tel: ${o.client?.phoneCode||'+52'} ${o.client?.phone||''}`,
-    '',
-    'ENTREGA',
-    `  Fecha: ${o.deliveryDate?.split('T')[0]||'—'}`,
-    `  Horario: ${winLabel}`,
-    `  Tipo: ${isPickup ? 'Recoger en tienda' : 'A domicilio'}`,
-    o.recipientName ? `  Destinatario: ${o.recipientName}` : '',
-    deliveryAddr ? `  Dirección: ${deliveryAddr}` : '',
-    o.recipientNotes ? `  Notas: ${o.recipientNotes}` : '',
-    o.messageText ? `  Mensaje: "${o.messageText}" — ${o.messageAnon ? 'Anónimo' : o.messageFrom||''}` : '',
-    '',
-    'PRODUCTOS',
-    items,
-    '',
-    `  Subtotal: $${fmt(o.subtotal)}`,
-    Number(o.deliveryFee)>0 ? `  Envío: $${fmt(o.deliveryFee)}` : '',
-    Number(o.advance)>0 ? `  Anticipo: -$${fmt(o.advance)}` : '',
-    `  TOTAL: $${fmt(o.total)} MXN`,
-    '',
-    `PAGO: ${payLabel}`,
-    '',
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-    'Gracias por su preferencia.',
-    'Florería y Regalos Karel',
-    'Av. de la Raza 5262 · Ciudad Juárez',
-    'Tel: 656 611 1124 · WhatsApp: (656) 130-3595',
-    'RFC: GMB081001TH8',
-  ].filter(l => l !== '').join('\n');
-
-  window.open(`mailto:${o.client?.email||''}?subject=${subject}&body=${encodeURIComponent(bodyText)}`, '_blank');
-  toast('Abriendo correo… 📧');
+  if (!o.client?.email) { toastErr('El cliente no tiene correo registrado'); return; }
+  try {
+    await api('POST', `/api/orders/${o.id}/send-confirmation-email`);
+    toast('Correo enviado ✓ 📧');
+  } catch(e) {
+    toastErr('No se pudo enviar el correo: ' + e.message);
+  }
 }
 
 function waOrder() {
