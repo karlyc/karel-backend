@@ -9,7 +9,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum StaffRole { ADMIN OFFICE FLORISTA REPARTIDOR }
+enum StaffRole { 
+  ADMIN 
+  OFFICE 
+  FLORISTA 
+  REPARTIDOR 
+  }
 
 model Staff {
   id        String    @id @default(cuid())
@@ -24,8 +29,23 @@ model Staff {
   deliveries     Delivery[] @relation("AssignedTo")
 }
 
-enum ClientSource { WEB IN_STORE INSTAGRAM GOOGLE FACEBOOK REFERRAL OTHER }
-enum LoyaltyTier  { REGULAR FREQUENT VIP PLATINUM }
+enum ClientSource { 
+  WEB 
+  IN_STORE 
+  INSTAGRAM 
+  GOOGLE 
+  FACEBOOK 
+  REFERRAL 
+  OTHER 
+  }
+
+enum LoyaltyTier  { 
+  REGULAR 
+  FREQUENT 
+  VIP 
+  PLATINUM 
+  }
+
 
 model Client {
   id           String       @id @default(cuid())
@@ -110,11 +130,45 @@ model RecipeItem {
   inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
 }
 
-enum OrderStatus   { EN_PROCESO POR_ENTREGAR COMPLETADA CANCELADA }
-enum PaymentStatus { PENDIENTE PAGO_RECIBIDO PAGADA }
-enum PaymentMethod { EFECTIVO TRANSFERENCIA TERMINAL CASHAPP APPLE_PAY LINK_PAGO CHEQUE ZELLE STRIPE }
-enum DeliveryType  { DOMICILIO_CASA DOMICILIO_NEGOCIO RECOGER_TIENDA }
-enum Occasion      { CUMPLEANOS ANIVERSARIO FUNERAL AMOR OTRA }
+enum OrderStatus   { 
+  EN_PROCESO 
+  POR_ENTREGAR 
+  COMPLETADA 
+  CANCELADA 
+  }
+
+enum PaymentStatus { 
+  PENDIENTE 
+  PAGO_RECIBIDO 
+  PAGADA 
+  }
+
+enum PaymentMethod { 
+  EFECTIVO 
+  TRANSFERENCIA 
+  TERMINAL 
+  CASHAPP 
+  APPLE_PAY 
+  LINK_PAGO 
+  CHEQUE 
+  ZELLE 
+  STRIPE 
+  }
+
+enum DeliveryType  { 
+  DOMICILIO_CASA 
+  DOMICILIO_NEGOCIO 
+  RECOGER_TIENDA 
+  }
+
+enum Occasion      { 
+  CUMPLEANOS 
+  ANIVERSARIO 
+  FUNERAL 
+  AMOR 
+  OTRA 
+  }
+
 
 model Order {
   id               String        @id @default(cuid())
@@ -205,7 +259,10 @@ model Task {
   order        Order?    @relation(fields: [orderId], references: [id])
 }
 
-enum ExpenditureType { MENSUAL MISCELANEA }
+enum ExpenditureType { 
+  MENSUAL 
+  MISCELANEA 
+  }
 
 model Expenditure {
   id          String          @id @default(cuid())
