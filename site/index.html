@@ -1125,12 +1125,6 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
           </div>
         </div>
         <div class="mfg"><label class="mfl">Correo electrónico *</label><input class="mfi" id="o-email" type="email" placeholder="tu@correo.com"/></div>
-        <div class="mfg"><label class="mfl">Notificación de entrega</label>
-          <div class="tile-group cols-3" id="notif-tiles" style="margin-top:6px;">
-            <div class="tile sel" onclick="selTile(this,'notif','whatsapp')"><div class="tile-icon" style="font-size:1.1rem;">💬</div><div class="tile-label">WhatsApp</div></div>
-            <div class="tile" onclick="selTile(this,'notif','email')"><div class="tile-icon" style="font-size:1.1rem;">📧</div><div class="tile-label">Correo</div></div>
-            <div class="tile" onclick="selTile(this,'notif','none')"><div class="tile-icon" style="font-size:1.1rem;">🔕</div><div class="tile-label">No notificar</div></div>
-          </div>
         </div>
         </div><!-- /om-customer-form -->
       </div>
@@ -1148,12 +1142,39 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
           <div class="sum-row"><span class="sum-label" id="ps-ship-label">Envío</span><span id="ps-ship">—</span></div>
           <div class="sum-total"><span>Total</span><span class="price" id="ps-total">—</span></div>
         </div>
-        <div class="mfg">
-          <label class="mfl">Datos de tarjeta</label>
-          <div id="stripe-card-element"></div>
-          <div class="stripe-error" id="stripe-error"></div>
+        <!-- Payment method selector -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+          <div class="tile sel" id="pm-stripe" onclick="selectPaymentMethod('stripe')" style="padding:14px;text-align:center;cursor:pointer;">
+            <div style="font-size:1.3rem;margin-bottom:4px;">🇺🇸</div>
+            <div style="font-size:.75rem;font-weight:700;color:var(--text);">Tarjeta americana</div>
+            <div style="font-size:.65rem;color:var(--muted);margin-top:2px;">Visa · MC · Amex</div>
+          </div>
+          <div class="tile" id="pm-mp" onclick="selectPaymentMethod('mp')" style="padding:14px;text-align:center;cursor:pointer;">
+            <div style="font-size:1.3rem;margin-bottom:4px;">🇲🇽</div>
+            <div style="font-size:.75rem;font-weight:700;color:var(--text);">Tarjeta mexicana</div>
+            <div style="font-size:.65rem;color:var(--muted);margin-top:2px;">OXXO · SPEI · Débito</div>
+          </div>
         </div>
-        <p style="font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:10px;">🔒 Pago 100% seguro con Stripe. No almacenamos datos de tarjeta.</p>
+
+        <!-- Stripe form -->
+        <div id="payment-stripe">
+          <div class="mfg">
+            <label class="mfl">Datos de tarjeta</label>
+            <div id="stripe-card-element"></div>
+            <div class="stripe-error" id="stripe-error"></div>
+          </div>
+          <p style="font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:10px;">🔒 Pago seguro con Stripe. No almacenamos datos de tarjeta.</p>
+        </div>
+
+        <!-- Mercado Pago form -->
+        <div id="payment-mp" style="display:none;">
+          <div style="background:var(--cream);border:1px solid var(--border);padding:16px;text-align:center;">
+            <div style="font-size:2rem;margin-bottom:8px;">🛒</div>
+            <p style="font-size:.85rem;color:var(--text);font-weight:600;margin-bottom:4px;">Pagar con Mercado Pago</p>
+            <p style="font-size:.78rem;color:var(--muted);line-height:1.6;">Serás redirigido a Mercado Pago para completar tu pago de forma segura. Acepta tarjetas mexicanas, OXXO y SPEI.</p>
+          </div>
+          <div class="stripe-error" id="mp-error" style="margin-top:8px;"></div>
+        </div>
       </div>
       <div class="om-foot"><button class="om-back" onclick="omBack(5)">← Atrás</button><button class="om-next" id="pay-btn" onclick="processPayment()">Pagar y confirmar</button></div>
     </div>
@@ -1212,8 +1233,8 @@ const API_BASE = (window.location.hostname === 'localhost' || window.location.ho
   : 'https://karel-backend-production.up.railway.app';
 
 const WA_NUMBER = '526561303595';
-const STRIPE_PK = 'pk_test_51TIGQc7lh4AQO7n6PD1gCIX5Q7PiNR3jBdWeHzYC1JUW0RiEW1PUHbDr6dueX82heIevhRCa6hguuBTAPtgWrhs400uGbQVWMS'; // ← update with your Stripe key
-//const STRIPE_PK = 'pk_live_51TIGQW9DkJxg2MOcv38zvykuQTmPGn7OT9BR4z9WlDOB89CkyxzHyyKKvQPSYRyU1ZZPO1PWXDVND46K4Ekd6yqI00f3otOAtH'; // ← update with your Stripe key
+const MP_PUBLIC_KEY = 'TEST-5ac33410-965a-4532-9c09-2c2925f1a9d5'; // ← update with Mercado Pago public key
+const STRIPE_PK = 'pk_live_51TIGQW9DkJxg2MOcv38zvykuQTmPGn7OT9BR4z9WlDOB89CkyxzHyyKKvQPSYRyU1ZZPO1PWXDVND46K4Ekd6yqI00f3otOAtH'; // ← update with your Stripe key
 const SHIPPING_FEE = 125;
 const IVA_RATE = 0.08;
 
@@ -1554,12 +1575,13 @@ function closeCart() {
 let omState = {
   occasion: '', occasionLabel: '',
   deliveryType: '', deliveryTypeLabel: '',
-  notifyVia: 'whatsapp',
+  notifyVia: 'email',
   currentStep: 1,
   confirmedOrder: null,
   linkedClientId: null,
   isGuest: false,
   _returnToStep: null,
+  paymentMethod: 'stripe', // 'stripe' | 'mp'
 };
 let stripe = null;
 let cardElement = null;
@@ -1606,7 +1628,7 @@ function omGo(step) {
     d.className = 'om-dot' + (i < step ? ' done' : i === step ? ' active' : '');
   }
   if (step === 4) initStep4();
-  if (step === 5) initStripe();
+  if (step === 5) { initStep5(); }
   if (step === 5) renderPaySummary();
 }
 
@@ -1815,12 +1837,43 @@ function initStripe() {
   }
 }
 
+// ── Payment method selection ──
+let mpInitialized = false;
+
+function initStep5() {
+  selectPaymentMethod(omState.paymentMethod || 'stripe');
+  renderPaySummary();
+  if (omState.paymentMethod === 'stripe') initStripe();
+}
+
+function selectPaymentMethod(method) {
+  omState.paymentMethod = method;
+  document.getElementById('pm-stripe').classList.toggle('sel', method === 'stripe');
+  document.getElementById('pm-mp').classList.toggle('sel', method === 'mp');
+  document.getElementById('payment-stripe').style.display = method === 'stripe' ? 'block' : 'none';
+  document.getElementById('payment-mp').style.display = method === 'mp' ? 'block' : 'none';
+
+  const payBtn = document.getElementById('pay-btn');
+  if (method === 'stripe') {
+    payBtn.textContent = 'Pagar y confirmar';
+    initStripe();
+  } else {
+    payBtn.textContent = 'Ir a Mercado Pago →';
+  }
+}
+
 async function processPayment() {
   const btn = document.getElementById('pay-btn');
   btn.disabled = true; btn.textContent = 'Procesando…';
   document.getElementById('stripe-error').textContent = '';
 
   try {
+    // Branch by payment method
+    if (omState.paymentMethod === 'mp') {
+      await processMercadoPago();
+      return;
+    }
+
     const firstName = document.getElementById('o-first').value.trim();
     const lastName  = document.getElementById('o-last').value.trim();
     const phone     = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
@@ -1939,6 +1992,158 @@ async function processPayment() {
     showToast(e.message, true);
   } finally {
     btn.disabled = false; btn.textContent = 'Pagar y confirmar →';
+  }
+}
+
+// ── Mercado Pago flow ──
+async function processMercadoPago() {
+  const btn = document.getElementById('pay-btn');
+  const errEl = document.getElementById('mp-error');
+  btn.disabled = true; btn.textContent = 'Redirigiendo…';
+  if (errEl) errEl.textContent = '';
+
+  try {
+    const firstName = document.getElementById('o-first').value.trim();
+    const lastName  = document.getElementById('o-last').value.trim();
+    const email     = document.getElementById('o-email').value.trim();
+    const dt        = omState.deliveryType;
+    const isPickup  = dt === 'RECOGER_TIENDA';
+    const sub       = cartSubtotal();
+    const ship      = isPickup ? 0 : SHIPPING_FEE;
+    const tax       = (sub + ship) * IVA_RATE;
+    const total     = sub + ship + tax;
+
+    // Save order data to sessionStorage so we can create the order after MP redirect
+    const orderDraft = {
+      firstName, lastName,
+      phone: document.getElementById('o-code').value + document.getElementById('o-phone').value.trim(),
+      email,
+      dt, isPickup, sub, ship, tax, total,
+      deliveryDate:     document.getElementById('d-date').value,
+      deliveryWindow:   document.getElementById('d-window').value,
+      recipientName:    document.getElementById('d-rname')?.value || '',
+      recipientPhone:   document.getElementById('d-rphone')?.value || '',
+      recipientAddress: document.getElementById('d-street')?.value || '',
+      recipientColonia: document.getElementById('d-colonia')?.value || '',
+      recipientNotes:   document.getElementById('d-notes')?.value || '',
+      messageFrom:      document.getElementById('d-from')?.value || firstName,
+      messageText:      document.getElementById('d-msg')?.value || '',
+      messageAnon:      document.getElementById('d-anon')?.checked || false,
+      occasion:         omState.occasion || 'OTRA',
+      cart:             JSON.stringify(cart),
+      notifyVia:        omState.notifyVia,
+    };
+    sessionStorage.setItem('karel_order_draft', JSON.stringify(orderDraft));
+
+    // Create MP preference
+    const res = await apiPost('/api/mp/create-preference', {
+      items: cart.map(i => ({
+        productId: i.productId,
+        name: i.name,
+        quantity: i.qty,
+        unitPrice: i.unitPrice,
+      })),
+      payer: { firstName, lastName, email },
+      total,
+    });
+
+    // Redirect to Mercado Pago checkout
+    const url = res.sandbox_init_point || res.init_point;
+    window.location.href = url;
+
+  } catch(e) {
+    if (errEl) errEl.textContent = e.message || 'Error al conectar con Mercado Pago';
+    btn.disabled = false; btn.textContent = 'Ir a Mercado Pago →';
+  }
+}
+
+// Handle MP return (after redirect back from MP)
+function checkMPReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const mp = params.get('mp');
+  const paymentId = params.get('payment_id');
+
+  if (!mp) return;
+
+  // Clean URL
+  window.history.replaceState({}, '', window.location.pathname);
+
+  if (mp === 'success' && paymentId) {
+    const draft = sessionStorage.getItem('karel_order_draft');
+    if (draft) {
+      sessionStorage.removeItem('karel_order_draft');
+      createOrderAfterMP(JSON.parse(draft), paymentId);
+    }
+  } else if (mp === 'failure') {
+    showToast('El pago fue rechazado. Intenta de nuevo.', true);
+  } else if (mp === 'pending') {
+    showToast('Tu pago está pendiente. Te notificaremos cuando sea confirmado.', false);
+  }
+}
+
+async function createOrderAfterMP(draft, paymentId) {
+  try {
+    // Restore cart
+    cart = JSON.parse(draft.cart);
+    updateCartUI();
+
+    // Find or create client
+    let clientId = null;
+    const fullPhone = draft.phone;
+    try {
+      const found = await apiGet('/api/clients?search=' + encodeURIComponent(draft.email));
+      if (found.length) clientId = found[0].id;
+    } catch(e) {}
+    if (!clientId && fullPhone) {
+      try {
+        const found = await apiGet('/api/clients?search=' + encodeURIComponent(fullPhone));
+        if (found.length) clientId = found[0].id;
+      } catch(e) {}
+    }
+    if (!clientId) {
+      const cl = await apiPost('/api/clients', {
+        firstName: draft.firstName, lastNameP: draft.lastName,
+        phone: fullPhone, email: draft.email, source: 'WEB'
+      });
+      clientId = cl.id;
+    }
+
+    const order = await apiPost('/api/orders', {
+      clientId,
+      deliveryDate:     draft.deliveryDate,
+      deliveryType:     draft.dt === 'FUNERAL' ? 'DOMICILIO_CASA' : draft.dt,
+      deliveryWindow:   draft.deliveryWindow,
+      deliveryFee:      draft.ship,
+      recipientName:    draft.recipientName || draft.firstName,
+      recipientPhone:   draft.recipientPhone || fullPhone,
+      recipientAddress: draft.recipientAddress,
+      recipientColonia: draft.recipientColonia,
+      recipientNotes:   draft.recipientNotes,
+      messageFrom:      draft.messageAnon ? 'Anónimo' : draft.messageFrom,
+      messageText:      draft.messageText,
+      messageAnon:      draft.messageAnon,
+      occasion:         draft.occasion,
+      items:            cart.map(i => ({ productId: i.productId, quantity: i.qty })),
+      paymentType:      'RECIBIDO',
+      paymentMethod:    'STRIPE', // closest available enum
+      paymentStatus:    'PAGADA',
+      stripePaymentId:  paymentId,
+      advance:          0,
+      needsInvoice:     false,
+      notifyVia:        draft.notifyVia,
+      source:           'WEB',
+    });
+
+    // Show confirmation
+    openOrderModal();
+    omGo(6);
+    document.getElementById('conf-num').textContent = order.orderNumber;
+    cart = []; updateCartUI();
+    showToast('¡Pago confirmado! 🌸');
+
+  } catch(e) {
+    showToast('Tu pago fue exitoso pero hubo un error al guardar el pedido. Contáctanos al 656 611-1124', true);
+    console.error('MP order creation error:', e);
   }
 }
 
@@ -2458,6 +2663,7 @@ loadProducts();
 loadClosedDates();
 updateCartUI();
 initAuth();
+checkMPReturn();
 
 
 

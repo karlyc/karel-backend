@@ -9,9 +9,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum StaffRole { 
+enum StaffRole {
   ADMIN 
-  OFFICE
+  OFFICE 
   FLORISTA 
   REPARTIDOR 
   }
