@@ -10,6 +10,43 @@ function getMP() {
   return { Preference, Payment, client };
 }
 
+// ── POST /api/mp/process-payment ──
+// Processes payment using Bricks formData
+router.post('/process-payment', async (req, res) => {
+  try {
+    if (!process.env.MP_ACCESS_TOKEN) {
+      return res.status(500).json({ error: 'MP_ACCESS_TOKEN not configured' });
+    }
+
+    const { formData, amount, email, description } = req.body;
+    const { Payment, client } = getMP();
+
+    const payment = new Payment(client);
+    const result = await payment.create({
+      body: {
+        ...formData,
+        transaction_amount: Number(amount),
+        description: description || 'Florería y Regalos Karel',
+        payer: {
+          email: formData.payer?.email || email,
+          identification: formData.payer?.identification,
+        },
+      },
+    });
+
+    console.log(`[MP] Payment ${result.id} status: ${result.status}`);
+
+    res.json({
+      id: result.id,
+      status: result.status,
+      status_detail: result.status_detail,
+    });
+  } catch(err) {
+    console.error('[MP] process-payment error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /api/mp/create-preference ──
 // Creates a Mercado Pago preference and returns the checkout URL
 router.post('/create-preference', async (req, res) => {

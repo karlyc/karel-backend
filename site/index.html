@@ -18,6 +18,7 @@
 <meta name="twitter:card" content="summary_large_image"/>
 <link rel="icon" type="image/png" href="https://res.cloudinary.com/dkz7mbacc/image/upload/v1774566491/Untitled_design_2_adxk40.png">
 <script src="https://js.stripe.com/v3/"></script>
+<script src="https://sdk.mercadopago.com/js/v2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script type="application/ld+json">
 
@@ -1166,13 +1167,9 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
           <p style="font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:10px;">🔒 Pago seguro con Stripe. No almacenamos datos de tarjeta.</p>
         </div>
 
-        <!-- Mercado Pago form -->
+        <!-- Mercado Pago Bricks -->
         <div id="payment-mp" style="display:none;">
-          <div style="background:var(--cream);border:1px solid var(--border);padding:16px;text-align:center;">
-            <div style="font-size:2rem;margin-bottom:8px;">🛒</div>
-            <p style="font-size:.85rem;color:var(--text);font-weight:600;margin-bottom:4px;">Pagar con Mercado Pago</p>
-            <p style="font-size:.78rem;color:var(--muted);line-height:1.6;">Serás redirigido a Mercado Pago para completar tu pago de forma segura. Acepta tarjetas mexicanas, OXXO y SPEI.</p>
-          </div>
+          <div id="mp-brick-container"></div>
           <div class="stripe-error" id="mp-error" style="margin-top:8px;"></div>
         </div>
       </div>
@@ -1865,9 +1862,12 @@ function selectPaymentMethod(method) {
   const payBtn = document.getElementById('pay-btn');
   if (method === 'stripe') {
     payBtn.textContent = 'Pagar y confirmar';
+    payBtn.style.display = 'block';
     initStripe();
   } else {
-    payBtn.textContent = 'Ir a Mercado Pago →';
+    // Hide the pay button — MP Brick has its own submit button
+    payBtn.style.display = 'none';
+    initMPBrick();
   }
 }
 
@@ -2005,11 +2005,78 @@ async function processPayment() {
   }
 }
 
-// ── Mercado Pago flow ──
-async function processMercadoPago() {
-  const btn = document.getElementById('pay-btn');
+// ── Mercado Pago Bricks flow ──
+let mpBrick = null;
+let mpBrickController = null;
+
+async function initMPBrick() {
+  const container = document.getElementById('mp-brick-container');
+  if (!container) return;
+
+  // Clear previous brick
+  container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem;">Cargando forma de pago…</div>';
+  if (mpBrickController) {
+    try { await mpBrickController.unmount(); } catch(e) {}
+    mpBrickController = null;
+  }
+
+  try {
+    const dt      = omState.deliveryType;
+    const isPickup = dt === 'RECOGER_TIENDA';
+    const sub     = cartSubtotal();
+    const ship    = isPickup ? 0 : SHIPPING_FEE;
+    const tax     = (sub + ship) * IVA_RATE;
+    const total   = Math.round((sub + ship + tax) * 100) / 100;
+
+    const email = document.getElementById('o-email')?.value.trim() || '';
+    const firstName = document.getElementById('o-first')?.value.trim() || '';
+    const lastName  = document.getElementById('o-last')?.value.trim() || '';
+
+    const mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'es-MX' });
+    const bricks = mp.bricks();
+
+    mpBrickController = await bricks.create('payment', 'mp-brick-container', {
+      initialization: {
+        amount: total,
+        payer: { email, firstName, lastName },
+      },
+      customization: {
+        paymentMethods: {
+          creditCard: 'all',
+          debitCard: 'all',
+        },
+        visual: {
+          style: {
+            theme: 'default',
+            customVariables: {
+              formPadding: '0px',
+              inputBackgroundColor: '#FFFFFF',
+            },
+          },
+        },
+      },
+      callbacks: {
+        onReady: () => {
+          console.log('[MP] Brick ready');
+        },
+        onSubmit: async ({ selectedPaymentMethod, formData }) => {
+          return await processMPPayment(formData);
+        },
+        onError: (error) => {
+          console.error('[MP] Brick error:', error);
+          const errEl = document.getElementById('mp-error');
+          if (errEl) errEl.textContent = 'Error en el formulario de pago. Intenta de nuevo.';
+        },
+      },
+    });
+  } catch(e) {
+    console.error('[MP] initMPBrick error:', e);
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--accent);font-size:.82rem;">Error al cargar Mercado Pago. Intenta con tarjeta americana.</div>';
+  }
+}
+
+async function processMPPayment(formData) {
   const errEl = document.getElementById('mp-error');
-  btn.disabled = true; btn.textContent = 'Redirigiendo…';
   if (errEl) errEl.textContent = '';
 
   try {
@@ -2021,141 +2088,86 @@ async function processMercadoPago() {
     const sub       = cartSubtotal();
     const ship      = isPickup ? 0 : SHIPPING_FEE;
     const tax       = (sub + ship) * IVA_RATE;
-    const total     = sub + ship + tax;
+    const total     = Math.round((sub + ship + tax) * 100) / 100;
+    const fullPhone = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
 
-    // Save order data to sessionStorage so we can create the order after MP redirect
-    const orderDraft = {
-      firstName, lastName,
-      phone: document.getElementById('o-code').value + document.getElementById('o-phone').value.trim(),
+    // Process payment via backend
+    const payRes = await apiPost('/api/mp/process-payment', {
+      formData,
+      amount: total,
       email,
-      dt, isPickup, sub, ship, tax, total,
-      deliveryDate:     document.getElementById('d-date').value,
-      deliveryWindow:   document.getElementById('d-window').value,
-      recipientName:    document.getElementById('d-rname')?.value || '',
-      recipientPhone:   document.getElementById('d-rphone')?.value || '',
-      recipientAddress: document.getElementById('d-street')?.value || '',
-      recipientColonia: document.getElementById('d-colonia')?.value || '',
-      recipientNotes:   document.getElementById('d-notes')?.value || '',
-      messageFrom:      document.getElementById('d-from')?.value || firstName,
-      messageText:      document.getElementById('d-msg')?.value || '',
-      messageAnon:      document.getElementById('d-anon')?.checked || false,
-      occasion:         omState.occasion || 'OTRA',
-      cart:             JSON.stringify(cart),
-      notifyVia:        omState.notifyVia,
-    };
-    sessionStorage.setItem('karel_order_draft', JSON.stringify(orderDraft));
-
-    // Create MP preference
-    const res = await apiPost('/api/mp/create-preference', {
-      items: cart.map(i => ({
-        productId: i.productId,
-        name: i.name,
-        quantity: i.qty,
-        unitPrice: i.unitPrice,
-      })),
-      payer: { firstName, lastName, email },
-      total,
+      description: `Florería Karel — ${cart.map(i => i.name).join(', ')}`,
     });
 
-    // Redirect to Mercado Pago checkout
-    const url = res.sandbox_init_point || res.init_point;
-    window.location.href = url;
+    if (payRes.status === 'approved') {
+      // Payment approved — create order
+      let clientId = omState.linkedClientId || null;
+      if (!clientId) {
+        try {
+          const found = await apiGet('/api/clients?search=' + encodeURIComponent(email));
+          if (found.length) clientId = found[0].id;
+        } catch(e) {}
+      }
+      if (!clientId) {
+        try {
+          const cl = await apiPost('/api/clients', { firstName, lastNameP: lastName, phone: fullPhone, email, source: 'WEB' });
+          clientId = cl.id;
+        } catch(e) {
+          const found = await apiGet('/api/clients?search=' + encodeURIComponent(fullPhone));
+          if (found.length) clientId = found[0].id;
+        }
+      }
 
-  } catch(e) {
-    if (errEl) errEl.textContent = e.message || 'Error al conectar con Mercado Pago';
-    btn.disabled = false; btn.textContent = 'Ir a Mercado Pago →';
-  }
-}
-
-// Handle MP return (after redirect back from MP)
-function checkMPReturn() {
-  const params = new URLSearchParams(window.location.search);
-  const mp = params.get('mp');
-  const paymentId = params.get('payment_id');
-
-  if (!mp) return;
-
-  // Clean URL
-  window.history.replaceState({}, '', window.location.pathname);
-
-  if (mp === 'success' && paymentId) {
-    const draft = sessionStorage.getItem('karel_order_draft');
-    if (draft) {
-      sessionStorage.removeItem('karel_order_draft');
-      createOrderAfterMP(JSON.parse(draft), paymentId);
-    }
-  } else if (mp === 'failure') {
-    showToast('El pago fue rechazado. Intenta de nuevo.', true);
-  } else if (mp === 'pending') {
-    showToast('Tu pago está pendiente. Te notificaremos cuando sea confirmado.', false);
-  }
-}
-
-async function createOrderAfterMP(draft, paymentId) {
-  try {
-    // Restore cart
-    cart = JSON.parse(draft.cart);
-    updateCartUI();
-
-    // Find or create client
-    let clientId = null;
-    const fullPhone = draft.phone;
-    try {
-      const found = await apiGet('/api/clients?search=' + encodeURIComponent(draft.email));
-      if (found.length) clientId = found[0].id;
-    } catch(e) {}
-    if (!clientId && fullPhone) {
-      try {
-        const found = await apiGet('/api/clients?search=' + encodeURIComponent(fullPhone));
-        if (found.length) clientId = found[0].id;
-      } catch(e) {}
-    }
-    if (!clientId) {
-      const cl = await apiPost('/api/clients', {
-        firstName: draft.firstName, lastNameP: draft.lastName,
-        phone: fullPhone, email: draft.email, source: 'WEB'
+      const order = await apiPost('/api/orders', {
+        clientId,
+        deliveryDate:     document.getElementById('d-date').value,
+        deliveryType:     dt === 'FUNERAL' ? 'DOMICILIO_CASA' : dt,
+        deliveryWindow:   document.getElementById('d-window').value,
+        deliveryFee:      ship,
+        recipientName:    dt === 'FUNERAL' ? document.getElementById('d-difunto').value : (isPickup ? firstName : document.getElementById('d-rname').value),
+        recipientPhone:   isPickup ? fullPhone : (document.getElementById('d-rphone')?.value || ''),
+        recipientAddress: dt === 'FUNERAL' ? document.getElementById('d-fun-addr').value : (isPickup ? '' : document.getElementById('d-street').value),
+        recipientColonia: dt === 'FUNERAL' ? document.getElementById('d-fun-col').value : (document.getElementById('d-colonia')?.value || ''),
+        recipientNotes:   dt === 'FUNERAL' ? document.getElementById('d-banda').value : (document.getElementById('d-notes')?.value || ''),
+        messageFrom:      document.getElementById('d-anon')?.checked ? 'Anónimo' : (document.getElementById('d-from')?.value || firstName),
+        messageText:      document.getElementById('d-msg')?.value || '',
+        messageAnon:      document.getElementById('d-anon')?.checked || false,
+        occasion:         omState.occasion || 'OTRA',
+        items:            cart.map(i => ({ productId: i.productId, quantity: i.qty })),
+        paymentType:      'RECIBIDO',
+        paymentMethod:    'STRIPE',
+        paymentStatus:    'PAGADA',
+        stripePaymentId:  String(payRes.id),
+        advance:          0,
+        needsInvoice:     false,
+        notifyVia:        omState.notifyVia,
+        source:           'WEB',
       });
-      clientId = cl.id;
+
+      omState.confirmedOrder = order;
+      document.getElementById('conf-num').textContent = order.orderNumber;
+      cart = []; updateCartUI();
+      omGo(6);
+
+    } else if (payRes.status === 'pending') {
+      if (errEl) errEl.textContent = 'Tu pago está pendiente de confirmación. Te notificaremos por correo.';
+    } else {
+      if (errEl) errEl.textContent = 'Pago rechazado. Verifica tus datos o intenta con otra tarjeta.';
+      throw new Error('payment_rejected');
     }
-
-    const order = await apiPost('/api/orders', {
-      clientId,
-      deliveryDate:     draft.deliveryDate,
-      deliveryType:     draft.dt === 'FUNERAL' ? 'DOMICILIO_CASA' : draft.dt,
-      deliveryWindow:   draft.deliveryWindow,
-      deliveryFee:      draft.ship,
-      recipientName:    draft.recipientName || draft.firstName,
-      recipientPhone:   draft.recipientPhone || fullPhone,
-      recipientAddress: draft.recipientAddress,
-      recipientColonia: draft.recipientColonia,
-      recipientNotes:   draft.recipientNotes,
-      messageFrom:      draft.messageAnon ? 'Anónimo' : draft.messageFrom,
-      messageText:      draft.messageText,
-      messageAnon:      draft.messageAnon,
-      occasion:         draft.occasion,
-      items:            cart.map(i => ({ productId: i.productId, quantity: i.qty })),
-      paymentType:      'RECIBIDO',
-      paymentMethod:    'STRIPE', // closest available enum
-      paymentStatus:    'PAGADA',
-      stripePaymentId:  paymentId,
-      advance:          0,
-      needsInvoice:     false,
-      notifyVia:        draft.notifyVia,
-      source:           'WEB',
-    });
-
-    // Show confirmation
-    openOrderModal();
-    omGo(6);
-    document.getElementById('conf-num').textContent = order.orderNumber;
-    cart = []; updateCartUI();
-    showToast('¡Pago confirmado! 🌸');
-
   } catch(e) {
-    showToast('Tu pago fue exitoso pero hubo un error al guardar el pedido. Contáctanos al 656 611-1124', true);
-    console.error('MP order creation error:', e);
+    console.error('[MP] processMPPayment error:', e);
+    if (errEl && !errEl.textContent) errEl.textContent = 'Error al procesar el pago. Intenta de nuevo.';
+    throw e; // re-throw so brick shows error state
   }
 }
+
+async function processMercadoPago() {
+  // This is now handled by the brick's onSubmit callback
+  // This function is kept as no-op for compatibility
+}
+
+// MP now uses Bricks — no redirect flow needed
 
 function sendConfirmWA() {
   if (!omState.confirmedOrder) return;
@@ -2673,7 +2685,6 @@ loadProducts();
 loadClosedDates();
 updateCartUI();
 initAuth();
-checkMPReturn();
 
 
 
