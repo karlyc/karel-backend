@@ -308,7 +308,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 /* ── ORDER MODAL ── */
 .order-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;}
 .order-overlay.open{display:flex;}
-.order-modal{background:white;width:100%;max-width:680px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.order-modal{background:white;width:100%;max-width:680px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow-x:hidden;}
 .om-head{padding:20px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white;z-index:5;}
 .om-progress{display:flex;gap:6px;align-items:center;}
 .om-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:all .2s;}
@@ -323,7 +323,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 .om-step-label{font-size:.62rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
 .om-step-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#1a1a1a;margin-bottom:20px;}
 .om-step-title em{font-style:italic;color:var(--accent);}
-.om-foot{padding:16px 28px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;bottom:0;background:white;}
+.om-foot{padding:16px 28px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:white;}
 .om-back{background:none;border:1px solid var(--border);padding:9px 20px;font-size:.7rem;font-weight:500;cursor:pointer;color:#888;transition:all .2s;font-family:'Jost',sans-serif;letter-spacing:.06em;}
 .om-back:hover{border-color:#ffaedc;color:#1a1a1a;}
 .om-next{background:#e39dff;color:white;border:none;padding:11px 28px;font-size:.7rem;font-weight:600;cursor:pointer;transition:background .2s;font-family:'Jost',sans-serif;letter-spacing:.1em;text-transform:uppercase;}
@@ -1125,7 +1125,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
           </div>
         </div>
         <div class="mfg"><label class="mfl">Correo electrónico *</label><input class="mfi" id="o-email" type="email" placeholder="tu@correo.com"/></div>
-        </div>
+        <div class="mfg"><label class="mfl">Dirección</label><input class="mfi" id="o-address" placeholder="Calle, número, colonia"/></div>
         </div><!-- /om-customer-form -->
       </div>
       <div class="om-foot"><button class="om-back" onclick="omBack(4)">← Atrás</button><button class="om-next" onclick="omNext(4)">Siguiente →</button></div>
@@ -1680,10 +1680,19 @@ function initStep4() {
     if (fn && !fn.value) fn.value = currentCustomer.firstName || '';
     if (ln && !ln.value) ln.value = currentCustomer.lastName  || '';
     if (em && !em.value) em.value = currentCustomer.email     || '';
+    const ad = document.getElementById('o-address');
+    if (ad && !ad.value && currentCustomer.address) ad.value = currentCustomer.address;
     omState.isGuest = false;
     if (currentCustomer.email && !omState.linkedClientId) {
       apiGet('/api/clients?search=' + encodeURIComponent(currentCustomer.email))
-        .then(r => { if (r.length) omState.linkedClientId = r[0].id; })
+        .then(r => {
+          if (r.length) {
+            omState.linkedClientId = r[0].id;
+            // Pre-fill address from existing client record
+            const ad = document.getElementById('o-address');
+            if (ad && !ad.value && r[0].address) ad.value = r[0].address;
+          }
+        })
         .catch(() => {});
     }
   } else {
@@ -1933,7 +1942,8 @@ async function processPayment() {
     // If still no clientId, create new client
     if (!clientId) {
       try {
-        const cl = await apiPost('/api/clients', { firstName, lastNameP: lastName, phone: fullPhone, email, source: 'WEB' });
+        const address = document.getElementById('o-address')?.value.trim() || '';
+        const cl = await apiPost('/api/clients', { firstName, lastNameP: lastName, phone: fullPhone, email, address, source: 'WEB' });
         clientId = cl.id;
       } catch(e) {
         if (e.message && (e.message.includes('409') || e.message.includes('already') || e.message.includes('Conflict'))) {
