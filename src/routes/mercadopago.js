@@ -34,7 +34,7 @@ router.post('/process-payment', async (req, res) => {
       },
     });
 
-    console.log(`[MP] Payment ${result.id} status: ${result.status}`);
+    console.log(`[MP] Payment ${result.id} status: ${result.status} | detail: ${result.status_detail}`);
 
     res.json({
       id: result.id,
@@ -101,33 +101,44 @@ router.post('/create-preference', async (req, res) => {
 // ── POST /api/mp/webhook ──
 // Mercado Pago payment notification
 router.post('/webhook', async (req, res) => {
-  try {
-    const { type, data } = req.body;
+  // Always return 200 immediately — MP requires fast response
+  res.json({ received: true });
 
-    if (type === 'payment' && data?.id) {
+  try {
+    const body = req.body || {};
+    console.log('[MP] Webhook received:', JSON.stringify(body));
+
+    // MP sends different formats depending on the event type
+    // Format 1: { type: 'payment', data: { id: '123' } }
+    // Format 2: { action: 'payment.updated', data: { id: '123' } }
+    // Format 3: query params ?topic=payment&id=123
+    const type   = body.type || body.action || '';
+    const dataId = body.data?.id || req.query.id;
+
+    if (!dataId) return; // empty simulation or ping — ignore
+
+    if (type.includes('payment') || req.query.topic === 'payment') {
       const { Payment, client } = getMP();
       const payment = new Payment(client);
-      const paymentData = await payment.get({ id: data.id });
+      const paymentData = await payment.get({ id: dataId });
+
+      console.log(`[MP] Payment ${dataId} status: ${paymentData.status}`);
 
       if (paymentData.status === 'approved') {
-        const orderId = paymentData.metadata?.order_id || paymentData.external_reference;
+        const orderId = paymentData.metadata?.order_id ||
+                        paymentData.metadata?.orderId ||
+                        paymentData.external_reference;
         if (orderId) {
           await prisma.order.update({
             where: { id: orderId },
-            data: {
-              paymentStatus: 'PAGADA',
-              paymentMethod: 'STRIPE', // reuse closest enum value
-            },
+            data: { paymentStatus: 'PAGADA' },
           }).catch(e => console.error('[MP] Order update failed:', e.message));
           console.log(`[MP] Order ${orderId} marked as PAGADA`);
         }
       }
     }
-
-    res.json({ received: true });
   } catch(err) {
-    console.error('[MP] webhook error:', err.message);
-    res.status(200).json({ received: true }); // always return 200 to MP
+    console.error('[MP] webhook processing error:', err.message);
   }
 });
 
