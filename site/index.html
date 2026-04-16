@@ -1317,8 +1317,16 @@ else if (today === 6) document.getElementById('hr-sa')?.classList.add('today');
 else document.getElementById('hr-do')?.classList.add('today');
 
 // Block Sundays in date picker
-const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-const minDate = tomorrow.toISOString().split('T')[0];
+// Cutoff: 1pm CST (UTC-6) = 19:00 UTC
+const now = new Date();
+const cutoffHour = 13; // 1pm local
+const localHour = now.getHours(); // browser local time
+const minDateObj = new Date();
+if (localHour >= cutoffHour) {
+  // After 1pm — earliest delivery is tomorrow
+  minDateObj.setDate(minDateObj.getDate() + 1);
+}
+const minDate = minDateObj.toISOString().split('T')[0];
 document.querySelectorAll('input[type=date]').forEach(el => el.min = minDate);
 
 // ═══════════════════════════════════════════
@@ -1345,6 +1353,11 @@ function validateDeliveryDate(dateStr) {
   if (!dateStr) return 'Por favor selecciona la fecha de entrega';
   if (new Date(dateStr + 'T12:00').getDay() === 0) return 'No hacemos entregas los domingos 🌸';
   if (closedDates.has(dateStr)) return 'No hacemos entregas en esa fecha 🌸';
+  // Check 1pm cutoff for same-day delivery
+  const today = new Date().toISOString().split('T')[0];
+  if (dateStr === today && new Date().getHours() >= 13) {
+    return 'Ya pasó la hora de corte (1:00 PM). Por favor selecciona el día de mañana 🌸';
+  }
   return null; // valid
 }
 
@@ -2152,7 +2165,20 @@ async function processMPPayment(formData) {
     } else if (payRes.status === 'pending') {
       if (errEl) errEl.textContent = 'Tu pago está pendiente de confirmación. Te notificaremos por correo.';
     } else {
-      if (errEl) errEl.textContent = 'Pago rechazado. Verifica tus datos o intenta con otra tarjeta.';
+      const detail = payRes.status_detail || 'rejected';
+      const msg = {
+        'cc_rejected_insufficient_amount': 'Fondos insuficientes.',
+        'cc_rejected_bad_filled_card_number': 'Número de tarjeta incorrecto.',
+        'cc_rejected_bad_filled_date': 'Fecha de vencimiento incorrecta.',
+        'cc_rejected_bad_filled_security_code': 'Código de seguridad incorrecto.',
+        'cc_rejected_blacklist': 'Tarjeta no permitida.',
+        'cc_rejected_call_for_authorize': 'Llamar al banco para autorizar.',
+        'cc_rejected_card_disabled': 'Tarjeta desactivada.',
+        'cc_rejected_duplicated_payment': 'Pago duplicado.',
+        'cc_rejected_high_risk': 'Pago rechazado por seguridad.',
+        'cc_rejected_other_reason': 'Tarjeta rechazada. Intenta con otra.',
+      }[detail] || `Pago rechazado (${detail}). Intenta con otra tarjeta.`;
+      if (errEl) errEl.textContent = msg;
       throw new Error('payment_rejected');
     }
   } catch(e) {
@@ -2346,9 +2372,17 @@ function checkDeliveryDate(dateStr) {
   if (err) {
     warn.textContent = '⚠ ' + err;
     warn.style.display = 'block';
-    document.getElementById('d-date').style.borderColor = 'var(--rose)';
+    document.getElementById('d-date').style.borderColor = 'var(--accent)';
   } else {
-    warn.style.display = 'none';
+    // Show cutoff reminder for same-day orders
+    const today = new Date().toISOString().split('T')[0];
+    if (dateStr === today) {
+      warn.textContent = '⏰ Pedido en el mismo día — ordena antes de la 1:00 PM';
+      warn.style.color = 'var(--accent)';
+      warn.style.display = 'block';
+    } else {
+      warn.style.display = 'none';
+    }
     document.getElementById('d-date').style.borderColor = '';
   }
 }
