@@ -119,7 +119,7 @@ router.post('/', upload.single('paymentProof'), [
   } = bodyData;
 
   // Normalize occasion to valid enum values
-  const validOccasions = ['CUMPLEANOS', 'ANIVERSARIO', 'FUNERAL', 'AMOR', 'OTRA'];
+  const validOccasions = ['CUMPLEANOS', 'ANIVERSARIO', 'FUNERAL', 'AMOR', 'GRADUACION', 'RECUPERACION', 'OTRA'];
   const normalizedOccasion = validOccasions.includes(occasion) ? occasion : 'OTRA';
 
   if (!clientId) return res.status(400).json({ error: 'Client is required' });

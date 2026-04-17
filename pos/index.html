@@ -3176,7 +3176,7 @@ document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.
 // ════════════════════════════════════════════
 const pb=p=>({PENDIENTE:`<span class="badge ba2">Pendiente</span>`,PAGO_RECIBIDO:`<span class="badge bb">Pago recibido</span>`,PAGADA:`<span class="badge bg2">Pagada</span>`}[p]||`<span class="badge bm">${p||'—'}</span>`);
 const sb=s=>({EN_PROCESO:`<span class="badge ba2">En proceso</span>`,POR_ENTREGAR:`<span class="badge bb">Por entregar</span>`,COMPLETADA:`<span class="badge bg2">Completada</span>`,CANCELADA:`<span class="badge br2">Cancelada</span>`}[s]||`<span class="badge bm">${s||'—'}</span>`);
-const occLabel=o=>({CUMPLEANOS:'🎂 Cumpleaños',ANIVERSARIO:'💑 Aniversario',FUNERAL:'⚱️ Funeral',AMOR:'💝 Amor',OTRA:'🎊 Otra'}[o]||o);
+const occLabel=o=>({CUMPLEANOS:'🎂 Cumpleaños',ANIVERSARIO:'💑 Aniversario',FUNERAL:'⚱️ Funeral',AMOR:'💝 Amor',GRADUACION:'🎓 Graduación',RECUPERACION:'🌿 Recuperación',OTRA:'🎊 Otra'}[o]||o);
 // Returns full photo URL — Cloudinary URLs are already absolute, local ones need API_BASE
 const photoSrc=url=>url?(url.startsWith('http')?url:API_BASE+url):null;
 const roleLabel=r=>({ADMIN:'Administrador',OFFICE:'Oficina',FLORISTA:'Florista',REPARTIDOR:'Repartidor'}[r]||r);
