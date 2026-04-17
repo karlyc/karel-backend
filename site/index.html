@@ -1230,7 +1230,7 @@ const API_BASE = (window.location.hostname === 'localhost' || window.location.ho
   : 'https://karel-backend-production.up.railway.app';
 
 const WA_NUMBER = '526561303595';
-const MP_PUBLIC_KEY = 'YOUR_MP_PUBLIC_KEYTEST-5ac33410-965a-4532-9c09-2c2925f1a9d5'; // ← update with Mercado Pago public key
+const MP_PUBLIC_KEY = 'TEST-5ac33410-965a-4532-9c09-2c2925f1a9d5'; // ← update with Mercado Pago public key
 const STRIPE_PK = 'pk_live_51TIGQW9DkJxg2MOcv38zvykuQTmPGn7OT9BR4z9WlDOB89CkyxzHyyKKvQPSYRyU1ZZPO1PWXDVND46K4Ekd6yqI00f3otOAtH'; // ← update with your Stripe key
 const SHIPPING_FEE = 125;
 const IVA_RATE = 0.08;
@@ -1984,7 +1984,13 @@ async function processPayment() {
       recipientPhone:   isPickup ? fullPhone : (document.getElementById('d-rphone')?.value || ''),
       recipientAddress: isFuneral ? document.getElementById('d-fun-addr').value : (isPickup ? '' : document.getElementById('d-street').value),
       recipientColonia: isFuneral ? document.getElementById('d-fun-col').value : (document.getElementById('d-colonia')?.value || ''),
-      recipientNotes:   isFuneral ? document.getElementById('d-banda').value : (isPickup ? (document.getElementById('d-rec-notes')?.value || '') : (document.getElementById('d-notes')?.value || '')),
+      recipientNotes:   isFuneral
+        ? [
+            document.getElementById('d-banda')?.value ? 'Banda: ' + document.getElementById('d-banda').value : '',
+            document.getElementById('d-funeraria')?.value ? 'Funeraria: ' + document.getElementById('d-funeraria').value : '',
+            document.getElementById('d-fun-notes')?.value || '',
+          ].filter(Boolean).join(' | ')
+        : (isPickup ? (document.getElementById('d-rec-notes')?.value || '') : (document.getElementById('d-notes')?.value || '')),
       businessName:     dt === 'DOMICILIO_NEGOCIO' ? (document.getElementById('d-biz')?.value || '') : '',
       businessDept:     dt === 'DOMICILIO_NEGOCIO' ? (document.getElementById('d-dept')?.value || '') : '',
       messageFrom:      document.getElementById('d-anon')?.checked ? 'Anónimo' : (document.getElementById('d-from')?.value || firstName),
