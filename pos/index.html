@@ -2812,7 +2812,7 @@ function printOrder() {
     '*{margin:0;padding:0;box-sizing:border-box;}',
     'body{font-family:Helvetica Neue,Arial,sans-serif;color:#1a1a1a;background:white;padding:28px;max-width:560px;margin:0 auto;}',
     '.hdr{text-align:center;border-bottom:3px solid #C96E60;padding-bottom:16px;margin-bottom:18px;}',
-    '.logo-box{background:linear-gradient(135deg,#fff5f3,#fff);border:2px solid #C96E60;border-radius:12px;padding:16px 24px;display:inline-block;margin-bottom:12px;}',
+    '.logo-box{background:transparent;border:none;padding:16px 24px;display:inline-block;margin-bottom:12px;}',
     '.logo-area{display:flex;align-items:center;justify-content:center;gap:12px;}',
     '.flower{font-size:36px;line-height:1;}',
     '.brand{font-size:20px;font-weight:900;letter-spacing:.02em;color:#1a1a1a;text-transform:uppercase;line-height:1.1;}',
@@ -2858,7 +2858,7 @@ function printOrder() {
 
   const html = [
     '<div class="hdr">',
-      '<div class="logo-box"><div class="logo-area"><div class="flower">🌹</div><div><div class="brand">FLORERÍA Y REGALOS <em>KAREL</em></div><div class="sub">Ciudad Juárez · Est. 2008</div></div></div></div>',
+      '<div class="logo-box"><div class="logo-area"><img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1773958184/000LOGO_mrylkc.png" style="height:56px;width:auto;object-fit:contain;" alt="Florería Karel"/><div class="brand">FLORERÍA Y REGALOS <em>KAREL</em></div><div class="sub">Ciudad Juárez · Est. 2008</div></div></div></div>',
       '<div class="hdr-info">AV. DE LA RAZA 5262, C.P. 32369, CIUDAD JUÁREZ<br>RFC: <b>GMB081001TH8</b> &nbsp;|&nbsp; WhatsApp: <b>(656) 130-3595</b></div>',
       `<div class="badge">${o.orderNumber}</div>`,
       `<div class="odate">Fecha de orden: ${new Date(o.createdAt).toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>`,
