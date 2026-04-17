@@ -1092,6 +1092,11 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
           </div>
           <div class="mfg"><label class="mfl">Mensaje para la tarjeta</label><textarea class="mfta" id="d-msg" placeholder="Escribe el mensaje que irá en la tarjeta…"></textarea></div>
         </div>
+        <!-- General notes — always visible -->
+        <div class="mfg" style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
+          <label class="mfl">Notas adicionales para el pedido</label>
+          <textarea class="mfta" id="d-general-notes" placeholder="Cualquier indicación especial para este pedido…"></textarea>
+        </div>
       </div>
       <div class="om-foot"><button class="om-back" onclick="omBack(3)">← Atrás</button><button class="om-next" onclick="omNext(3)">Siguiente →</button></div>
     </div>
@@ -1984,13 +1989,16 @@ async function processPayment() {
       recipientPhone:   isPickup ? fullPhone : (document.getElementById('d-rphone')?.value || ''),
       recipientAddress: isFuneral ? document.getElementById('d-fun-addr').value : (isPickup ? '' : document.getElementById('d-street').value),
       recipientColonia: isFuneral ? document.getElementById('d-fun-col').value : (document.getElementById('d-colonia')?.value || ''),
-      recipientNotes:   isFuneral
-        ? [
-            document.getElementById('d-banda')?.value ? 'Banda: ' + document.getElementById('d-banda').value : '',
-            document.getElementById('d-funeraria')?.value ? 'Funeraria: ' + document.getElementById('d-funeraria').value : '',
-            document.getElementById('d-fun-notes')?.value || '',
-          ].filter(Boolean).join(' | ')
-        : (isPickup ? (document.getElementById('d-rec-notes')?.value || '') : (document.getElementById('d-notes')?.value || '')),
+      recipientNotes:   [
+        isFuneral
+          ? [
+              document.getElementById('d-banda')?.value ? 'Banda: ' + document.getElementById('d-banda').value : '',
+              document.getElementById('d-funeraria')?.value ? 'Funeraria: ' + document.getElementById('d-funeraria').value : '',
+              document.getElementById('d-fun-notes')?.value || '',
+            ].filter(Boolean).join(' | ')
+          : (isPickup ? (document.getElementById('d-rec-notes')?.value || '') : (document.getElementById('d-notes')?.value || '')),
+        document.getElementById('d-general-notes')?.value || '',
+      ].filter(Boolean).join(' | ') || '',
       businessName:     dt === 'DOMICILIO_NEGOCIO' ? (document.getElementById('d-biz')?.value || '') : '',
       businessDept:     dt === 'DOMICILIO_NEGOCIO' ? (document.getElementById('d-dept')?.value || '') : '',
       messageFrom:      document.getElementById('d-anon')?.checked ? 'Anónimo' : (document.getElementById('d-from')?.value || firstName),
@@ -2147,7 +2155,16 @@ async function processMPPayment(formData) {
         recipientPhone:   isPickup ? fullPhone : (document.getElementById('d-rphone')?.value || ''),
         recipientAddress: dt === 'FUNERAL' ? document.getElementById('d-fun-addr').value : (isPickup ? '' : document.getElementById('d-street').value),
         recipientColonia: dt === 'FUNERAL' ? document.getElementById('d-fun-col').value : (document.getElementById('d-colonia')?.value || ''),
-        recipientNotes:   dt === 'FUNERAL' ? document.getElementById('d-banda').value : (isPickup ? (document.getElementById('d-rec-notes')?.value || '') : (document.getElementById('d-notes')?.value || '')),
+        recipientNotes:   [
+          dt === 'FUNERAL'
+            ? [
+                document.getElementById('d-banda')?.value ? 'Banda: ' + document.getElementById('d-banda').value : '',
+                document.getElementById('d-funeraria')?.value ? 'Funeraria: ' + document.getElementById('d-funeraria').value : '',
+                document.getElementById('d-fun-notes')?.value || '',
+              ].filter(Boolean).join(' | ')
+            : (isPickup ? (document.getElementById('d-rec-notes')?.value || '') : (document.getElementById('d-notes')?.value || '')),
+          document.getElementById('d-general-notes')?.value || '',
+        ].filter(Boolean).join(' | ') || '',
         messageFrom:      document.getElementById('d-anon')?.checked ? 'Anónimo' : (document.getElementById('d-from')?.value || firstName),
         messageText:      document.getElementById('d-msg')?.value || '',
         messageAnon:      document.getElementById('d-anon')?.checked || false,
