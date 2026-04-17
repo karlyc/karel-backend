@@ -140,7 +140,7 @@ enum PaymentStatus {
   PENDIENTE 
   PAGO_RECIBIDO 
   PAGADA 
-  }
+  } 
 
 enum PaymentMethod { 
   EFECTIVO 

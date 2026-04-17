@@ -11,28 +11,18 @@ function getMP() {
 }
 
 // ── POST /api/mp/process-payment ──
-// Processes payment using Bricks formData
+// Processes payment using Bricks formData — matches official MP pattern
 router.post('/process-payment', async (req, res) => {
   try {
     if (!process.env.MP_ACCESS_TOKEN) {
       return res.status(500).json({ error: 'MP_ACCESS_TOKEN not configured' });
     }
 
-    const { formData, amount, email, description } = req.body;
     const { Payment, client } = getMP();
-
     const payment = new Payment(client);
-    const result = await payment.create({
-      body: {
-        ...formData,
-        transaction_amount: Number(amount),
-        description: description || 'Florería y Regalos Karel',
-        payer: {
-          email: formData.payer?.email || email,
-          identification: formData.payer?.identification,
-        },
-      },
-    });
+
+    // Use req.body directly as MP official docs show
+    const result = await payment.create({ body: req.body });
 
     console.log(`[MP] Payment ${result.id} status: ${result.status} | detail: ${result.status_detail}`);
 
@@ -48,49 +38,46 @@ router.post('/process-payment', async (req, res) => {
 });
 
 // ── POST /api/mp/create-preference ──
-// Creates a Mercado Pago preference and returns the checkout URL
 router.post('/create-preference', async (req, res) => {
   try {
     if (!process.env.MP_ACCESS_TOKEN) {
       return res.status(500).json({ error: 'MP_ACCESS_TOKEN not configured' });
     }
 
-    const { items, payer, orderId, total } = req.body;
+    const { items, payer, total } = req.body;
     const { Preference, client } = getMP();
-
     const preference = new Preference(client);
 
     const result = await preference.create({
       body: {
         items: items.map(i => ({
-          id: i.productId,
-          title: i.name,
-          quantity: i.quantity,
+          id: i.productId || 'product',
+          title: i.name || 'Producto',
+          quantity: Number(i.quantity) || 1,
           unit_price: Number(i.unitPrice),
           currency_id: 'MXN',
         })),
         payer: {
-          name: payer?.firstName || '',
-          surname: payer?.lastName || '',
-          email: payer?.email || '',
-          phone: { number: payer?.phone || '' },
+          name:    payer?.firstName || '',
+          surname: payer?.lastName  || '',
+          email:   payer?.email     || '',
         },
-        back_urls: {
-          success: `${process.env.SITE_URL || 'https://karel-site.pages.dev'}?mp=success&orderId=${orderId}`,
-          failure: `${process.env.SITE_URL || 'https://karel-site.pages.dev'}?mp=failure`,
-          pending: `${process.env.SITE_URL || 'https://karel-site.pages.dev'}?mp=pending&orderId=${orderId}`,
-        },
-        auto_return: 'approved',
-        external_reference: orderId || 'web-order',
         statement_descriptor: 'Floreria Karel',
-        metadata: { orderId },
+        auto_return: 'approved',
+        back_urls: {
+          success: `${process.env.SITE_URL || 'https://karel-site.pages.dev'}`,
+          failure: `${process.env.SITE_URL || 'https://karel-site.pages.dev'}`,
+          pending: `${process.env.SITE_URL || 'https://karel-site.pages.dev'}`,
+        },
       },
     });
 
+    console.log(`[MP] Preference created: ${result.id}`);
+
     res.json({
       id: result.id,
-      init_point: result.init_point,       // redirect URL for production
-      sandbox_init_point: result.sandbox_init_point, // redirect URL for testing
+      init_point: result.init_point,
+      sandbox_init_point: result.sandbox_init_point,
     });
   } catch(err) {
     console.error('[MP] create-preference error:', err.message);
@@ -99,23 +86,17 @@ router.post('/create-preference', async (req, res) => {
 });
 
 // ── POST /api/mp/webhook ──
-// Mercado Pago payment notification
 router.post('/webhook', async (req, res) => {
-  // Always return 200 immediately — MP requires fast response
-  res.json({ received: true });
+  res.json({ received: true }); // Always 200 immediately
 
   try {
-    const body = req.body || {};
+    const body   = req.body || {};
     console.log('[MP] Webhook received:', JSON.stringify(body));
 
-    // MP sends different formats depending on the event type
-    // Format 1: { type: 'payment', data: { id: '123' } }
-    // Format 2: { action: 'payment.updated', data: { id: '123' } }
-    // Format 3: query params ?topic=payment&id=123
     const type   = body.type || body.action || '';
     const dataId = body.data?.id || req.query.id;
 
-    if (!dataId) return; // empty simulation or ping — ignore
+    if (!dataId) return;
 
     if (type.includes('payment') || req.query.topic === 'payment') {
       const { Payment, client } = getMP();
@@ -126,12 +107,12 @@ router.post('/webhook', async (req, res) => {
 
       if (paymentData.status === 'approved') {
         const orderId = paymentData.metadata?.order_id ||
-                        paymentData.metadata?.orderId ||
+                        paymentData.metadata?.orderId  ||
                         paymentData.external_reference;
         if (orderId) {
           await prisma.order.update({
             where: { id: orderId },
-            data: { paymentStatus: 'PAGADA' },
+            data:  { paymentStatus: 'PAGADA' },
           }).catch(e => console.error('[MP] Order update failed:', e.message));
           console.log(`[MP] Order ${orderId} marked as PAGADA`);
         }
@@ -143,16 +124,12 @@ router.post('/webhook', async (req, res) => {
 });
 
 // ── GET /api/mp/payment-status/:paymentId ──
-// Check payment status (called after redirect back from MP)
 router.get('/payment-status/:paymentId', async (req, res) => {
   try {
     const { Payment, client } = getMP();
     const payment = new Payment(client);
     const data = await payment.get({ id: req.params.paymentId });
-    res.json({
-      status: data.status,
-      orderId: data.metadata?.order_id || data.external_reference,
-    });
+    res.json({ status: data.status });
   } catch(err) {
     res.status(500).json({ error: err.message });
   }
