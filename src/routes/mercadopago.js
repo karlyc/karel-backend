@@ -90,6 +90,34 @@ router.post('/webhook', async (req, res) => {
   res.json({ received: true }); // Always 200 immediately
 
   try {
+    // Verify webhook signature if secret is configured
+    if (process.env.MP_WEBHOOK_SECRET) {
+      const crypto = require('crypto');
+      const xSignature = req.headers['x-signature'];
+      const xRequestId = req.headers['x-request-id'];
+      const dataId = req.query['data.id'] || req.body?.data?.id;
+
+      if (xSignature) {
+        const parts = xSignature.split(',');
+        let ts, hash;
+        parts.forEach(part => {
+          const [key, val] = part.trim().split('=');
+          if (key === 'ts') ts = val;
+          if (key === 'v1') hash = val;
+        });
+
+        const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+        const expected = crypto
+          .createHmac('sha256', process.env.MP_WEBHOOK_SECRET)
+          .update(manifest)
+          .digest('hex');
+
+        if (expected !== hash) {
+          console.warn('[MP] Webhook signature mismatch — ignoring');
+          return;
+        }
+      }
+    }
     const body   = req.body || {};
     console.log('[MP] Webhook received:', JSON.stringify(body));
 
