@@ -35,7 +35,7 @@ enum ClientSource {
   INSTAGRAM 
   GOOGLE 
   FACEBOOK 
-  REFERRAL
+  REFERRAL 
   OTHER 
   }
 

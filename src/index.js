@@ -26,6 +26,7 @@ const closedDatesRoutes = require('./routes/closedDates');
 const stripeRoutes      = require('./routes/stripe');
 const { router: customerAuthRoutes } = require('./routes/customerAuth');
 const mpRoutes = require('./routes/mercadopago');
+const waRoutes = require('./routes/whatsapp');
 const { setupChat } = require('./utils/socket');
 
 const app = express();
@@ -96,6 +97,7 @@ app.use('/api/stripe',        stripeRoutes);
 app.use('/api/auth/customer', customerAuthRoutes);
 app.use('/api/customers/me',  customerAuthRoutes);
 app.use('/api/mp',            mpRoutes);
+app.use('/api/whatsapp',      waRoutes);
 
 // ── Health check ──
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date() }));
