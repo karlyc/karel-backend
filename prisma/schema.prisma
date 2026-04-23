@@ -29,7 +29,7 @@ model Staff {
   deliveries     Delivery[] @relation("AssignedTo")
 }
 
-enum ClientSource {
+enum ClientSource { 
   WEB 
   IN_STORE 
   INSTAGRAM 
@@ -131,7 +131,7 @@ model RecipeItem {
 
 enum OrderStatus   { 
   EN_PROCESO 
-  POR_ENTREGAR
+  POR_ENTREGAR 
   COMPLETADA 
   CANCELADA 
   }
@@ -169,6 +169,7 @@ enum Occasion      {
   RECUPERACION 
   OTRA 
   }
+
 
 model Order {
   id               String        @id @default(cuid())
