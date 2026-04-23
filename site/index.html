@@ -1194,7 +1194,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 
         <!-- Mercado Pago Bricks -->
         <div id="payment-mp" style="display:none;">
-          <div id="paymentBrick_container"></div>
+          <div id="cardPaymentBrick_container"></div>
           <div class="stripe-error" id="mp-error" style="margin-top:8px;"></div>
         </div>
       </div>
@@ -2067,14 +2067,13 @@ let mpBrick = null;
 let mpBrickController = null;
 
 async function initMPBrick() {
-  const container = document.getElementById('paymentBrick_container');
+  const container = document.getElementById('cardPaymentBrick_container');
   if (!container) return;
 
-  // Clear previous brick
   container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem;">Cargando forma de pago…</div>';
-  if (window.paymentBrickController) {
-    try { await window.paymentBrickController.unmount(); } catch(e) {}
-    window.paymentBrickController = null;
+  if (window.cardPaymentBrickController) {
+    try { await window.cardPaymentBrickController.unmount(); } catch(e) {}
+    window.cardPaymentBrickController = null;
   }
 
   try {
@@ -2085,53 +2084,44 @@ async function initMPBrick() {
     const tax      = (sub + ship) * IVA_RATE;
     const amount   = Math.round((sub + ship + tax) * 100) / 100;
 
-    const email     = document.getElementById('o-email')?.value.trim() || '';
-    const firstName = document.getElementById('o-first')?.value.trim() || '';
-    const lastName  = document.getElementById('o-last')?.value.trim() || '';
-
-    // Create preference first to get preferenceId
-    const prefRes = await apiPost('/api/mp/create-preference', {
-      items: cart.map(i => ({
-        productId: i.productId,
-        name: i.name,
-        quantity: i.qty,
-        unitPrice: i.unitPrice,
-      })),
-      payer: { firstName, lastName, email },
-      total: amount,
-    });
-
     const mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'es-MX' });
     const bricksBuilder = mp.bricks();
 
     const settings = {
-      initialization: {
-        amount,
-        preferenceId: prefRes.id,
-        payer: { firstName, lastName, email },
-      },
-      customization: {
-        visual: {
-          style: { theme: 'default' },
-        },
-        paymentMethods: {
-          creditCard: 'all',
-          debitCard: 'all',
-          ticket: 'all',
-          bankTransfer: 'all',
-          onboarding_credits: 'all',
-          wallet_purchase: 'all',
-          maxInstallments: 1,
-        },
-      },
+      initialization: { amount },
       callbacks: {
-        onReady: () => {
-          // Hide loading message
-          console.log('[MP] Brick ready');
-        },
-        onSubmit: ({ selectedPaymentMethod, formData }) => {
+        onReady: () => { console.log('[MP] CardPayment Brick ready'); },
+        onSubmit: (formData, additionalData) => {
           return new Promise((resolve, reject) => {
-            processMPPayment(formData)
+            // Build submitData exactly as MP docs specify
+            const submitData = {
+              type: 'online',
+              total_amount: String(formData.transaction_amount),
+              external_reference: 'karel-' + Date.now(),
+              processing_mode: 'automatic',
+              transactions: {
+                payments: [{
+                  amount: String(formData.transaction_amount),
+                  payment_method: {
+                    id: formData.payment_method_id,
+                    type: additionalData.paymentTypeId,
+                    token: formData.token,
+                    installments: formData.installments,
+                  },
+                }],
+              },
+              payer: {
+                email: formData.payer.email,
+                identification: formData.payer.identification,
+              },
+            };
+            // Store payer info for order creation
+            window._mpPayer = {
+              email:     formData.payer.email,
+              firstName: document.getElementById('o-first')?.value.trim() || '',
+              lastName:  document.getElementById('o-last')?.value.trim()  || '',
+            };
+            processMPPayment(submitData)
               .then(() => resolve())
               .catch(() => reject());
           });
@@ -2144,39 +2134,39 @@ async function initMPBrick() {
       },
     };
 
-    window.paymentBrickController = await bricksBuilder.create(
-      'payment',
-      'paymentBrick_container',
+    window.cardPaymentBrickController = await bricksBuilder.create(
+      'cardPayment',
+      'cardPaymentBrick_container',
       settings
     );
-
   } catch(e) {
     console.error('[MP] initMPBrick error:', e);
     container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--accent);font-size:.82rem;">Error al cargar Mercado Pago. Intenta con tarjeta americana.</div>';
   }
 }
 
-async function processMPPayment(formData) {
+
+async function processMPPayment(submitData) {
   const errEl = document.getElementById('mp-error');
   if (errEl) errEl.textContent = '';
 
   try {
-    const firstName = document.getElementById('o-first').value.trim();
-    const lastName  = document.getElementById('o-last').value.trim();
-    const email     = document.getElementById('o-email').value.trim();
+    const payer     = window._mpPayer || {};
+    const firstName = payer.firstName || document.getElementById('o-first')?.value.trim() || '';
+    const lastName  = payer.lastName  || document.getElementById('o-last')?.value.trim()  || '';
+    const email     = payer.email     || document.getElementById('o-email')?.value.trim() || '';
     const dt        = omState.deliveryType;
     const isPickup  = dt === 'RECOGER_TIENDA';
+    const isFuneral = dt === 'FUNERAL';
     const sub       = cartSubtotal();
     const ship      = isPickup ? 0 : SHIPPING_FEE;
-    const tax       = (sub + ship) * IVA_RATE;
-    const total     = Math.round((sub + ship + tax) * 100) / 100;
     const fullPhone = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
 
-    // Process payment via backend — send formData directly as MP official docs show
-    const payRes = await apiPost('/api/mp/process-payment', formData);
+    // Call backend — sends to MP Orders API
+    const payRes = await apiPost('/api/mp/process-order', submitData);
 
-    if (payRes.status === 'approved') {
-      // Payment approved — create order
+    if (payRes.status === 'processed' || payRes.status === 'approved') {
+      // Find or create client
       let clientId = omState.linkedClientId || null;
       if (!clientId) {
         try {
@@ -2184,28 +2174,31 @@ async function processMPPayment(formData) {
           if (found.length) clientId = found[0].id;
         } catch(e) {}
       }
+      if (!clientId && fullPhone) {
+        try {
+          const found = await apiGet('/api/clients?search=' + encodeURIComponent(fullPhone));
+          if (found.length) clientId = found[0].id;
+        } catch(e) {}
+      }
       if (!clientId) {
         try {
           const cl = await apiPost('/api/clients', { firstName, lastNameP: lastName, phone: fullPhone, email, source: 'WEB' });
           clientId = cl.id;
-        } catch(e) {
-          const found = await apiGet('/api/clients?search=' + encodeURIComponent(fullPhone));
-          if (found.length) clientId = found[0].id;
-        }
+        } catch(e) {}
       }
 
       const order = await apiPost('/api/orders', {
         clientId,
         deliveryDate:     document.getElementById('d-date').value,
-        deliveryType:     dt === 'FUNERAL' ? 'DOMICILIO_CASA' : dt,
+        deliveryType:     isFuneral ? 'DOMICILIO_CASA' : dt,
         deliveryWindow:   document.getElementById('d-window').value,
         deliveryFee:      ship,
-        recipientName:    dt === 'FUNERAL' ? document.getElementById('d-difunto').value : (isPickup ? firstName : document.getElementById('d-rname').value),
+        recipientName:    isFuneral ? document.getElementById('d-difunto').value : (isPickup ? firstName : document.getElementById('d-rname').value),
         recipientPhone:   isPickup ? fullPhone : (document.getElementById('d-rphone')?.value || ''),
-        recipientAddress: dt === 'FUNERAL' ? document.getElementById('d-fun-addr').value : (isPickup ? '' : document.getElementById('d-street').value),
-        recipientColonia: dt === 'FUNERAL' ? document.getElementById('d-fun-col').value : (document.getElementById('d-colonia')?.value || ''),
-        recipientNotes:   [
-          dt === 'FUNERAL'
+        recipientAddress: isFuneral ? document.getElementById('d-fun-addr').value : (isPickup ? '' : document.getElementById('d-street').value),
+        recipientColonia: isFuneral ? document.getElementById('d-fun-col').value : (document.getElementById('d-colonia')?.value || ''),
+        recipientNotes: [
+          isFuneral
             ? [
                 document.getElementById('d-banda')?.value ? 'Banda: ' + document.getElementById('d-banda').value : '',
                 document.getElementById('d-funeraria')?.value ? 'Funeraria: ' + document.getElementById('d-funeraria').value : '',
@@ -2214,19 +2207,19 @@ async function processMPPayment(formData) {
             : (isPickup ? (document.getElementById('d-rec-notes')?.value || '') : (document.getElementById('d-notes')?.value || '')),
           document.getElementById('d-general-notes')?.value || '',
         ].filter(Boolean).join(' | ') || '',
-        messageFrom:      document.getElementById('d-anon')?.checked ? 'Anónimo' : (document.getElementById('d-from')?.value || firstName),
-        messageText:      document.getElementById('d-msg')?.value || '',
-        messageAnon:      document.getElementById('d-anon')?.checked || false,
-        occasion:         omState.occasion || 'OTRA',
-        items:            cart.map(i => ({ productId: i.productId, quantity: i.qty })),
-        paymentType:      'RECIBIDO',
-        paymentMethod:    'STRIPE',
-        paymentStatus:    'PAGADA',
-        stripePaymentId:  String(payRes.id),
-        advance:          0,
-        needsInvoice:     false,
-        notifyVia:        omState.notifyVia,
-        source:           'WEB',
+        messageFrom:   document.getElementById('d-anon')?.checked ? 'Anónimo' : (document.getElementById('d-from')?.value || firstName),
+        messageText:   document.getElementById('d-msg')?.value || '',
+        messageAnon:   document.getElementById('d-anon')?.checked || false,
+        occasion:      omState.occasion || 'OTRA',
+        items:         cart.map(i => ({ productId: i.productId, quantity: i.qty })),
+        paymentType:   'RECIBIDO',
+        paymentMethod: 'STRIPE',
+        paymentStatus: 'PAGADA',
+        stripePaymentId: payRes.id,
+        advance:       0,
+        needsInvoice:  false,
+        notifyVia:     omState.notifyVia || 'email',
+        source:        'WEB',
       });
 
       omState.confirmedOrder = order;
@@ -2235,30 +2228,27 @@ async function processMPPayment(formData) {
       omGo(6);
 
     } else if (payRes.status === 'pending') {
-      if (errEl) errEl.textContent = 'Tu pago está pendiente de confirmación. Te notificaremos por correo.';
+      if (errEl) errEl.textContent = 'Tu pago está pendiente. Te notificaremos cuando sea confirmado.';
+      throw new Error('payment_pending');
     } else {
       const detail = payRes.status_detail || 'rejected';
-      const msg = {
-        'cc_rejected_insufficient_amount': 'Fondos insuficientes.',
+      const msgs = {
+        'cc_rejected_insufficient_amount':  'Fondos insuficientes.',
         'cc_rejected_bad_filled_card_number': 'Número de tarjeta incorrecto.',
-        'cc_rejected_bad_filled_date': 'Fecha de vencimiento incorrecta.',
+        'cc_rejected_bad_filled_date':      'Fecha de vencimiento incorrecta.',
         'cc_rejected_bad_filled_security_code': 'Código de seguridad incorrecto.',
-        'cc_rejected_blacklist': 'Tarjeta no permitida.',
-        'cc_rejected_call_for_authorize': 'Llamar al banco para autorizar.',
-        'cc_rejected_card_disabled': 'Tarjeta desactivada.',
-        'cc_rejected_duplicated_payment': 'Pago duplicado.',
-        'cc_rejected_high_risk': 'Pago rechazado por seguridad.',
-        'cc_rejected_other_reason': 'Tarjeta rechazada. Intenta con otra.',
-      }[detail] || `Pago rechazado (${detail}). Intenta con otra tarjeta.`;
-      if (errEl) errEl.textContent = msg;
+        'cc_rejected_other_reason':         'Tarjeta rechazada. Intenta con otra.',
+      };
+      if (errEl) errEl.textContent = msgs[detail] || `Pago rechazado (${detail}).`;
       throw new Error('payment_rejected');
     }
   } catch(e) {
     console.error('[MP] processMPPayment error:', e);
-    if (errEl && !errEl.textContent) errEl.textContent = 'Error al procesar el pago. Intenta de nuevo.';
-    throw e; // re-throw so brick shows error state
+    if (errEl && !errEl.textContent) errEl.textContent = 'Error al procesar el pago.';
+    throw e;
   }
 }
+
 
 async function processMercadoPago() {
   // This is now handled by the brick's onSubmit callback

@@ -35,7 +35,7 @@ enum ClientSource {
   INSTAGRAM 
   GOOGLE 
   FACEBOOK 
-  REFERRAL 
+  REFERRAL
   OTHER 
   }
 
@@ -134,12 +134,14 @@ enum OrderStatus   {
   POR_ENTREGAR 
   COMPLETADA 
   CANCELADA 
-}
+  }
+
 enum PaymentStatus { 
   PENDIENTE 
   PAGO_RECIBIDO 
   PAGADA 
-}
+  }
+
 enum PaymentMethod { 
   EFECTIVO 
   TRANSFERENCIA 
@@ -150,12 +152,14 @@ enum PaymentMethod {
   CHEQUE 
   ZELLE 
   STRIPE 
-}
+  }
+
 enum DeliveryType  { 
   DOMICILIO_CASA 
   DOMICILIO_NEGOCIO 
   RECOGER_TIENDA 
-}
+  }
+
 enum Occasion      { 
   CUMPLEANOS 
   ANIVERSARIO 
@@ -164,7 +168,7 @@ enum Occasion      {
   GRADUACION 
   RECUPERACION 
   OTRA 
-}
+  }
 
 model Order {
   id               String        @id @default(cuid())
@@ -258,7 +262,7 @@ model Task {
 enum ExpenditureType { 
   MENSUAL 
   MISCELANEA 
-}
+  }
 
 model Expenditure {
   id          String          @id @default(cuid())

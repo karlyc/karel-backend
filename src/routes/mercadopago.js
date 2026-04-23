@@ -4,38 +4,47 @@ const { prisma } = require('../db/prisma');
 
 function getMP() {
   const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
-  const client = new MercadoPagoConfig({
-    accessToken: process.env.MP_ACCESS_TOKEN,
-  });
+  const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
   return { Preference, Payment, client };
 }
 
-// ── POST /api/mp/process-payment ──
-// Processes payment using Bricks formData — matches official MP pattern
-router.post('/process-payment', async (req, res) => {
+// ── POST /api/mp/process-order ──
+// Calls MP Orders API with submitData from cardPayment Brick
+router.post('/process-order', async (req, res) => {
   try {
     if (!process.env.MP_ACCESS_TOKEN) {
       return res.status(500).json({ error: 'MP_ACCESS_TOKEN not configured' });
     }
 
-    const { Payment, client } = getMP();
-    const payment = new Payment(client);
+    const crypto = require('crypto');
+    const idempotencyKey = crypto.randomUUID();
 
-    // Log what we receive for debugging
-    console.log('[MP] process-payment body:', JSON.stringify(req.body).slice(0, 300));
+    const response = await fetch('https://api.mercadopago.com/v1/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+        'X-Idempotency-Key': idempotencyKey,
+      },
+      body: JSON.stringify(req.body),
+    });
 
-    // Use req.body directly as MP official docs show
-    const result = await payment.create({ body: req.body });
+    const result = await response.json();
+    console.log(`[MP] Order ${result.id} status: ${result.status} | detail: ${result.status_detail}`);
 
-    console.log(`[MP] Payment ${result.id} status: ${result.status} | detail: ${result.status_detail}`);
+    if (!response.ok) {
+      console.error('[MP] Orders API error:', JSON.stringify(result));
+      return res.status(response.status).json({ error: result.message || 'MP Orders API error' });
+    }
 
     res.json({
-      id: result.id,
-      status: result.status,
+      id:           result.id,
+      status:       result.status,
       status_detail: result.status_detail,
+      transactions: result.transactions,
     });
   } catch(err) {
-    console.error('[MP] process-payment error:', err.message);
+    console.error('[MP] process-order error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -46,11 +55,9 @@ router.post('/create-preference', async (req, res) => {
     if (!process.env.MP_ACCESS_TOKEN) {
       return res.status(500).json({ error: 'MP_ACCESS_TOKEN not configured' });
     }
-
     const { items, payer, total } = req.body;
     const { Preference, client } = getMP();
     const preference = new Preference(client);
-
     const result = await preference.create({
       body: {
         items: items.map(i => ({
@@ -68,53 +75,37 @@ router.post('/create-preference', async (req, res) => {
         statement_descriptor: 'Floreria Karel',
         auto_return: 'approved',
         back_urls: {
-          success: `${process.env.SITE_URL || 'https://karel-site.pages.dev'}`,
-          failure: `${process.env.SITE_URL || 'https://karel-site.pages.dev'}`,
-          pending: `${process.env.SITE_URL || 'https://karel-site.pages.dev'}`,
+          success: `${process.env.SITE_URL || 'https://floreriakarel.com'}`,
+          failure: `${process.env.SITE_URL || 'https://floreriakarel.com'}`,
+          pending: `${process.env.SITE_URL || 'https://floreriakarel.com'}`,
         },
       },
     });
-
     console.log(`[MP] Preference created: ${result.id}`);
-
-    res.json({
-      id: result.id,
-      init_point: result.init_point,
-      sandbox_init_point: result.sandbox_init_point,
-    });
+    res.json({ id: result.id, init_point: result.init_point, sandbox_init_point: result.sandbox_init_point });
   } catch(err) {
     console.error('[MP] create-preference error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ── GET /api/mp/webhook — IPN notifications use GET ──
+// ── GET /api/mp/webhook — IPN ──
 router.get('/webhook', async (req, res) => {
-  res.json({ received: true }); // Always 200 immediately
-
+  res.status(200).json({ received: true, topic: req.query.topic, id: req.query.id });
   try {
     const topic  = req.query.topic;
     const dataId = req.query.id;
-
     console.log(`[MP] IPN received: topic=${topic} id=${dataId}`);
-
     if (!dataId || topic !== 'payment') return;
-
     const { Payment, client } = getMP();
     const payment = new Payment(client);
     const paymentData = await payment.get({ id: dataId });
-
     console.log(`[MP] IPN Payment ${dataId} status: ${paymentData.status}`);
-
     if (paymentData.status === 'approved') {
-      const orderId = paymentData.metadata?.order_id ||
-                      paymentData.metadata?.orderId  ||
-                      paymentData.external_reference;
+      const orderId = paymentData.metadata?.order_id || paymentData.metadata?.orderId || paymentData.external_reference;
       if (orderId) {
-        await prisma.order.update({
-          where: { id: orderId },
-          data:  { paymentStatus: 'PAGADA' },
-        }).catch(e => console.error('[MP] Order update failed:', e.message));
+        await prisma.order.update({ where: { id: orderId }, data: { paymentStatus: 'PAGADA' } })
+          .catch(e => console.error('[MP] Order update failed:', e.message));
         console.log(`[MP] Order ${orderId} marked as PAGADA via IPN`);
       }
     }
@@ -125,79 +116,29 @@ router.get('/webhook', async (req, res) => {
 
 // ── POST /api/mp/webhook ──
 router.post('/webhook', async (req, res) => {
-  res.json({ received: true }); // Always 200 immediately
-
+  res.json({ received: true });
   try {
-    // Verify webhook signature if secret is configured
-    if (process.env.MP_WEBHOOK_SECRET) {
-      const crypto = require('crypto');
-      const xSignature = req.headers['x-signature'];
-      const xRequestId = req.headers['x-request-id'];
-      const dataId = req.query['data.id'] || req.body?.data?.id;
-
-      if (xSignature) {
-        const parts = xSignature.split(',');
-        let ts, hash;
-        parts.forEach(part => {
-          const [key, val] = part.trim().split('=');
-          if (key === 'ts') ts = val;
-          if (key === 'v1') hash = val;
-        });
-
-        const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
-        const expected = crypto
-          .createHmac('sha256', process.env.MP_WEBHOOK_SECRET)
-          .update(manifest)
-          .digest('hex');
-
-        if (expected !== hash) {
-          console.warn('[MP] Webhook signature mismatch — ignoring');
-          return;
-        }
-      }
-    }
     const body   = req.body || {};
     console.log('[MP] Webhook received:', JSON.stringify(body));
-
     const type   = body.type || body.action || '';
     const dataId = body.data?.id || req.query.id;
-
     if (!dataId) return;
-
     if (type.includes('payment') || req.query.topic === 'payment') {
       const { Payment, client } = getMP();
       const payment = new Payment(client);
       const paymentData = await payment.get({ id: dataId });
-
       console.log(`[MP] Payment ${dataId} status: ${paymentData.status}`);
-
       if (paymentData.status === 'approved') {
-        const orderId = paymentData.metadata?.order_id ||
-                        paymentData.metadata?.orderId  ||
-                        paymentData.external_reference;
+        const orderId = paymentData.metadata?.order_id || paymentData.metadata?.orderId || paymentData.external_reference;
         if (orderId) {
-          await prisma.order.update({
-            where: { id: orderId },
-            data:  { paymentStatus: 'PAGADA' },
-          }).catch(e => console.error('[MP] Order update failed:', e.message));
+          await prisma.order.update({ where: { id: orderId }, data: { paymentStatus: 'PAGADA' } })
+            .catch(e => console.error('[MP] Order update failed:', e.message));
           console.log(`[MP] Order ${orderId} marked as PAGADA`);
         }
       }
     }
   } catch(err) {
     console.error('[MP] webhook processing error:', err.message);
-  }
-});
-
-// ── GET /api/mp/payment-status/:paymentId ──
-router.get('/payment-status/:paymentId', async (req, res) => {
-  try {
-    const { Payment, client } = getMP();
-    const payment = new Payment(client);
-    const data = await payment.get({ id: req.params.paymentId });
-    res.json({ status: data.status });
-  } catch(err) {
-    res.status(500).json({ error: err.message });
   }
 });
 
