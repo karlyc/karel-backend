@@ -21,6 +21,9 @@ router.post('/process-payment', async (req, res) => {
     const { Payment, client } = getMP();
     const payment = new Payment(client);
 
+    // Log what we receive for debugging
+    console.log('[MP] process-payment body:', JSON.stringify(req.body).slice(0, 300));
+
     // Use req.body directly as MP official docs show
     const result = await payment.create({ body: req.body });
 
@@ -82,6 +85,41 @@ router.post('/create-preference', async (req, res) => {
   } catch(err) {
     console.error('[MP] create-preference error:', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/mp/webhook — IPN notifications use GET ──
+router.get('/webhook', async (req, res) => {
+  res.json({ received: true }); // Always 200 immediately
+
+  try {
+    const topic  = req.query.topic;
+    const dataId = req.query.id;
+
+    console.log(`[MP] IPN received: topic=${topic} id=${dataId}`);
+
+    if (!dataId || topic !== 'payment') return;
+
+    const { Payment, client } = getMP();
+    const payment = new Payment(client);
+    const paymentData = await payment.get({ id: dataId });
+
+    console.log(`[MP] IPN Payment ${dataId} status: ${paymentData.status}`);
+
+    if (paymentData.status === 'approved') {
+      const orderId = paymentData.metadata?.order_id ||
+                      paymentData.metadata?.orderId  ||
+                      paymentData.external_reference;
+      if (orderId) {
+        await prisma.order.update({
+          where: { id: orderId },
+          data:  { paymentStatus: 'PAGADA' },
+        }).catch(e => console.error('[MP] Order update failed:', e.message));
+        console.log(`[MP] Order ${orderId} marked as PAGADA via IPN`);
+      }
+    }
+  } catch(err) {
+    console.error('[MP] IPN processing error:', err.message);
   }
 });
 
