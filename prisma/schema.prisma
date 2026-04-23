@@ -46,6 +46,7 @@ enum LoyaltyTier  {
   PLATINUM 
   }
 
+
 model Client {
   id           String       @id @default(cuid())
   phoneCode    String       @default("+52")
@@ -143,7 +144,7 @@ enum PaymentStatus {
   }
 
 enum PaymentMethod { 
-  EFECTIVO 
+  EFECTIVO
   TRANSFERENCIA 
   TERMINAL 
   CASHAPP 
@@ -157,7 +158,7 @@ enum PaymentMethod {
 enum DeliveryType  { 
   DOMICILIO_CASA 
   DOMICILIO_NEGOCIO 
-  RECOGER_TIENDA 
+  RECOGER_TIENDA
   }
 
 enum Occasion      { 
@@ -169,8 +170,6 @@ enum Occasion      {
   RECUPERACION 
   OTRA 
   }
-
-
 model Order {
   id               String        @id @default(cuid())
   orderNumber      String        @unique

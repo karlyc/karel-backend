@@ -72,8 +72,8 @@ function buildReceiptHTML(order) {
 
   <!-- HEADER -->
   <tr>
-    <td style="background:linear-gradient(135deg,#C96E60,#e08070);padding:32px 36px;text-align:center;">
-      <div style="font-size:2.5rem;margin-bottom:8px;">🌹</div>
+    <td style="background:linear-gradient(135deg,#EC7FA9,#e08070);padding:32px 36px;text-align:center;color:#BE5985;">
+      <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1773958184/000LOGO_mrylkc.png" width="80" style="display:block;margin:0 auto 8px;height:auto;" alt="Florería Karel"/>
       <div style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:white;letter-spacing:.02em;text-transform:uppercase;">
         FLORERÍA Y REGALOS KAREL
       </div>
@@ -89,8 +89,8 @@ function buildReceiptHTML(order) {
   <!-- ORDER NUMBER BADGE -->
   <tr>
     <td style="padding:28px 36px 0;text-align:center;">
-      <div style="display:inline-block;background:#fff5f3;border:2px solid #C96E60;border-radius:100px;padding:10px 28px;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#C96E60;margin-bottom:4px;">Número de Pedido</div>
+      <div style="display:inline-block;background:#fff5f3;border:2px solid #EC7FA9;border-radius:100px;padding:10px 28px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#EC7FA9;margin-bottom:4px;">Número de Pedido</div>
         <div style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:#1a1a1a;">${order.orderNumber}</div>
       </div>
       <div style="font-size:12px;color:#888;margin-top:10px;">${orderDate}</div>
@@ -102,7 +102,7 @@ function buildReceiptHTML(order) {
 
     <!-- CLIENT -->
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-      <tr><td colspan="2" style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#C96E60;border-bottom:1.5px solid #f0e8e6;padding-bottom:6px;margin-bottom:10px;">👤 Cliente</td></tr>
+      <tr><td colspan="2" style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;margin-bottom:10px;">👤 Cliente</td></tr>
       <tr>
         <td style="padding:6px 0;font-size:13px;color:#888;width:110px;">Nombre</td>
         <td style="padding:6px 0;font-size:13px;font-weight:600;">${clientName}</td>
@@ -113,7 +113,7 @@ function buildReceiptHTML(order) {
 
     <!-- DELIVERY -->
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-      <tr><td colspan="2" style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#C96E60;border-bottom:1.5px solid #f0e8e6;padding-bottom:6px;">🚐 Entrega</td></tr>
+      <tr><td colspan="2" style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;">🚐 Entrega</td></tr>
       <tr>
         <td style="padding:6px 0;font-size:13px;color:#888;width:110px;">Fecha</td>
         <td style="padding:6px 0;font-size:13px;font-weight:600;">${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('es-MX', {weekday:'long', year:'numeric', month:'long', day:'numeric'}) : '—'}</td>
@@ -153,10 +153,10 @@ function buildReceiptHTML(order) {
     </table>
 
     <!-- PRODUCTS -->
-    <div style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#C96E60;border-bottom:1.5px solid #f0e8e6;padding-bottom:6px;margin-bottom:12px;">🌺 Productos</div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;margin-bottom:12px;">🌺 Productos</div>
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:10px;overflow:hidden;margin-bottom:16px;">
       <thead>
-        <tr style="background:#faf5f3;">
+        <tr style="background:#f9f5f5;">
           <th style="padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#888;text-align:left;width:56px;"></th>
           <th style="padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#888;text-align:left;">Producto</th>
           <th style="padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#888;text-align:center;">Cant.</th>
@@ -173,13 +173,13 @@ function buildReceiptHTML(order) {
         <td style="padding:4px 0;font-size:13px;text-align:right;">$${fmt(order.subtotal)}</td>
       </tr>
       ${Number(order.deliveryFee) > 0 ? `<tr><td style="padding:4px 0;font-size:13px;color:#888;">Envío</td><td style="padding:4px 0;font-size:13px;text-align:right;">$${fmt(order.deliveryFee)}</td></tr>` : ''}
-      ${Number(order.advance) > 0 ? `<tr><td style="padding:4px 0;font-size:13px;color:#888;">Anticipo</td><td style="padding:4px 0;font-size:13px;text-align:right;color:#C96E60;">− $${fmt(order.advance)}</td></tr>` : ''}
+      ${Number(order.advance) > 0 ? `<tr><td style="padding:4px 0;font-size:13px;color:#888;">Anticipo</td><td style="padding:4px 0;font-size:13px;text-align:right;color:#EC7FA9;">− $${fmt(order.advance)}</td></tr>` : ''}
       <tr>
         <td colspan="2" style="border-top:2px solid #1a1a1a;padding-top:10px;"></td>
       </tr>
       <tr>
         <td style="padding:4px 0;font-size:16px;font-weight:800;">TOTAL</td>
-        <td style="padding:4px 0;font-size:20px;font-weight:800;text-align:right;color:#C96E60;">$${fmt(order.total)} MXN</td>
+        <td style="padding:4px 0;font-size:20px;font-weight:800;text-align:right;color:#EC7FA9;">$${fmt(order.total)} MXN</td>
       </tr>
     </table>
 
@@ -193,7 +193,7 @@ function buildReceiptHTML(order) {
 
   <!-- FOOTER -->
   <tr>
-    <td style="background:#2e2320;padding:24px 36px;text-align:center;">
+    <td style="background:#BE5985;padding:24px 36px;text-align:center;">
       <div style="font-family:Georgia,serif;font-size:14px;color:white;margin-bottom:6px;">Florería y Regalos Karel</div>
       <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.8;">
         Av. de la Raza 5262 · Ciudad Juárez, Chih.<br/>
@@ -201,7 +201,7 @@ function buildReceiptHTML(order) {
         RFC: GMB081001TH8
       </div>
       <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:12px;">
-        Gracias por su preferencia 🌹
+        Gracias por su preferencia 🌸
       </div>
     </td>
   </tr>
@@ -224,7 +224,7 @@ async function sendOrderConfirmation(order) {
     const result = await getResend().emails.send({
       from: FROM,
       to: email,
-      subject: `Pedido ${order.orderNumber} confirmado — Florería y Regalos Karel 🌹`,
+      subject: `Pedido ${order.orderNumber} confirmado — Florería y Regalos Karel 🌸`,
       html: buildReceiptHTML(order),
     });
     console.log('[Email] Resend full response:', JSON.stringify(result));
@@ -331,7 +331,7 @@ async function sendContactEmail({ name, phone, email, subject, message }) {
       <tr><td style="padding:8px 0;font-size:13px;color:#888;">Correo</td><td style="padding:8px 0;font-size:13px;font-weight:600;">${email || '—'}</td></tr>
       <tr><td style="padding:8px 0;font-size:13px;color:#888;">Asunto</td><td style="padding:8px 0;font-size:13px;font-weight:600;">${subject || '—'}</td></tr>
     </table>
-    <div style="background:#faf5f3;border-left:3px solid #C4846A;border-radius:0 8px 8px 0;padding:16px 20px;">
+    <div style="background:#f9f5f5;border-left:3px solid #C4846A;border-radius:0 8px 8px 0;padding:16px 20px;">
       <div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#C4846A;margin-bottom:8px;">Mensaje</div>
       <div style="font-size:14px;color:#333;line-height:1.7;white-space:pre-wrap;">${message}</div>
     </div>
