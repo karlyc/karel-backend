@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
-
 Sitemap: https://floreriakarel.com/sitemap.xml

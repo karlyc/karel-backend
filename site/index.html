@@ -947,7 +947,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       </div>
 
       <button class="auth-btn" id="auth-send-btn" onclick="requestOTP()">Recibir código →</button>
-      <p class="auth-switch">Al continuar aceptas nuestros <a>términos y condiciones</a></p>
+      <p class="auth-switch">Al continuar aceptas nuestros <a href="/terminos" onclick="return false;" style="color:inherit;">términos y condiciones</a></p>
     </div>
 
     <!-- SCREEN: OTP -->
@@ -967,7 +967,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         ¿No recibiste el código?
         <button id="auth-resend-btn" onclick="resendOTP()" disabled>Reenviar (<span class="auth-countdown" id="auth-countdown">60</span>s)</button>
       </div>
-      <p class="auth-switch"><a onclick="showAuthScreen('auth-identify')">← Cambiar correo/teléfono</a></p>
+      <p class="auth-switch"><a href="#" onclick="showAuthScreen('auth-identify');return false;">← Cambiar correo/teléfono</a></p>
     </div>
 
     <!-- SCREEN: COMPLETE PROFILE (new users) -->
