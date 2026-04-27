@@ -9,6 +9,7 @@
 <meta name="robots" content="index, follow"/>
 <meta name="author" content="Florería y Regalos Karel"/>
 <link rel="canonical" href="https://floreriakarel.com/"/>
+<link rel="alternate" href="https://www.floreriakarel.com/" hreflang="es-MX"/>
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://floreriakarel.com/"/>
 <meta property="og:title" content="Florería y Regalos Karel — Flores a Domicilio en Ciudad Juárez"/>
@@ -626,7 +627,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775253142/PHOTO-2026-04-03-15-50-39_bvmhqg.jpg" alt="Flores que hablan por ti" class="slide-img"/>
         <div class="slide-overlay"></div>
         <div class="slide-content">
-          <h2 class="slide-heading">Flores que <em>hablan por ti</em></h2>
+          <h1 class="slide-heading">Flores que <em>hablan por ti</em></h1>
           <button class="slide-btn" onclick="showPage('catalog')">Ver catálogo</button>
         </div>
       </div>
@@ -744,7 +745,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
   </section>
 
   <!-- HOURS + MAP -->
-  <section class="section">
+  <section id="horario" class="section">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;">
       <div>
         <span class="s-label rv">Estamos aquí para ti</span>
@@ -766,7 +767,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
   </section>
 
   <!-- LOCATIONS -->
-  <section class="section" style="background:#FCE8F3;">
+  <section id="ubicaciones" class="section" style="background:#FCE8F3;">
     <div class="text-center rv" style="margin-bottom:40px;">
       <span class="s-label">Nuestras ubicaciones</span>
       <h2 class="s-title">Visítanos</h2>
@@ -818,7 +819,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
   </section>
 
   <!-- GALLERY -->
-  <section class="section" style="padding-top:0;">
+  <section id="galeria" class="section" style="padding-top:0;">
     <div class="text-center rv" style="margin-bottom:0;">
       <span class="s-label">Síguenos en Instagram</span>
       <h2 class="s-title">Nuestros <em>arreglos</em></h2>
@@ -841,7 +842,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 <div class="page" id="page-catalog">
   <div class="catalog-header">
     <span class="s-label rv">Todo nuestro inventario</span>
-    <h1 class="s-title rv d1">Catálogo <em>completo</em></h1>
+    <h2 class="s-title rv d1">Catálogo <em>completo</em></h2>
   </div>
   <div class="catalog-filters" id="cat-filters"><!-- loaded dynamically --></div>
   <div class="catalog-body" id="catalog-body">
@@ -853,7 +854,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 <div class="page" id="page-eventos">
   <div class="eventos-header">
     <span class="s-label rv">Nuestro trabajo</span>
-    <h1 class="s-title rv d1">Galería de <em>eventos</em></h1>
+    <h2 class="s-title rv d1">Galería de <em>eventos</em></h2>
     <p class="s-sub rv d2">Bodas, quinceañeras, graduaciones y más. Llevamos flores a los momentos más especiales de Ciudad Juárez.</p>
   </div>
   <div class="eventos-grid">
@@ -873,7 +874,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 <div class="page" id="page-contacto">
   <section class="section">
     <span class="s-label rv">Estamos aquí</span>
-    <h1 class="s-title rv d1"><em>Contáctanos</em></h1>
+    <h2 class="s-title rv d1"><em>Contáctanos</em></h2>
     <div class="contact-grid">
       <div class="contact-form rv">
         <h3 style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:400;margin-bottom:24px;">Envíanos un mensaje</h3>
@@ -990,6 +991,15 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       <p class="footer-tagline">Flores frescas, arreglos con amor,<br/>entregas en Ciudad Juárez.</p>
       <div class="footer-social">
         <a href="https://wa.me/526561303595" target="_blank" class="f-soc">WA</a>
+      </div>
+      <div style="margin-top:24px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap;">
+        <a href="#horario" style="font-size:.72rem;color:#e7b1ff;text-decoration:none;letter-spacing:.08em;">Horario</a>
+        <a href="#ubicaciones" style="font-size:.72rem;color:#e7b1ff;text-decoration:none;letter-spacing:.08em;">Ubicaciones</a>
+        <a href="#galeria" style="font-size:.72rem;color:#e7b1ff;text-decoration:none;letter-spacing:.08em;">Galería</a>
+        <a href="#contacto" style="font-size:.72rem;color:#e7b1ff;text-decoration:none;letter-spacing:.08em;">Contacto</a>
+        <a href="https://karelsflowers.com" target="_blank" style="font-size:.72rem;color:#e7b1ff;text-decoration:none;letter-spacing:.08em;">El Paso, TX</a>
+      </div>
+      <div style="display:none;">
         <a href="https://www.instagram.com/floreriakarel" target="_blank" class="f-soc">IG</a>
         <a href="https://www.facebook.com/floreriayregaloskarel/" target="_blank" class="f-soc">FB</a>
       </div>
