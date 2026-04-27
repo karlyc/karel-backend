@@ -85,8 +85,9 @@ async function sendOrderConfirmation(order, client) {
   const phone = formatPhone(client?.phone, client?.phoneCode);
   if (!phone) return;
 
-  // Use free-form message to customer (they may not have messaged first)
-  // Once template is approved, switch to sendTemplate
+  // Now using approved template — sendShopNewOrder handles the shop notification
+  // Customer order confirmation is sent via email (Resend)
+  // WhatsApp template for customer not submitted yet — using free-form as fallback
   const items = (order.items || []).map(i => `  • ${i.product?.name || 'Producto'} x${i.quantity}`).join('\n');
   const delivDate = order.deliveryDate
     ? new Date(order.deliveryDate).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
