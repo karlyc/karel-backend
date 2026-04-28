@@ -7,18 +7,19 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'AW-11343818478');
 </script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Florería y Regalos Karel</title>
+<title>Florería y Regalos Karel — Flores a Domicilio en Ciudad Juárez</title>
 <meta name="description" content="Florería y Regalos Karel en Ciudad Juárez. Arreglos florales frescos, ramos, rosas y detalles para toda ocasión. Entrega el mismo día. Llama al (656) 611-1124."/>
 <meta name="keywords" content="florería Ciudad Juárez, flores a domicilio Juárez, arreglos florales Juárez, ramos de rosas Juárez, floristería Juárez, flores Chihuahua, florería Karel"/>
 <meta name="robots" content="index, follow"/>
 <meta name="author" content="Florería y Regalos Karel"/>
 <link rel="canonical" href="https://floreriakarel.com/"/>
+<link rel="alternate" href="https://floreriakarel.com/" hreflang="es-MX"/>
 <link rel="alternate" href="https://www.floreriakarel.com/" hreflang="es-MX"/>
+<link rel="alternate" href="https://floreriakarel.com/" hreflang="x-default"/>
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://floreriakarel.com/"/>
 <meta property="og:title" content="Florería y Regalos Karel — Flores a Domicilio en Ciudad Juárez"/>
@@ -292,6 +293,8 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 .cart-sidebar{position:fixed;right:0;top:0;bottom:0;width:400px;max-width:100vw;background:white;z-index:501;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .35s ease;box-shadow:-8px 0 40px rgba(0,0,0,.1);}
 .cart-sidebar.open{transform:none;}
 .cart-head{padding:24px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.cart-head-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:400;color:#1a1a1a;}
+.footer-col-title{font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(26,26,26,.45);margin-bottom:16px;}
 .cart-head h3{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:400;letter-spacing:.02em;color:#1a1a1a;}
 .cart-close{background:none;border:none;font-size:1rem;cursor:pointer;color:var(--muted);padding:4px;}
 .cart-items{flex:1;overflow-y:auto;padding:20px 28px;}
@@ -599,6 +602,9 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       <button class="icon-btn" onclick="toggleSearch()" id="search-btn" title="Buscar">
         <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1776815561/search_1_nedwvf.png" style="width:20px;height:20px;" alt="Buscar"/>
       </button>
+      <button class="icon-btn" onclick="toggleSearch()" id="search-btn" title="Buscar">
+        <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1776815561/search_1_nedwvf.png" style="width:20px;height:20px;" alt="Buscar"/>
+      </button>
       <button class="cart-btn icon-btn" onclick="openCart()" title="Carrito">
        <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775584638/shopping-cart_ujk1cw.png" style="width:20px;height:20px;" alt="Carrito"/>
        <span class="cart-count" id="cart-count">0</span>
@@ -644,7 +650,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775253197/WhatsApp_Image_2026-04-03_at_15.50.40_ykchme.jpg" alt="Para cada ocasión especial" class="slide-img"/>
         <div class="slide-overlay"></div>
         <div class="slide-content">
-          <h2 class="slide-heading">Para cada <em>ocasión especial</em></h2>
+          <div class="slide-heading">Para cada <em>ocasión especial</em></div>
           <button class="slide-btn" onclick="showPage('catalog')">Ordenar ahora</button>
         </div>
       </div>
@@ -652,7 +658,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775253671/WhatsApp_Image_2026-04-03_at_15.58.21_6_dovm0j.jpg" alt="Entrega el mismo día" class="slide-img"/>
         <div class="slide-overlay"></div>
         <div class="slide-content">
-          <h2 class="slide-heading">Entrega el <em>mismo día</em></h2>
+          <div class="slide-heading">Entrega el <em>mismo día</em></div>
           <button class="slide-btn" onclick="openOrderModal()">Ordenar ahora</button>
         </div>
       </div>
@@ -660,7 +666,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775253670/WhatsApp_Image_2026-04-03_at_15.58.21_3_u6piac.jpg" alt="Arreglos elaborados con amor" class="slide-img"/>
         <div class="slide-overlay"></div>
         <div class="slide-content">
-          <h2 class="slide-heading">Arreglos elaborados <em>con amor</em></h2>
+          <div class="slide-heading">Arreglos elaborados <em>con amor</em></div>
           <button class="slide-btn" onclick="showPage('catalog')">Ver catálogo</button>
         </div>
       </div>
@@ -668,7 +674,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775253670/WhatsApp_Image_2026-04-03_at_16.00.26_2_szlrl3.jpg" alt="El regalo perfecto te espera" class="slide-img"/>
         <div class="slide-overlay"></div>
         <div class="slide-content">
-          <h2 class="slide-heading">El regalo perfecto <em>te espera</em></h2>
+          <div class="slide-heading">El regalo perfecto <em>te espera</em></div>
           <button class="slide-btn" onclick="showPage('catalog')">Ver catálogo</button>
         </div>
       </div>
@@ -676,7 +682,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775253670/WhatsApp_Image_2026-04-03_at_15.58.21_5_gwhmkd.jpg" alt="Sorprende a quien más quieres" class="slide-img"/>
         <div class="slide-overlay"></div>
         <div class="slide-content">
-          <h2 class="slide-heading">Sorprende a quien <em>más quieres</em></h2>
+          <div class="slide-heading">Sorprende a quien <em>más quieres</em></div>
           <button class="slide-btn" onclick="openOrderModal()">Ordenar ahora</button>
         </div>
       </div>
@@ -754,7 +760,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
   </section>
 
   <!-- HOURS + MAP -->
-  <section id="horario" class="section">
+  <section class="section">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;">
       <div>
         <span class="s-label rv">Estamos aquí para ti</span>
@@ -775,60 +781,8 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     </div>
   </section>
 
-  <!-- LOCATIONS -->
-  <section id="ubicaciones" class="section" style="background:#FCE8F3;">
-    <div class="text-center rv" style="margin-bottom:40px;">
-      <span class="s-label">Nuestras ubicaciones</span>
-      <h2 class="s-title">Visítanos</h2>
-    </div>
-    <div class="loc-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:32px;max-width:900px;margin:0 auto;">
-
-      <!-- Ciudad Juárez -->
-      <div class="rv" style="text-align:center;">
-        <div style="overflow:hidden;border-radius:12px;margin-bottom:16px;aspect-ratio:4/3;">
-          <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1776987475/floreriakareljuarezfachada_uuvjy8.webp"
-               alt="Florería Karel Ciudad Juárez"
-               style="width:100%;height:100%;object-fit:cover;transition:transform .4s;"
-               onmouseover="this.style.transform='scale(1.04)'"
-               onmouseout="this.style.transform='scale(1)'"/>
-        </div>
-        <h3 style="font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:6px;">Ciudad Juárez, MX</h3>
-        <p style="font-size:.82rem;color:var(--muted);line-height:1.7;">
-          Av. de la Raza 5262, Del. Norte<br/>
-          C.P. 32369 · Ciudad Juárez, Chih.<br/>
-          📞 (656) 611-1124
-        </p>
-      </div>
-
-      <!-- El Paso, TX -->
-      <div class="rv" style="text-align:center;">
-        <div style="overflow:hidden;border-radius:12px;margin-bottom:16px;aspect-ratio:4/3;">
-          <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1776987587/WhatsApp_Image_2026-04-23_at_17.39.10_o4k5wk.jpg"
-               alt="Karel's Flowers El Paso Texas"
-               style="width:100%;height:100%;object-fit:cover;transition:transform .4s;"
-               onmouseover="this.style.transform='scale(1.04)'"
-               onmouseout="this.style.transform='scale(1)'"/>
-        </div>
-        <h3 style="font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:6px;">El Paso, TX</h3>
-        <p style="font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:16px;">
-          Karel's Flowers<br/>
-          1779 N. Zaragoza Suite C<br/>
-          El Paso, Texas 79936<br/>
-          📞 (915) 408-6506
-        </p>
-        <a href="https://karelsflowers.com" target="_blank" rel="noopener noreferrer"
-           style="display:inline-block;background:var(--accent);color:white;padding:12px 28px;font-family:'Jost',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;transition:opacity .2s;"
-           onmouseover="this.style.opacity='.85'"
-           onmouseout="this.style.opacity='1'">
-          Compra en El Paso, TX →
-        </a>
-      </div>
-
-    </div>
-  </section>
-
   <!-- GALLERY -->
-  <section id="galeria" class="section" style="padding-top:0;">
+  <section class="section" style="padding-top:0;">
     <div class="text-center rv" style="margin-bottom:0;">
       <span class="s-label">Síguenos en Instagram</span>
       <h2 class="s-title">Nuestros <em>arreglos</em></h2>
@@ -841,7 +795,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       <div class="gal-cell rv d1"><img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1774565932/PHOTO-2026-03-26-16-58-24_mhn5z6.jpg" alt="Arreglo floral Karel"/><div class="gal-overlay"></div></div>
     </div>
     <div style="text-align:center;margin-top:28px;" class="rv">
-      <a href="https://instagram.com/floreriakarel" rel="noopener noreferrer" target="_blank" class="btn-outline">Ver más en Instagram</a>
+      <a href="https://instagram.com/floreriakarel" target="_blank" class="btn-outline">Ver más en Instagram</a>
     </div>
   </section>
 
@@ -907,7 +861,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <div class="c-item"><div><div class="c-lab">Dirección</div><div class="c-val">Av. de la Raza 5262, Del. Norte, 32369<br/>Ciudad Juárez, Chih.</div></div></div>
         <div class="c-item"><div><div class="c-lab">Teléfono</div><div class="c-val"><a href="tel:6566111124">656 611 1124</a></div></div></div>
         <div class="c-item"><div><div class="c-lab">WhatsApp</div><div class="c-val"><a href="https://wa.me/526561303595" target="_blank">656 130 3595</a></div></div></div>
-        <div class="c-item"><div><div class="c-lab">Correo</div><div class="c-val"><a href="mailto:facturacionkarel@hotmail.com">facturacionkarel@hotmail.com</a></div></div></div>
+        <div class="c-item"><div><div class="c-lab">Correo</div><div class="c-val"><a href="/cdn-cgi/l/email-protection#086e696b7c7d7a696b61676663697a6d644860677c65696164266b6765"><span class="__cf_email__" data-cfemail="7e181f1d0a0b0c1f1d171110151f0c1b123e16110a131f1712501d1113">[email&#160;protected]</span></a></div></div></div>
         <div class="map-embed">
           <iframe src="https://maps.google.com/maps?q=Av+de+la+Raza+5262,+Del+Nte,+32369+Ciudad+Ju%C3%A1rez,+Chih&output=embed" allowfullscreen loading="lazy"></iframe>
         </div>
@@ -947,7 +901,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 
     <!-- SCREEN: IDENTIFY -->
     <div class="auth-screen active" id="auth-identify">
-      <h2 class="auth-title">Bienvenida</h2>
+      <div class="auth-title">Bienvenida</div>
       <p class="auth-sub">Ingresa tu correo y te enviamos un código de acceso.</p>
 
       <div id="auth-email-wrap">
@@ -956,12 +910,12 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       </div>
 
       <button class="auth-btn" id="auth-send-btn" onclick="requestOTP()">Recibir código →</button>
-      <p class="auth-switch">Al continuar aceptas nuestros <a href="/terminos" onclick="return false;" style="color:inherit;">términos y condiciones</a></p>
+      <p class="auth-switch">Al continuar aceptas nuestros <a>términos y condiciones</a></p>
     </div>
 
     <!-- SCREEN: OTP -->
     <div class="auth-screen" id="auth-otp">
-      <h2 class="auth-title">Código de verificación</h2>
+      <div class="auth-title">Código de verificación</div>
       <p class="auth-sub" id="auth-otp-sub">Ingresa el código que enviamos a tu correo.</p>
       <div class="otp-inputs">
         <input class="otp-input" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,0)" onkeydown="otpKey(event,0)"/>
@@ -976,12 +930,12 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         ¿No recibiste el código?
         <button id="auth-resend-btn" onclick="resendOTP()" disabled>Reenviar (<span class="auth-countdown" id="auth-countdown">60</span>s)</button>
       </div>
-      <p class="auth-switch"><a href="#" onclick="showAuthScreen('auth-identify');return false;">← Cambiar correo/teléfono</a></p>
+      <p class="auth-switch"><a onclick="showAuthScreen('auth-identify')">← Cambiar correo/teléfono</a></p>
     </div>
 
     <!-- SCREEN: COMPLETE PROFILE (new users) -->
     <div class="auth-screen" id="auth-complete">
-      <h2 class="auth-title">Casi listo</h2>
+      <div class="auth-title">Casi listo</div>
       <p class="auth-sub">Cuéntanos tu nombre para personalizar tu experiencia.</p>
       <label class="auth-label">Nombre *</label>
       <input class="auth-input" id="auth-firstname" placeholder="Tu nombre" style="margin-bottom:12px;"/>
@@ -1000,31 +954,22 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       <p class="footer-tagline">Flores frescas, arreglos con amor,<br/>entregas en Ciudad Juárez.</p>
       <div class="footer-social">
         <a href="https://wa.me/526561303595" target="_blank" class="f-soc">WA</a>
-      </div>
-      <div style="margin-top:24px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap;">
-        <a href="#horario" style="font-size:.72rem;color:#e7b1ff;text-decoration:none;letter-spacing:.08em;">Horario</a>
-        <a href="#ubicaciones" style="font-size:.72rem;color:#e7b1ff;text-decoration:none;letter-spacing:.08em;">Ubicaciones</a>
-        <a href="#galeria" style="font-size:.72rem;color:#e7b1ff;text-decoration:none;letter-spacing:.08em;">Galería</a>
-        <a href="#contacto" style="font-size:.72rem;color:#e7b1ff;text-decoration:none;letter-spacing:.08em;">Contacto</a>
-        <a href="https://karelsflowers.com" target="_blank" rel="noopener noreferrer" style="font-size:.72rem;color:#e7b1ff;text-decoration:none;letter-spacing:.08em;">El Paso, TX</a>
-      </div>
-      <div style="display:none;">
-        <a href="https://www.instagram.com/floreriakarel" rel="noopener noreferrer" target="_blank" class="f-soc">IG</a>
+        <a href="https://www.instagram.com/floreriakarel" target="_blank" class="f-soc">IG</a>
         <a href="https://www.facebook.com/floreriayregaloskarel/" target="_blank" class="f-soc">FB</a>
       </div>
     </div>
-    <div class="footer-col"><h3>Navegación</h3><ul>
+    <div class="footer-col"><div class="footer-col-title">Navegación</div><ul>
       <li><a href="#" onclick="showPage('home');return false;">Inicio</a></li>
       <li><a href="#" onclick="showPage('catalog');return false;">Catálogo</a></li>
       <li><a href="#" onclick="showPage('eventos');return false;">Eventos</a></li>
       <li><a href="#" onclick="showPage('contacto');return false;">Contacto</a></li>
     </ul></div>
-    <div class="footer-col"><h3>Servicios</h3><ul>
+    <div class="footer-col"><div class="footer-col-title">Servicios</div><ul>
       <li><a href="#" onclick="openOrderModal();return false;">Ordenar en línea</a></li>
       <li><a href="#" onclick="openOrderModal();return false;">Entrega a domicilio</a></li>
       <li><a href="#" onclick="showPage('eventos');return false;">Eventos y bodas</a></li>
     </ul></div>
-    <div class="footer-col"><h3>Horarios</h3><ul>
+    <div class="footer-col"><div class="footer-col-title">Horarios</div><ul>
       <li><a href="#">Lunes–Viernes 9AM–6PM</a></li>
       <li><a href="#">Sábado 9AM–4PM</a></li>
       <li><a href="#">Domingo Cerrado</a></li>
@@ -1060,7 +1005,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 <div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
 <div class="cart-sidebar" id="cart-sidebar">
   <div class="cart-head">
-    <h3>Tu carrito</h3>
+    <div class="cart-head-title">Tu carrito</div>
     <button class="cart-close" onclick="closeCart()">✕</button>
   </div>
   <div class="cart-items" id="cart-items-list"></div>
@@ -1092,7 +1037,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     <div class="om-step active" id="oms-1">
       <div class="om-body">
         <div class="om-step-label">Paso 1 de 6</div>
-        <h2 class="om-step-title">Tu <em>pedido</em></h2>
+        <div class="om-step-title">Tu <em>pedido</em></div>
         <div id="om-cart-summary"></div>
         <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
           <div style="font-size:.62rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">¿Quieres agregar algo más?</div>
@@ -1109,7 +1054,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     <div class="om-step" id="oms-2">
       <div class="om-body">
         <div class="om-step-label">Paso 2 de 6</div>
-        <h2 class="om-step-title">¿Cuál es la <em>ocasión?</em></h2>
+        <div class="om-step-title">¿Cuál es la <em>ocasión?</em></div>
         <div class="tile-group cols-3" id="occ-tiles">
           <div class="tile" onclick="selTile(this,'occ','CUMPLEANOS')"><div class="tile-icon">🎂</div><div class="tile-label">Cumpleaños</div></div>
           <div class="tile" onclick="selTile(this,'occ','AMOR')"><div class="tile-icon">💝</div><div class="tile-label">Amor</div></div>
@@ -1126,7 +1071,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     <div class="om-step" id="oms-3">
       <div class="om-body">
         <div class="om-step-label">Paso 3 de 6</div>
-        <h2 class="om-step-title">Datos de <em>entrega</em></h2>
+        <div class="om-step-title">Datos de <em>entrega</em></div>
         <div class="tile-group cols-2" id="del-tiles" style="margin-bottom:20px;">
           <div class="tile" onclick="selTile(this,'del','DOMICILIO_CASA')"><div class="tile-icon">🏠</div><div class="tile-label">Casa</div></div>
           <div class="tile" onclick="selTile(this,'del','DOMICILIO_NEGOCIO')"><div class="tile-icon">🏢</div><div class="tile-label">Trabajo / Negocio</div></div>
@@ -1196,7 +1141,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     <div class="om-step" id="oms-4">
       <div class="om-body">
         <div class="om-step-label">Paso 4 de 6</div>
-        <h2 class="om-step-title">Tus <em>datos</em></h2>
+        <div class="om-step-title">Tus <em>datos</em></div>
 
         <div id="om-auth-choice" style="display:none;margin-bottom:20px;padding:16px;background:var(--cream);border:1px solid var(--border);">
           <p style="font-size:.82rem;color:var(--mid);margin-bottom:12px;">¿Tienes una cuenta? Inicia sesión para ver tu historial de pedidos.</p>
@@ -1232,7 +1177,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
     <div class="om-step" id="oms-5">
       <div class="om-body">
         <div class="om-step-label">Paso 5 de 6</div>
-        <h2 class="om-step-title">Pago <em>seguro</em></h2>
+        <div class="om-step-title">Pago <em>seguro</em></div>
         <div class="sum-block" id="pay-summary">
           <div class="sum-row"><span class="sum-label">Subtotal</span><span id="ps-sub">—</span></div>
           <div class="sum-row"><span class="sum-label">IVA (8%)</span><span id="ps-tax">—</span></div>
@@ -1265,7 +1210,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
 
         <!-- Mercado Pago Bricks -->
         <div id="payment-mp" style="display:none;">
-          <div id="cardPaymentBrick_container"></div>
+          <div id="paymentBrick_container"></div>
           <div class="stripe-error" id="mp-error" style="margin-top:8px;"></div>
         </div>
       </div>
@@ -1277,7 +1222,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       <div class="om-body">
         <div class="confirm-screen">
           <div class="confirm-icon">🌹</div>
-          <h2 class="confirm-title">¡Pedido confirmado!</h2>
+          <div class="confirm-title">¡Pedido confirmado!</div>
           <div class="confirm-num" id="conf-num">—</div>
           <p class="confirm-note">Te enviamos un correo de confirmación. Nos pondremos en contacto para coordinar los detalles de entrega.</p>
           <button class="confirm-wa" onclick="sendConfirmWA()">💬 Hablar con la florería por WhatsApp</button>
@@ -1869,7 +1814,7 @@ function renderModalProducts() {
       summary.innerHTML = cart.map(i => `
         <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
           <div style="width:52px;height:52px;border-radius:10px;background:var(--pink-light);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">
-            ${i.photo ? `<img src="${photoSrc(i.photo)}" style="width:100%;height:100%;object-fit:cover;" alt="${i.name || 'Producto'}"/>` : '🌸'}
+            ${i.photo ? `<img src="${photoSrc(i.photo)}" style="width:100%;height:100%;object-fit:cover;"/>` : '🌸'}
           </div>
           <div style="flex:1;">
             <div style="font-weight:700;font-size:.88rem;">${escHtml(i.name)}</div>
@@ -1899,7 +1844,7 @@ function renderModalProducts() {
       addonsEl.innerHTML = addonProds.map(a => {
         const inCart = cart.find(i => i.productId === a.id);
         return '<div style="border:2px solid ' + (inCart ? '#C4846A' : 'var(--border)') + ';border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .15s;background:' + (inCart ? 'rgba(196,132,106,.08)' : 'white') + ';" onclick="toggleAddon(&quot;' + a.id + '&quot;)">' +
-          (a.photo1Url ? '<div style="width:56px;height:56px;border-radius:8px;overflow:hidden;margin:0 auto 6px;"><img src="' + photoSrc(a.photo1Url) + '" style="width:100%;height:100%;object-fit:cover;" alt="Florería Karel"/></div>' : '<div style="font-size:1.8rem;margin-bottom:6px;">🎁</div>') +
+          (a.photo1Url ? '<div style="width:56px;height:56px;border-radius:8px;overflow:hidden;margin:0 auto 6px;"><img src="' + photoSrc(a.photo1Url) + '" style="width:100%;height:100%;object-fit:cover;"/></div>' : '<div style="font-size:1.8rem;margin-bottom:6px;">🎁</div>') +
           '<div style="font-size:.72rem;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:4px;">' + escHtml(a.name) + '</div>' +
           '<div style="font-size:.75rem;font-weight:800;color:#C4846A;">$' + fmt(a.price || a.priceStd) + '</div>' +
           (inCart ? '<div style="font-size:.65rem;color:#C4846A;margin-top:4px;font-weight:700;">✓ Agregado</div>' : '') +
@@ -2138,13 +2083,14 @@ let mpBrick = null;
 let mpBrickController = null;
 
 async function initMPBrick() {
-  const container = document.getElementById('cardPaymentBrick_container');
+  const container = document.getElementById('paymentBrick_container');
   if (!container) return;
 
+  // Clear previous brick
   container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem;">Cargando forma de pago…</div>';
-  if (window.cardPaymentBrickController) {
-    try { await window.cardPaymentBrickController.unmount(); } catch(e) {}
-    window.cardPaymentBrickController = null;
+  if (window.paymentBrickController) {
+    try { await window.paymentBrickController.unmount(); } catch(e) {}
+    window.paymentBrickController = null;
   }
 
   try {
@@ -2155,44 +2101,53 @@ async function initMPBrick() {
     const tax      = (sub + ship) * IVA_RATE;
     const amount   = Math.round((sub + ship + tax) * 100) / 100;
 
+    const email     = document.getElementById('o-email')?.value.trim() || '';
+    const firstName = document.getElementById('o-first')?.value.trim() || '';
+    const lastName  = document.getElementById('o-last')?.value.trim() || '';
+
+    // Create preference first to get preferenceId
+    const prefRes = await apiPost('/api/mp/create-preference', {
+      items: cart.map(i => ({
+        productId: i.productId,
+        name: i.name,
+        quantity: i.qty,
+        unitPrice: i.unitPrice,
+      })),
+      payer: { firstName, lastName, email },
+      total: amount,
+    });
+
     const mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'es-MX' });
     const bricksBuilder = mp.bricks();
 
     const settings = {
-      initialization: { amount },
+      initialization: {
+        amount,
+        preferenceId: prefRes.id,
+        payer: { firstName, lastName, email },
+      },
+      customization: {
+        visual: {
+          style: { theme: 'default' },
+        },
+        paymentMethods: {
+          creditCard: 'all',
+          debitCard: 'all',
+          ticket: 'all',
+          bankTransfer: 'all',
+          onboarding_credits: 'all',
+          wallet_purchase: 'all',
+          maxInstallments: 1,
+        },
+      },
       callbacks: {
-        onReady: () => { console.log('[MP] CardPayment Brick ready'); },
-        onSubmit: (formData, additionalData) => {
+        onReady: () => {
+          // Hide loading message
+          console.log('[MP] Brick ready');
+        },
+        onSubmit: ({ selectedPaymentMethod, formData }) => {
           return new Promise((resolve, reject) => {
-            // Build submitData exactly as MP docs specify
-            const submitData = {
-              type: 'online',
-              total_amount: String(formData.transaction_amount),
-              external_reference: 'karel-' + Date.now(),
-              processing_mode: 'automatic',
-              transactions: {
-                payments: [{
-                  amount: String(formData.transaction_amount),
-                  payment_method: {
-                    id: formData.payment_method_id,
-                    type: additionalData.paymentTypeId,
-                    token: formData.token,
-                    installments: formData.installments,
-                  },
-                }],
-              },
-              payer: {
-                email: formData.payer.email,
-                identification: formData.payer.identification,
-              },
-            };
-            // Store payer info for order creation
-            window._mpPayer = {
-              email:     formData.payer.email,
-              firstName: document.getElementById('o-first')?.value.trim() || '',
-              lastName:  document.getElementById('o-last')?.value.trim()  || '',
-            };
-            processMPPayment(submitData)
+            processMPPayment(formData)
               .then(() => resolve())
               .catch(() => reject());
           });
@@ -2205,39 +2160,39 @@ async function initMPBrick() {
       },
     };
 
-    window.cardPaymentBrickController = await bricksBuilder.create(
-      'cardPayment',
-      'cardPaymentBrick_container',
+    window.paymentBrickController = await bricksBuilder.create(
+      'payment',
+      'paymentBrick_container',
       settings
     );
+
   } catch(e) {
     console.error('[MP] initMPBrick error:', e);
     container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--accent);font-size:.82rem;">Error al cargar Mercado Pago. Intenta con tarjeta americana.</div>';
   }
 }
 
-
-async function processMPPayment(submitData) {
+async function processMPPayment(formData) {
   const errEl = document.getElementById('mp-error');
   if (errEl) errEl.textContent = '';
 
   try {
-    const payer     = window._mpPayer || {};
-    const firstName = payer.firstName || document.getElementById('o-first')?.value.trim() || '';
-    const lastName  = payer.lastName  || document.getElementById('o-last')?.value.trim()  || '';
-    const email     = payer.email     || document.getElementById('o-email')?.value.trim() || '';
+    const firstName = document.getElementById('o-first').value.trim();
+    const lastName  = document.getElementById('o-last').value.trim();
+    const email     = document.getElementById('o-email').value.trim();
     const dt        = omState.deliveryType;
     const isPickup  = dt === 'RECOGER_TIENDA';
-    const isFuneral = dt === 'FUNERAL';
     const sub       = cartSubtotal();
     const ship      = isPickup ? 0 : SHIPPING_FEE;
+    const tax       = (sub + ship) * IVA_RATE;
+    const total     = Math.round((sub + ship + tax) * 100) / 100;
     const fullPhone = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
 
-    // Call backend — sends to MP Orders API
-    const payRes = await apiPost('/api/mp/process-order', submitData);
+    // Process payment via backend — send formData directly as MP official docs show
+    const payRes = await apiPost('/api/mp/process-payment', formData);
 
-    if (payRes.status === 'processed' || payRes.status === 'approved') {
-      // Find or create client
+    if (payRes.status === 'approved') {
+      // Payment approved — create order
       let clientId = omState.linkedClientId || null;
       if (!clientId) {
         try {
@@ -2245,31 +2200,28 @@ async function processMPPayment(submitData) {
           if (found.length) clientId = found[0].id;
         } catch(e) {}
       }
-      if (!clientId && fullPhone) {
-        try {
-          const found = await apiGet('/api/clients?search=' + encodeURIComponent(fullPhone));
-          if (found.length) clientId = found[0].id;
-        } catch(e) {}
-      }
       if (!clientId) {
         try {
           const cl = await apiPost('/api/clients', { firstName, lastNameP: lastName, phone: fullPhone, email, source: 'WEB' });
           clientId = cl.id;
-        } catch(e) {}
+        } catch(e) {
+          const found = await apiGet('/api/clients?search=' + encodeURIComponent(fullPhone));
+          if (found.length) clientId = found[0].id;
+        }
       }
 
       const order = await apiPost('/api/orders', {
         clientId,
         deliveryDate:     document.getElementById('d-date').value,
-        deliveryType:     isFuneral ? 'DOMICILIO_CASA' : dt,
+        deliveryType:     dt === 'FUNERAL' ? 'DOMICILIO_CASA' : dt,
         deliveryWindow:   document.getElementById('d-window').value,
         deliveryFee:      ship,
-        recipientName:    isFuneral ? document.getElementById('d-difunto').value : (isPickup ? firstName : document.getElementById('d-rname').value),
+        recipientName:    dt === 'FUNERAL' ? document.getElementById('d-difunto').value : (isPickup ? firstName : document.getElementById('d-rname').value),
         recipientPhone:   isPickup ? fullPhone : (document.getElementById('d-rphone')?.value || ''),
-        recipientAddress: isFuneral ? document.getElementById('d-fun-addr').value : (isPickup ? '' : document.getElementById('d-street').value),
-        recipientColonia: isFuneral ? document.getElementById('d-fun-col').value : (document.getElementById('d-colonia')?.value || ''),
-        recipientNotes: [
-          isFuneral
+        recipientAddress: dt === 'FUNERAL' ? document.getElementById('d-fun-addr').value : (isPickup ? '' : document.getElementById('d-street').value),
+        recipientColonia: dt === 'FUNERAL' ? document.getElementById('d-fun-col').value : (document.getElementById('d-colonia')?.value || ''),
+        recipientNotes:   [
+          dt === 'FUNERAL'
             ? [
                 document.getElementById('d-banda')?.value ? 'Banda: ' + document.getElementById('d-banda').value : '',
                 document.getElementById('d-funeraria')?.value ? 'Funeraria: ' + document.getElementById('d-funeraria').value : '',
@@ -2278,19 +2230,19 @@ async function processMPPayment(submitData) {
             : (isPickup ? (document.getElementById('d-rec-notes')?.value || '') : (document.getElementById('d-notes')?.value || '')),
           document.getElementById('d-general-notes')?.value || '',
         ].filter(Boolean).join(' | ') || '',
-        messageFrom:   document.getElementById('d-anon')?.checked ? 'Anónimo' : (document.getElementById('d-from')?.value || firstName),
-        messageText:   document.getElementById('d-msg')?.value || '',
-        messageAnon:   document.getElementById('d-anon')?.checked || false,
-        occasion:      omState.occasion || 'OTRA',
-        items:         cart.map(i => ({ productId: i.productId, quantity: i.qty })),
-        paymentType:   'RECIBIDO',
-        paymentMethod: 'STRIPE',
-        paymentStatus: 'PAGADA',
-        stripePaymentId: payRes.id,
-        advance:       0,
-        needsInvoice:  false,
-        notifyVia:     omState.notifyVia || 'email',
-        source:        'WEB',
+        messageFrom:      document.getElementById('d-anon')?.checked ? 'Anónimo' : (document.getElementById('d-from')?.value || firstName),
+        messageText:      document.getElementById('d-msg')?.value || '',
+        messageAnon:      document.getElementById('d-anon')?.checked || false,
+        occasion:         omState.occasion || 'OTRA',
+        items:            cart.map(i => ({ productId: i.productId, quantity: i.qty })),
+        paymentType:      'RECIBIDO',
+        paymentMethod:    'STRIPE',
+        paymentStatus:    'PAGADA',
+        stripePaymentId:  String(payRes.id),
+        advance:          0,
+        needsInvoice:     false,
+        notifyVia:        omState.notifyVia,
+        source:           'WEB',
       });
 
       omState.confirmedOrder = order;
@@ -2299,27 +2251,30 @@ async function processMPPayment(submitData) {
       omGo(6);
 
     } else if (payRes.status === 'pending') {
-      if (errEl) errEl.textContent = 'Tu pago está pendiente. Te notificaremos cuando sea confirmado.';
-      throw new Error('payment_pending');
+      if (errEl) errEl.textContent = 'Tu pago está pendiente de confirmación. Te notificaremos por correo.';
     } else {
       const detail = payRes.status_detail || 'rejected';
-      const msgs = {
-        'cc_rejected_insufficient_amount':  'Fondos insuficientes.',
+      const msg = {
+        'cc_rejected_insufficient_amount': 'Fondos insuficientes.',
         'cc_rejected_bad_filled_card_number': 'Número de tarjeta incorrecto.',
-        'cc_rejected_bad_filled_date':      'Fecha de vencimiento incorrecta.',
+        'cc_rejected_bad_filled_date': 'Fecha de vencimiento incorrecta.',
         'cc_rejected_bad_filled_security_code': 'Código de seguridad incorrecto.',
-        'cc_rejected_other_reason':         'Tarjeta rechazada. Intenta con otra.',
-      };
-      if (errEl) errEl.textContent = msgs[detail] || `Pago rechazado (${detail}).`;
+        'cc_rejected_blacklist': 'Tarjeta no permitida.',
+        'cc_rejected_call_for_authorize': 'Llamar al banco para autorizar.',
+        'cc_rejected_card_disabled': 'Tarjeta desactivada.',
+        'cc_rejected_duplicated_payment': 'Pago duplicado.',
+        'cc_rejected_high_risk': 'Pago rechazado por seguridad.',
+        'cc_rejected_other_reason': 'Tarjeta rechazada. Intenta con otra.',
+      }[detail] || `Pago rechazado (${detail}). Intenta con otra tarjeta.`;
+      if (errEl) errEl.textContent = msg;
       throw new Error('payment_rejected');
     }
   } catch(e) {
     console.error('[MP] processMPPayment error:', e);
-    if (errEl && !errEl.textContent) errEl.textContent = 'Error al procesar el pago.';
-    throw e;
+    if (errEl && !errEl.textContent) errEl.textContent = 'Error al procesar el pago. Intenta de nuevo.';
+    throw e; // re-throw so brick shows error state
   }
 }
-
 
 async function processMercadoPago() {
   // This is now handled by the brick's onSubmit callback
@@ -2457,9 +2412,9 @@ function openProductDetail(productId) {
   currentDetailProduct = p;
   const imgsEl = document.getElementById('pd-imgs');
   if (p.photo1Url && p.photo2Url) {
-    imgsEl.innerHTML = '<div class="pd-img"><img src="' + photoSrc(p.photo1Url) + '" alt="Florería Karel"/></div><div class="pd-img"><img src="' + photoSrc(p.photo2Url) + '" alt="Florería Karel"/></div>';
+    imgsEl.innerHTML = '<div class="pd-img"><img src="' + photoSrc(p.photo1Url) + '"/></div><div class="pd-img"><img src="' + photoSrc(p.photo2Url) + '"/></div>';
   } else if (p.photo1Url) {
-    imgsEl.innerHTML = '<div class="pd-img single"><img src="' + photoSrc(p.photo1Url) + '" alt="Florería Karel"/></div>';
+    imgsEl.innerHTML = '<div class="pd-img single"><img src="' + photoSrc(p.photo1Url) + '"/></div>';
   } else {
     imgsEl.innerHTML = '<div class="pd-img single" style="font-size:5rem">🌸</div>';
   }
