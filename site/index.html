@@ -595,7 +595,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <span></span><span></span><span></span>
       </button>
     </div>
-    <a class="nav-logo" href="#" onclick="showPage('home');return false;">
+    <a class="nav-logo" href="/" onclick="showPage('home');return false;">
       <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1773958184/000LOGO_mrylkc.png" alt="Florería y Regalos Karel"/>
     </a>
     <div class="nav-actions">
@@ -610,24 +610,24 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
        <span class="cart-count" id="cart-count">0</span>
       </button>
       <button class="icon-btn" onclick="openAuthModal()" id="account-btn" title="Mi cuenta"><img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1775584637/user_e0ntvd.png" style="width:20px;height:20px;" alt="Mi cuenta"/></button>
-      <a class="cta-nav" href="#" onclick="openOrderModal();return false;" data-es="Ordenar" data-en="Order">Ordenar</a>
+      <a class="cta-nav" href="/catalogo" onclick="openOrderModal();return false;" data-es="Ordenar" data-en="Order">Ordenar</a>
     </div>
   </div>
   <ul class="nav-links">
-    <li><a href="#" onclick="showPage('home');return false;" data-es="Inicio" data-en="Home">Inicio</a></li>
-    <li><a href="#" onclick="showPage('catalog');return false;" data-es="Catálogo" data-en="Catalog">Catálogo</a></li>
+    <li><a href="/" onclick="showPage('home');return false;" data-es="Inicio" data-en="Home">Inicio</a></li>
+    <li><a href="/catalogo" onclick="showPage('catalog');return false;" data-es="Catálogo" data-en="Catalog">Catálogo</a></li>
    <!-- <li><a href="#" onclick="showPage('eventos');return false;" data-es="Eventos" data-en="Events">Eventos</a></li> -->
-    <li><a href="#" onclick="showPage('contacto');return false;" data-es="Contacto" data-en="Contact">Contacto</a></li>
+    <li><a href="/contacto" onclick="showPage('contacto');return false;" data-es="Contacto" data-en="Contact">Contacto</a></li>
   </ul>
 </nav>
 
 <!-- MOBILE MENU -->
 <div class="mobile-menu" id="mobileMenu">
   <div class="mobile-menu-head"><button onclick="toggleMenu()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;">✕</button></div>
-  <a href="#" onclick="showPage('home');toggleMenu();return false;" data-es="Inicio" data-en="Home">Inicio</a>
-  <a href="#" onclick="showPage('catalog');toggleMenu();return false;" data-es="Catálogo" data-en="Catalog">Catálogo</a>
-  <a href="#" onclick="showPage('eventos');toggleMenu();return false;" data-es="Eventos" data-en="Events">Eventos</a>
-  <a href="#" onclick="showPage('contacto');toggleMenu();return false;" data-es="Contacto" data-en="Contact">Contacto</a>
+  <a href="/" onclick="showPage('home');toggleMenu();return false;" data-es="Inicio" data-en="Home">Inicio</a>
+  <a href="/catalogo" onclick="showPage('catalog');toggleMenu();return false;" data-es="Catálogo" data-en="Catalog">Catálogo</a>
+  <a href="/eventos" onclick="showPage('eventos');toggleMenu();return false;" data-es="Eventos" data-en="Events">Eventos</a>
+  <a href="/contacto" onclick="showPage('contacto');toggleMenu();return false;" data-es="Contacto" data-en="Contact">Contacto</a>
   <a href="#" onclick="(currentCustomer?showPage('perfil'):openAuthModal());toggleMenu();return false;" data-es="Mi cuenta" data-en="My account">Mi cuenta</a>
   <a href="#" onclick="openOrderModal();toggleMenu();return false;" data-es="Ordenar ahora" data-en="Order now">Ordenar ahora</a>
 </div>
@@ -861,7 +861,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
         <div class="c-item"><div><div class="c-lab">Dirección</div><div class="c-val">Av. de la Raza 5262, Del. Norte, 32369<br/>Ciudad Juárez, Chih.</div></div></div>
         <div class="c-item"><div><div class="c-lab">Teléfono</div><div class="c-val"><a href="tel:6566111124">656 611 1124</a></div></div></div>
         <div class="c-item"><div><div class="c-lab">WhatsApp</div><div class="c-val"><a href="https://wa.me/526561303595" target="_blank">656 130 3595</a></div></div></div>
-        <div class="c-item"><div><div class="c-lab">Correo</div><div class="c-val"><a href="/cdn-cgi/l/email-protection#086e696b7c7d7a696b61676663697a6d644860677c65696164266b6765"><span class="__cf_email__" data-cfemail="7e181f1d0a0b0c1f1d171110151f0c1b123e16110a131f1712501d1113">[email&#160;protected]</span></a></div></div></div>
+        <div class="c-item"><div><div class="c-lab">Correo</div><div class="c-val"><a href="mailto:facturacionkarel@hotmail.com"><span class="__cf_email__" data-cfemail="7e181f1d0a0b0c1f1d171110151f0c1b123e16110a131f1712501d1113">[email&#160;protected]</span></a></div></div></div>
         <div class="map-embed">
           <iframe src="https://maps.google.com/maps?q=Av+de+la+Raza+5262,+Del+Nte,+32369+Ciudad+Ju%C3%A1rez,+Chih&output=embed" allowfullscreen loading="lazy"></iframe>
         </div>
@@ -959,15 +959,15 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       </div>
     </div>
     <div class="footer-col"><div class="footer-col-title">Navegación</div><ul>
-      <li><a href="#" onclick="showPage('home');return false;">Inicio</a></li>
-      <li><a href="#" onclick="showPage('catalog');return false;">Catálogo</a></li>
-      <li><a href="#" onclick="showPage('eventos');return false;">Eventos</a></li>
-      <li><a href="#" onclick="showPage('contacto');return false;">Contacto</a></li>
+      <li><a href="/">Inicio</a></li>
+      <li><a href="/catalogo">Catálogo</a></li>
+      <li><a href="/eventos">Eventos</a></li>
+      <li><a href="/contacto">Contacto</a></li>
     </ul></div>
     <div class="footer-col"><div class="footer-col-title">Servicios</div><ul>
-      <li><a href="#" onclick="openOrderModal();return false;">Ordenar en línea</a></li>
-      <li><a href="#" onclick="openOrderModal();return false;">Entrega a domicilio</a></li>
-      <li><a href="#" onclick="showPage('eventos');return false;">Eventos y bodas</a></li>
+      <li><a href="/catalogo" onclick="openOrderModal();return false;">Ordenar en línea</a></li>
+      <li><a href="/catalogo" onclick="openOrderModal();return false;">Entrega a domicilio</a></li>
+      <li><a href="/eventos">Eventos y bodas</a></li>
     </ul></div>
     <div class="footer-col"><div class="footer-col-title">Horarios</div><ul>
       <li><a href="#">Lunes–Viernes 9AM–6PM</a></li>
