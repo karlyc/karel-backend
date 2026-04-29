@@ -2858,6 +2858,37 @@ loadClosedDates();
 updateCartUI();
 initAuth();
 
+// Handle URL parameters for direct category/page access
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const cat = params.get('categoria');
+  const page = params.get('pagina') || window.location.pathname.replace('/', '');
+
+  if (page === 'catalogo' || page === 'catalog') {
+    showPage('catalog');
+  } else if (page === 'contacto') {
+    showPage('contacto');
+  } else if (page === 'eventos') {
+    showPage('eventos');
+  }
+
+  if (cat) {
+    // Wait for products to load then filter
+    const tryFilter = setInterval(() => {
+      const match = allCategories.find(c =>
+        c.name.toLowerCase().includes(cat.toLowerCase()) ||
+        c.id === cat
+      );
+      if (match || allProducts.length) {
+        clearInterval(tryFilter);
+        showPage('catalog');
+        setTimeout(() => filterCatalog(match?.id || ''), 200);
+      }
+    }, 300);
+    setTimeout(() => clearInterval(tryFilter), 5000);
+  }
+})();
+
 
 
 
