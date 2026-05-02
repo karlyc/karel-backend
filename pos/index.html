@@ -321,6 +321,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     <div class="ni" data-v="productos"><span class="ni-ic">🌺</span>Productos</div>
     <div class="ni" data-v="categorias"><span class="ni-ic">▦</span>Categorías</div>
     <div class="ni" data-v="inventario"><span class="ni-ic">📦</span>Inventario</div>
+    <div class="ni" data-v="clientes"><span class="ni-ic">👥</span>Clientes</div>
   </div>
   <div class="sb-sec">Admin</div>
   <div class="nav">
@@ -801,7 +802,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 // CONFIG
 // ════════════════════════════════════════════
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-  ? 'http://localhost:3000' : 'https://karel-backend-production.up.railway.app';
+  ? 'http://localhost:3000' : 'https://your-karel-backend.up.railway.app';
 
 // ════════════════════════════════════════════
 // STATE
@@ -940,7 +941,7 @@ function setBadge(id, n) {
 // ════════════════════════════════════════════
 // VIEW ROUTING
 // ════════════════════════════════════════════
-const VT = {dashboard:'Dashboard',pedidos:'Pedidos',elaboracion:'Elaboración de Arreglos',entregas:'Entregas',tareas:'Tareas',chat:'Chat con Clientes Web',productos:'Productos',categorias:'Categorías',inventario:'Inventario',admin:'Administración',repartidor:'Vista Repartidor'};
+const VT = {dashboard:'Dashboard',pedidos:'Pedidos',elaboracion:'Elaboración de Arreglos',entregas:'Entregas',tareas:'Tareas',chat:'Chat con Clientes Web',productos:'Productos',categorias:'Categorías',inventario:'Inventario',admin:'Administración',repartidor:'Vista Repartidor',clientes:'Clientes'};
 
 async function showView(v) {
   if (v === 'nuevo') { openOrderModal(); return; }
@@ -950,7 +951,7 @@ async function showView(v) {
   const vc = document.getElementById('vc');
   vc.innerHTML = `<div class="loading"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>`;
   try {
-    const views = { dashboard:vDash, pedidos:vPeds, elaboracion:vElab, entregas:vEntr, tareas:vTar, chat:vChat, productos:vProds, categorias:vCats, inventario:vInv, admin:vAdmin, repartidor:vRep };
+    const views = { dashboard:vDash, pedidos:vPeds, elaboracion:vElab, entregas:vEntr, tareas:vTar, chat:vChat, productos:vProds, categorias:vCats, inventario:vInv, admin:vAdmin, repartidor:vRep, clientes:vClientes };
     if (views[v]) await views[v]();
     else vc.innerHTML = `<div style="color:var(--dim);text-align:center;padding:80px;">Vista en desarrollo</div>`;
   } catch(e) { vc.innerHTML = `<div class="err-state">⚠ ${e.message}</div>`; }
@@ -1497,6 +1498,63 @@ async function sendChatMsg() {
 // ════════════════════════════════════════════
 // PRODUCTOS
 // ════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// CLIENTES
+// ═══════════════════════════════════════════
+async function vClientes() {
+  setV('clientes');
+  mn(`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <h2 style="font-size:1.1rem;font-weight:700;">Clientes</h2>
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:16px;">
+    <input class="fi" id="cl-search" placeholder="Buscar por nombre, teléfono o correo…" style="flex:1;" oninput="searchClientes(this.value)" onkeydown="if(event.key==='Enter')searchClientes(this.value)"/>
+    <button class="btn bp bsm" onclick="searchClientes(document.getElementById('cl-search').value)">Buscar</button>
+  </div>
+  <div id="cl-list">
+    <div style="text-align:center;padding:40px;color:var(--mid);">Busca un cliente para editar sus datos.</div>
+  </div>`);
+}
+
+async function searchClientes(q) {
+  const list = document.getElementById('cl-list');
+  if (!q || q.trim().length < 2) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mid);">Ingresa al menos 2 caracteres para buscar.</div>';
+    return;
+  }
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mid);">Buscando…</div>';
+  try {
+    const clients = await api('GET', `/api/clients?search=${encodeURIComponent(q.trim())}`);
+    if (!clients.length) {
+      list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mid);">No se encontraron clientes.</div>';
+      return;
+    }
+    list.innerHTML = clients.map(c => `
+      <div style="border:1px solid var(--brd);padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:700;font-size:.9rem;">${[c.firstName,c.middleName,c.lastNameP,c.lastNameM].filter(Boolean).join(' ') || '—'}</div>
+          <div style="font-size:.78rem;color:var(--mid);">${c.phoneCode||'+52'} ${c.phone||''} · ${c.email||'Sin correo'}</div>
+        </div>
+        <button class="btn bp bsm" onclick="openEditClient('${c.id}')">Editar</button>
+      </div>`).join('');
+  } catch(e) {
+    list.innerHTML = `<div style="text-align:center;padding:40px;color:var(--mid);">Error: ${e.message}</div>`;
+  }
+}
+
+async function openEditClient(id) {
+  const c = await api('GET', `/api/clients/${id}`);
+  editingClientId = id;
+  document.getElementById('cv-fn').value    = c.firstName  || '';
+  document.getElementById('cv-mn').value    = c.middleName || '';
+  document.getElementById('cv-lp').value    = c.lastNameP  || '';
+  document.getElementById('cv-lm').value    = c.lastNameM  || '';
+  document.getElementById('cv-code').value  = c.phoneCode  || '+52';
+  document.getElementById('cv-phone').value = c.phone      || '';
+  document.getElementById('cv-email').value = c.email      || '';
+  document.getElementById('cv-notes').value = c.notes      || '';
+  cm('m-client');
+}
+
 async function vProds() {
   const [prods, cats] = await Promise.all([api('GET','/api/products'), api('GET','/api/categories')]);
   cachedProducts = prods; cachedCategories = cats;
@@ -2812,7 +2870,7 @@ function printOrder() {
     '*{margin:0;padding:0;box-sizing:border-box;}',
     'body{font-family:Helvetica Neue,Arial,sans-serif;color:#1a1a1a;background:white;padding:28px;max-width:560px;margin:0 auto;}',
     '.hdr{text-align:center;border-bottom:3px solid #C96E60;padding-bottom:16px;margin-bottom:18px;}',
-    '.logo-box{background:transparent;border:none;padding:16px 24px;display:inline-block;margin-bottom:12px;}',
+    '.logo-box{background:linear-gradient(135deg,#fff5f3,#fff);border:2px solid #C96E60;border-radius:12px;padding:16px 24px;display:inline-block;margin-bottom:12px;}',
     '.logo-area{display:flex;align-items:center;justify-content:center;gap:12px;}',
     '.flower{font-size:36px;line-height:1;}',
     '.brand{font-size:20px;font-weight:900;letter-spacing:.02em;color:#1a1a1a;text-transform:uppercase;line-height:1.1;}',
@@ -2858,7 +2916,7 @@ function printOrder() {
 
   const html = [
     '<div class="hdr">',
-      '<div class="logo-box"><div class="logo-area"><img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1773958184/000LOGO_mrylkc.png" style="height:56px;width:auto;object-fit:contain;" alt="Florería Karel"/><div class="brand">FLORERÍA Y REGALOS <em>KAREL</em></div><div class="sub">Ciudad Juárez · Est.1995 </div></div></div></div>',
+      '<div class="logo-box"><div class="logo-area"><div class="flower">🌹</div><div><div class="brand">FLORERÍA Y REGALOS <em>KAREL</em></div><div class="sub">Ciudad Juárez · Est. 2008</div></div></div></div>',
       '<div class="hdr-info">AV. DE LA RAZA 5262, C.P. 32369, CIUDAD JUÁREZ<br>RFC: <b>GMB081001TH8</b> &nbsp;|&nbsp; WhatsApp: <b>(656) 130-3595</b></div>',
       `<div class="badge">${o.orderNumber}</div>`,
       `<div class="odate">Fecha de orden: ${new Date(o.createdAt).toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>`,
