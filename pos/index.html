@@ -1502,9 +1502,9 @@ async function sendChatMsg() {
 // CLIENTES
 // ═══════════════════════════════════════════
 async function vClientes() {
-  setV('clientes');
-  mn(`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-    <h2 style="font-size:1.1rem;font-weight:700;">Clientes</h2>
+  document.getElementById('vc').innerHTML = `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <div style="font-family:var(--fd);font-size:1.1rem;font-weight:700;">Clientes</div>
   </div>
   <div style="display:flex;gap:10px;margin-bottom:16px;">
     <input class="fi" id="cl-search" placeholder="Buscar por nombre, teléfono o correo…" style="flex:1;" oninput="searchClientes(this.value)" onkeydown="if(event.key==='Enter')searchClientes(this.value)"/>
@@ -1512,7 +1512,7 @@ async function vClientes() {
   </div>
   <div id="cl-list">
     <div style="text-align:center;padding:40px;color:var(--mid);">Busca un cliente para editar sus datos.</div>
-  </div>`);
+  </div>`;
 }
 
 async function searchClientes(q) {
@@ -1542,17 +1542,7 @@ async function searchClientes(q) {
 }
 
 async function openEditClient(id) {
-  const c = await api('GET', `/api/clients/${id}`);
-  editingClientId = id;
-  document.getElementById('cv-fn').value    = c.firstName  || '';
-  document.getElementById('cv-mn').value    = c.middleName || '';
-  document.getElementById('cv-lp').value    = c.lastNameP  || '';
-  document.getElementById('cv-lm').value    = c.lastNameM  || '';
-  document.getElementById('cv-code').value  = c.phoneCode  || '+52';
-  document.getElementById('cv-phone').value = c.phone      || '';
-  document.getElementById('cv-email').value = c.email      || '';
-  document.getElementById('cv-notes').value = c.notes      || '';
-  cm('m-client');
+  await openClientView(id);
 }
 
 async function vProds() {
