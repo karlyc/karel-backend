@@ -129,7 +129,7 @@ model RecipeItem {
   inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
 }
 
-enum OrderStatus   { 
+enum OrderStatus   {
   EN_PROCESO 
   POR_ENTREGAR 
   COMPLETADA 

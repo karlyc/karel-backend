@@ -220,10 +220,13 @@ async function sendOrderConfirmation(order) {
   if (!email) return { skipped: true, reason: 'No email on file' };
   if (!process.env.RESEND_API_KEY) return { skipped: true, reason: 'RESEND_API_KEY not set' };
 
+  const SHOP_EMAIL = process.env.SHOP_EMAIL || 'karla@floreriakarel.com';
+
   try {
     const result = await getResend().emails.send({
       from: FROM,
       to: email,
+      bcc: SHOP_EMAIL,
       subject: `Pedido ${order.orderNumber} confirmado — Florería y Regalos Karel 🌸`,
       html: buildReceiptHTML(order),
     });
@@ -232,7 +235,7 @@ async function sendOrderConfirmation(order) {
       console.error('[Email] Resend error:', result.error);
       return { sent: false, error: result.error };
     }
-    console.log(`[Email] Sent confirmation to ${email} — ID: ${result.data?.id}`);
+    console.log(`[Email] Sent confirmation to ${email} (BCC: ${SHOP_EMAIL}) — ID: ${result.data?.id}`);
     return { sent: true, id: result.data?.id };
   } catch (err) {
     console.error('[Email] Failed to send:', err.message);
