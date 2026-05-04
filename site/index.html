@@ -2062,7 +2062,8 @@ async function processPayment() {
       notifyVia:        omState.notifyVia,
       source:           'WEB',
       subtotal:         sub,
-      total:            amount,
+      deliveryFee:      ship,
+      total:            total,
     };
 
     const order = await apiPost('/api/orders', orderPayload);
