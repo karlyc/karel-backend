@@ -2061,6 +2061,8 @@ async function processPayment() {
       needsInvoice:     false,
       notifyVia:        omState.notifyVia,
       source:           'WEB',
+      subtotal:         sub,
+      total:            amount,
     };
 
     const order = await apiPost('/api/orders', orderPayload);
