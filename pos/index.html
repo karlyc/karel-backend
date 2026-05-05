@@ -2122,7 +2122,7 @@ async function adjustStock(id, name) {
 // ════════════════════════════════════════════
 let atab='pagos';
 async function vAdmin() {
-  const tabs=[['pagos','💰 Pagos'],['diario','📊 Diario'],['mensual','📅 Mensual'],['rango','🗓 Rango'],['gastos','💸 Gastos'],['productos','📦 Productos'],['fechas','🚫 Fechas'],['staff','👥 Staff'],['pin','🔑 PIN']];
+  const tabs=[['pagos','💰 Pagos'],['diario','📊 Diario'],['mensual','📅 Mensual'],['rango','🗓 Rango'],['gastos','💸 Gastos'],['productos','📦 Productos'],['fechas','🚫 Fechas'],['horario','⏰ Horario'],['staff','👥 Staff'],['pin','🔑 PIN']];
   document.getElementById('vc').innerHTML = `
 <div style="display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap;">
   ${tabs.map(([k,l])=>`<button id="atb-${k}" class="btn ${atab===k?'bp':'bg'} bsm" onclick="aTab('${k}')">${l}</button>`).join('')}
@@ -2388,6 +2388,32 @@ async function aRender(t) {
       ${staff.map(s=>`<tr><td style="font-family:var(--fd);font-weight:700;">${s.username}</td><td>${s.name}</td><td><span class="badge ${roleColor(s.role)}">${roleLabel(s.role)}</span></td><td><span class="badge ${s.active?'bg2':'br2'}">${s.active?'Activo':'Inactivo'}</span></td><td><div class="tog${s.active?' on':''}" onclick="toggleStaff('${s.id}',this)"><div class="tk"></div></div></td></tr>`).join('')}
       </tbody></table></div>`;
     }
+    else if (t==='horario') {
+      // Load current settings
+      let cfg = { blockSundays: true, cutoffHour: 13 };
+      try { cfg = await api('GET', '/api/settings'); } catch(e) {}
+      el.innerHTML=`<div class="card" style="max-width:420px;">
+        <div class="ch"><span class="ct">⏰ Horario y Disponibilidad</span></div>
+        <div class="fg" style="margin-bottom:16px;">
+          <label class="fl">Hora de corte para pedidos del mismo día</label>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+            <input class="fi" id="cfg-cutoff" type="number" min="8" max="20" value="${cfg.cutoffHour}" style="width:80px;"/>
+            <span style="font-size:12px;color:var(--mid);">hrs (formato 24h — actualmente ${cfg.cutoffHour}:00)</span>
+          </div>
+          <div style="font-size:11px;color:var(--dim);margin-top:4px;">Después de esta hora no se permiten pedidos para el mismo día.</div>
+        </div>
+        <div class="fg" style="margin-bottom:20px;">
+          <label class="fl">Domingos</label>
+          <div class="tw" style="margin-top:6px;">
+            <div class="tog${cfg.blockSundays?' on':''}" id="cfg-sun-tog" onclick="this.classList.toggle('on')"><div class="tk"></div></div>
+            <span class="tl">Bloquear domingos (no se aceptan pedidos)</span>
+          </div>
+          <div style="font-size:11px;color:var(--dim);margin-top:4px;">Desactiva esto si vas a trabajar un domingo en particular.</div>
+        </div>
+        <button class="btn bp" onclick="saveHorarioSettings()">Guardar cambios</button>
+        <div id="horario-msg" style="margin-top:10px;font-size:12px;"></div>
+      </div>`;
+    }
     else if (t==='pin') {
       el.innerHTML=`<div class="card" style="max-width:320px;"><div class="ch"><span class="ct">Cambiar PIN</span></div><div class="fg"><label class="fl">PIN Actual (6 dígitos)</label><input class="fi" id="pin-cur" type="password" maxlength="6" placeholder="••••••"/></div><div class="fg"><label class="fl">Nuevo PIN (6 dígitos)</label><input class="fi" id="pin-new" type="password" maxlength="6" placeholder="••••••"/></div><div class="fg"><label class="fl">Confirmar Nuevo PIN</label><input class="fi" id="pin-conf" type="password" maxlength="6" placeholder="••••••"/></div><button class="btn bp" onclick="changePIN()">Cambiar PIN</button></div>`;
     }
@@ -2475,6 +2501,23 @@ async function toggleStaff(id, tog) {
   const active=!tog.classList.contains('on'); tog.classList.toggle('on',active);
   try { await api('PATCH',`/api/staff/${id}/active`,{active}); toast('Estado actualizado ✓'); }
   catch(e) { tog.classList.toggle('on',!active); toastErr(e.message); }
+}
+
+async function saveHorarioSettings() {
+  const cutoffHour = parseInt(document.getElementById('cfg-cutoff')?.value);
+  const blockSundays = document.getElementById('cfg-sun-tog')?.classList.contains('on');
+  const msg = document.getElementById('horario-msg');
+  if (isNaN(cutoffHour) || cutoffHour < 8 || cutoffHour > 20) {
+    if (msg) { msg.textContent = '⚠ Hora de corte debe ser entre 8 y 20'; msg.style.color = 'var(--red)'; }
+    return;
+  }
+  try {
+    await api('PUT', '/api/settings', { cutoffHour, blockSundays });
+    if (msg) { msg.textContent = '✓ Guardado — el sitio web actualizará las fechas disponibles'; msg.style.color = 'var(--sage)'; }
+    toast('Configuración guardada ✓');
+  } catch(e) {
+    if (msg) { msg.textContent = '⚠ Error: ' + e.message; msg.style.color = 'var(--red)'; }
+  }
 }
 
 async function changePIN() {

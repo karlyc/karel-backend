@@ -1367,17 +1367,30 @@ else if (today === 6) document.getElementById('hr-sa')?.classList.add('today');
 else document.getElementById('hr-do')?.classList.add('today');
 
 // Block Sundays in date picker
-// Cutoff: 1pm CST (UTC-6) = 19:00 UTC
-const now = new Date();
-const cutoffHour = 13; // 1pm local
-const localHour = now.getHours(); // browser local time
-const minDateObj = new Date();
-if (localHour >= cutoffHour) {
-  // After 1pm — earliest delivery is tomorrow
-  minDateObj.setDate(minDateObj.getDate() + 1);
+// Settings loaded from backend (blockSundays, cutoffHour)
+let siteSettings = { blockSundays: true, cutoffHour: 13 };
+
+async function loadSiteSettings() {
+  try {
+    siteSettings = await apiGet('/api/settings');
+  } catch(e) {}
+  applyDateCutoff();
 }
-const minDate = minDateObj.toISOString().split('T')[0];
-document.querySelectorAll('input[type=date]').forEach(el => el.min = minDate);
+
+function applyDateCutoff() {
+  const now = new Date();
+  const localHour = now.getHours();
+  const minDateObj = new Date();
+  if (localHour >= siteSettings.cutoffHour) {
+    minDateObj.setDate(minDateObj.getDate() + 1);
+  }
+  // Skip Sundays if blockSundays is on
+  if (siteSettings.blockSundays) {
+    while (minDateObj.getDay() === 0) minDateObj.setDate(minDateObj.getDate() + 1);
+  }
+  const minDate = minDateObj.toISOString().split('T')[0];
+  document.querySelectorAll('input[type=date]').forEach(el => el.min = minDate);
+}
 
 // ═══════════════════════════════════════════
 // CLOSED DATES
@@ -1393,20 +1406,20 @@ async function loadClosedDates() {
 
 function isDateClosed(dateStr) {
   if (!dateStr) return false;
-  // Block Sundays
-  if (new Date(dateStr + 'T12:00').getDay() === 0) return true;
+  // Block Sundays only if setting is on
+  if (siteSettings.blockSundays && new Date(dateStr + 'T12:00').getDay() === 0) return true;
   // Block closed dates from backend
   return closedDates.has(dateStr);
 }
 
 function validateDeliveryDate(dateStr) {
   if (!dateStr) return 'Por favor selecciona la fecha de entrega';
-  if (new Date(dateStr + 'T12:00').getDay() === 0) return 'No hacemos entregas los domingos 🌸';
+  if (siteSettings.blockSundays && new Date(dateStr + 'T12:00').getDay() === 0) return 'No hacemos entregas los domingos 🌸';
   if (closedDates.has(dateStr)) return 'No hacemos entregas en esa fecha 🌸';
-  // Check 1pm cutoff for same-day delivery
+  // Check cutoff for same-day delivery
   const today = new Date().toISOString().split('T')[0];
-  if (dateStr === today && new Date().getHours() >= 13) {
-    return 'Ya pasó la hora de corte (1:00 PM). Por favor selecciona el día de mañana 🌸';
+  if (dateStr === today && new Date().getHours() >= siteSettings.cutoffHour) {
+    return `Ya pasó la hora de corte (${siteSettings.cutoffHour}:00). Por favor selecciona el día de mañana 🌸`;
   }
   return null; // valid
 }
@@ -2857,6 +2870,7 @@ document.addEventListener('keydown', e => {
   }
 });
 
+loadSiteSettings();
 loadProducts();
 loadClosedDates();
 updateCartUI();
