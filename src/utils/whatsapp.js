@@ -116,20 +116,21 @@ async function sendShopNewOrder(order, client) {
   const shopPhone = process.env.SHOP_WHATSAPP;
   if (!shopPhone) { console.log('[WA] SHOP_WHATSAPP not set'); return; }
 
-  // Template: orden_nueva
-  // Params: {{order_id}}, {{client_name}}, {{delivery_date}}, {{product_name}}
   const delivDate = order.deliveryDate
     ? new Date(order.deliveryDate).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
     : 'Por confirmar';
-  const products = (order.items || []).map(i => `${i.product?.name || 'Producto'} x${i.quantity}`).join(', ');
-  const clientName = `${client?.firstName || ''} ${client?.lastNameP || ''}`.trim() || 'Cliente';
+  // Use | separator — commas can cause "Invalid parameter" in Meta templates
+  const products = (order.items || []).map(i => `${i.product?.name || 'Producto'} x${i.quantity}`).join(' | ');
+  const clientName = (`${client?.firstName || ''} ${client?.lastNameP || ''}`).trim() || 'Cliente';
 
-  await sendTemplate(shopPhone, 'orden_nueva', [
-    order.orderNumber,
+  const params = [
+    String(order.orderNumber),
     clientName,
     delivDate,
     products,
-  ]);
+  ];
+  console.log('[WA] orden_nueva params:', JSON.stringify(params));
+  await sendTemplate(shopPhone, 'orden_nueva', params);
 }
 
 module.exports = { sendOrderConfirmation, sendDeliveryConfirmation, sendShopNewOrder };

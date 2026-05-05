@@ -157,7 +157,12 @@ router.post('/', upload.single('paymentProof'), [
       };
     });
 
-    const total = subtotal + Number(deliveryFee) - Number(advance);
+    // For web orders, use the total sent from frontend (includes IVA)
+    // For POS orders, calculate from subtotal + fee - advance
+    const sentTotal = req.body.total ? Number(req.body.total) : null;
+    const total = (sentTotal && sentTotal > subtotal)
+      ? sentTotal
+      : subtotal + Number(deliveryFee) - Number(advance);
 
     // Payment status logic per spec:
     // PENDIENTE    = credit orders

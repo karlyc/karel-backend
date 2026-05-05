@@ -223,19 +223,36 @@ async function sendOrderConfirmation(order) {
   const SHOP_EMAIL = process.env.SHOP_EMAIL || 'karla@floreriakarel.com';
 
   try {
+    const html = buildReceiptHTML(order);
+    const subject = `Pedido ${order.orderNumber} confirmado — Florería y Regalos Karel 🌸`;
+
+    // Send to customer
     const result = await getResend().emails.send({
       from: FROM,
       to: email,
-      bcc: SHOP_EMAIL,
-      subject: `Pedido ${order.orderNumber} confirmado — Florería y Regalos Karel 🌸`,
-      html: buildReceiptHTML(order),
+      subject,
+      html,
     });
     console.log('[Email] Resend full response:', JSON.stringify(result));
     if (result.error) {
       console.error('[Email] Resend error:', result.error);
       return { sent: false, error: result.error };
     }
-    console.log(`[Email] Sent confirmation to ${email} (BCC: ${SHOP_EMAIL}) — ID: ${result.data?.id}`);
+    console.log(`[Email] Sent confirmation to ${email} — ID: ${result.data?.id}`);
+
+    // Send separate copy to shop (avoids BCC deliverability issues)
+    try {
+      const shopResult = await getResend().emails.send({
+        from: FROM,
+        to: SHOP_EMAIL,
+        subject: `[Copia] ${subject}`,
+        html,
+      });
+      console.log(`[Email] Sent shop copy to ${SHOP_EMAIL} — ID: ${shopResult.data?.id}`);
+    } catch (shopErr) {
+      console.error('[Email] Failed to send shop copy:', shopErr.message);
+    }
+
     return { sent: true, id: result.data?.id };
   } catch (err) {
     console.error('[Email] Failed to send:', err.message);
