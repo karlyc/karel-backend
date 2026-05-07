@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
         : '';
       const category = p.category?.name || 'Flores y Arreglos';
       const price = Number(p.price || 0).toFixed(2);
-      const productUrl = `${STORE_URL}?categoria=${encodeURIComponent(category.toLowerCase())}`;
+      const productUrl = `${STORE_URL}?producto=${encodeURIComponent(p.code || p.id)}`;
 
       return `
     <item>
