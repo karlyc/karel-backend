@@ -13,7 +13,7 @@ enum StaffRole {
   ADMIN 
   OFFICE 
   FLORISTA 
-  REPARTIDOR
+  REPARTIDOR 
   }
 
 model Staff {
