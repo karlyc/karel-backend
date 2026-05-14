@@ -2008,11 +2008,17 @@ async function processPayment() {
 
     const firstName = document.getElementById('o-first').value.trim();
     const lastName  = document.getElementById('o-last').value.trim();
-    const phone     = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
+    const rawPhone  = document.getElementById('o-phone').value.trim();
+    const phone     = document.getElementById('o-code').value + rawPhone;
     const email     = document.getElementById('o-email').value.trim();
     const dt        = omState.deliveryType;
     const isFuneral = dt === 'FUNERAL';
     const isPickup  = dt === 'RECOGER_TIENDA';
+
+    // Validate required fields BEFORE charging card
+    if (!firstName) { showToast('Por favor ingresa tu nombre', true); btn.disabled = false; btn.textContent = 'Pagar'; return; }
+    if (!rawPhone || rawPhone.replace(/\D/g,'').length < 7) { showToast('Por favor ingresa tu número de teléfono', true); btn.disabled = false; btn.textContent = 'Pagar'; document.getElementById('o-phone')?.focus(); return; }
+    if (!email) { showToast('Por favor ingresa tu correo electrónico', true); btn.disabled = false; btn.textContent = 'Pagar'; return; }
     const sub       = cartSubtotal();
     const ship      = isPickup ? 0 : SHIPPING_FEE;
     const tax       = (sub + ship) * IVA_RATE;
@@ -2073,17 +2079,26 @@ async function processPayment() {
         clientId = cl.id;
       } catch(e) {
         if (e.message && (e.message.includes('409') || e.message.includes('Conflict'))) {
-          // Phone conflict — search strictly by phone
+          // Conflict — try phone first, then email
           try {
             const digits = fullPhone.replace(/\D/g, '').slice(-10);
-            const found = await apiGet('/api/clients?search=' + encodeURIComponent(digits));
-            const exact = found.find(c => c.phone?.replace(/\D/g,'').slice(-10) === digits);
-            if (exact) { clientId = exact.id; }
-            else throw new Error('No se pudo identificar al cliente.');
-          } catch(e2) { throw new Error('No se pudo identificar al cliente.'); }
+            if (digits.length >= 7) {
+              const found = await apiGet('/api/clients?search=' + encodeURIComponent(digits));
+              const exact = found.find(c => c.phone?.replace(/\D/g,'').slice(-10) === digits);
+              if (exact) { clientId = exact.id; }
+            }
+            if (!clientId && email) {
+              const found2 = await apiGet('/api/clients?search=' + encodeURIComponent(email));
+              const exact2 = found2.find(c => c.email?.toLowerCase() === email.toLowerCase());
+              if (exact2) { clientId = exact2.id; }
+            }
+            if (!clientId) throw new Error('No se pudo identificar al cliente.');
+          } catch(e2) { throw new Error('No se pudo identificar al cliente. Verifica tus datos.'); }
         } else { throw e; }
       }
     }
+
+    if (!clientId) throw new Error('No se pudo crear el perfil del cliente. Verifica tu teléfono y correo.');
 
     // 3. Create order — payment already confirmed
     const orderPayload = {
@@ -2244,6 +2259,13 @@ async function processMPPayment(formData) {
     const firstName = document.getElementById('o-first').value.trim();
     const lastName  = document.getElementById('o-last').value.trim();
     const email     = document.getElementById('o-email').value.trim();
+    const rawPhone  = document.getElementById('o-phone')?.value.trim() || '';
+
+    // Validate before processing payment
+    if (!firstName) { if (errEl) errEl.textContent = 'Por favor ingresa tu nombre'; throw new Error('Nombre requerido'); }
+    if (!rawPhone || rawPhone.replace(/\D/g,'').length < 7) { if (errEl) errEl.textContent = 'Por favor ingresa tu número de teléfono'; document.getElementById('o-phone')?.focus(); throw new Error('Teléfono requerido'); }
+    if (!email) { if (errEl) errEl.textContent = 'Por favor ingresa tu correo electrónico'; throw new Error('Email requerido'); }
+
     const dt        = omState.deliveryType;
     const isPickup  = dt === 'RECOGER_TIENDA';
     const sub       = cartSubtotal();
