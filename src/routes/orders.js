@@ -139,22 +139,38 @@ router.post('/', upload.single('paymentProof'), [
     }
 
     // Resolve prices from DB (single price per product)
-    const productIds = items.map(i => i.productId);
+   // UPDATED — supports catalog products AND quick/custom items
+    const productIds = items.filter(i => i.productId).map(i => i.productId);
     const products = await prisma.product.findMany({ where: { id: { in: productIds } } });
     const productMap = Object.fromEntries(products.map(p => [p.id, p]));
 
     let subtotal = 0;
     const itemData = items.map(item => {
-      const product = productMap[item.productId];
-      if (!product) throw new Error(`Product ${item.productId} not found`);
-      const price = Number(product.price);
-      subtotal += price * item.quantity;
-      return {
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: price,
-        notes: item.notes || null,
-      };
+      if (item.productId) {
+        // Normal catalog product
+        const product = productMap[item.productId];
+        if (!product) throw new Error(`Product ${item.productId} not found`);
+        const price = Number(product.price);
+        subtotal += price * item.quantity;
+        return {
+          productId: item.productId,
+          customName: null,
+          quantity: item.quantity,
+          unitPrice: price,
+          notes: item.notes || null,
+        };
+      } else {
+        // Quick/custom item — no catalog product
+        const price = Number(item.unitPrice) || 0;
+        subtotal += price * item.quantity;
+        return {
+          productId: null,
+          customName: item.name || 'Producto rápido',
+          quantity: item.quantity,
+          unitPrice: price,
+          notes: item.notes || null,
+        };
+      }
     });
 
     // For web orders, use the total sent from frontend (includes IVA)
