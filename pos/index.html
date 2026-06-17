@@ -411,7 +411,10 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
         </div>
 
         <div class="fsec"><div class="fst">🌺 Productos</div>
-          <div class="sb2" style="margin-bottom:7px;"><span style="color:var(--dim);">⌕</span><input id="product-search" placeholder="Buscar por nombre o código…" oninput="searchProducts(this.value)"/></div>
+          <div style="display:flex;gap:6px;margin-bottom:7px;">
+            <div class="sb2" style="flex:1;"><span style="color:var(--dim);">⌕</span><input id="product-search" placeholder="Buscar por nombre o código…" oninput="searchProducts(this.value)"/></div>
+            <button class="btn bg bsm" onclick="om('m-quick-product')" title="Agregar producto rápido sin guardar al catálogo" style="white-space:nowrap;flex-shrink:0;">＋ Rápido</button>
+          </div>
           <div id="product-results" style="display:none;max-height:160px;overflow-y:auto;"></div>
           <div id="order-items"></div>
           <div style="background:var(--ink3);border-radius:var(--r8);padding:9px;margin-top:7px;font-size:12px;">
@@ -794,6 +797,24 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     </div>
   </div>
   <div class="mf"><button class="btn bp" onclick="cm('m-order-done');showView('pedidos')">Ver pedidos →</button></div>
+</div>
+</div>
+
+<!-- ════ MODAL: PRODUCTO RÁPIDO (solo para este pedido) ════ -->
+<div class="ov" id="m-quick-product">
+<div class="modal msm">
+  <div class="mh"><div class="mt">＋ Producto Rápido</div><button class="mx" onclick="cm('m-quick-product')">✕</button></div>
+  <div class="mb">
+    <p style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.5;">Agrega un producto solo para este pedido, sin guardarlo en el catálogo.</p>
+    <div class="fg"><label class="fl">Nombre del producto *</label><input class="fi" id="qp-name" placeholder="Ej: Arreglo especial rosas…"/></div>
+    <div class="fg"><label class="fl">Precio unitario *</label><input class="fi" id="qp-price" type="number" placeholder="$0.00" min="0" step="0.01"/></div>
+    <div class="fg"><label class="fl">Cantidad</label><input class="fi" id="qp-qty" type="number" value="1" min="1"/></div>
+    <div class="fg"><label class="fl">Notas del arreglo</label><input class="fi" id="qp-notes" placeholder="Color, tamaño, detalles…"/></div>
+  </div>
+  <div class="mf">
+    <button class="btn bg" onclick="cm('m-quick-product')">Cancelar</button>
+    <button class="btn bp" onclick="addQuickProduct()">Agregar al pedido</button>
+  </div>
 </div>
 </div>
 
@@ -2764,6 +2785,26 @@ function addOrderItem(id, name, price) {
   renderOrderItems(); recalcTotal();
 }
 
+function addQuickProduct() {
+  const name  = document.getElementById('qp-name').value.trim();
+  const price = parseFloat(document.getElementById('qp-price').value);
+  const qty   = parseInt(document.getElementById('qp-qty').value) || 1;
+  const notes = document.getElementById('qp-notes').value.trim();
+  if (!name) { toastErr('El nombre del producto es requerido'); return; }
+  if (isNaN(price) || price < 0) { toastErr('Ingresa un precio válido'); return; }
+  const itemId = `oi-quick-${Date.now()}`;
+  // productId null = custom/quick item; backend should accept null or a placeholder
+  orderState.items.push({ itemId, productId: null, name, unitPrice: price, quantity: qty, notes });
+  // Reset form
+  document.getElementById('qp-name').value  = '';
+  document.getElementById('qp-price').value = '';
+  document.getElementById('qp-qty').value   = '1';
+  document.getElementById('qp-notes').value = '';
+  cm('m-quick-product');
+  renderOrderItems(); recalcTotal();
+  toast(`"${name}" agregado al pedido ✓`);
+}
+
 function renderOrderItems() {
   document.getElementById('order-items').innerHTML = orderState.items.map(item=>`
     <div class="order-item-card" id="${item.itemId}">
@@ -2830,7 +2871,7 @@ async function submitOrder() {
     messageAnon:document.getElementById('o-anon-tog').classList.contains('on'),
     occasion:orderState.occasion,
     hasBanda:document.getElementById('o-banda-tog')?.classList.contains('on')||false,
-    items:orderState.items.map(i=>({productId:i.productId,quantity:i.quantity,notes:i.notes})),
+    items:orderState.items.map(i=>({productId:i.productId,quantity:i.quantity,notes:i.notes,...(i.productId===null?{name:i.name,unitPrice:i.unitPrice}:{})})),
     paymentType:payType,
     paymentMethod:payType==='CREDITO'?null:payMethod,
     creditDueDate:document.getElementById('o-cred-date')?.value||undefined,
