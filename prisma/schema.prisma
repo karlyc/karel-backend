@@ -217,16 +217,57 @@ model Order {
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  productId   String?                          // ← make nullable
-  customName  String?                          // ← new: for quick items
-  quantity    Int      @default(1)
-  unitPrice   Decimal  @db.Decimal(10,2)
-  notes       String?
-  createdAt   DateTime @default(now())
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product     Product? @relation(fields: [productId], references: [id])  // ← also nullable
+  id                 String   @id @default(cuid())
+  orderId            String
+  productId          String?                          // ← make nullable
+  customName         String?                          // ← new: for quick items
+  accessoryVariantId String?
+  quantity           Int      @default(1)
+  unitPrice          Decimal  @db.Decimal(10,2)
+  notes              String?
+  createdAt          DateTime @default(now())
+  order              Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product            Product?          @relation(fields: [productId], references: [id])  // ← also nullable
+  accessoryVariant   AccessoryVariant? @relation(fields: [accessoryVariantId], references: [id])
+}
+
+model AccessoryType {
+  id          String      @id @default(cuid())
+  name        String
+  hasColor    Boolean     @default(false)
+  hasOccasion Boolean     @default(false)
+  hasSizes    Boolean     @default(false)
+  sortOrder   Int         @default(0)
+  visible     Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  accessories Accessory[]
+}
+
+model Accessory {
+  id            String   @id @default(cuid())
+  typeId        String
+  type          AccessoryType @relation(fields: [typeId], references: [id])
+  name          String
+  color         String?
+  occasion      String?   // CUMPLEANOS | AMOR | ANIVERSARIO | OTRA
+  occasionOther String?
+  visible       Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  variants      AccessoryVariant[]
+}
+
+model AccessoryVariant {
+  id          String      @id @default(cuid())
+  accessoryId String
+  accessory   Accessory   @relation(fields: [accessoryId], references: [id], onDelete: Cascade)
+  sizeLabel   String?     // "Chico" | "Mediano" | "Grande" | null (single-variant types)
+  price       Decimal     @db.Decimal(10,2)
+  photoUrl    String?
+  createdAt   DateTime    @default(now())
+  orderItems  OrderItem[]
 }
 
 model Delivery {

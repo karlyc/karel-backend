@@ -319,6 +319,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
   <div class="sb-sec">Catálogo</div>
   <div class="nav">
     <div class="ni" data-v="productos"><span class="ni-ic">🌺</span>Productos</div>
+    <div class="ni" data-v="accesorios"><span class="ni-ic">🎀</span>Accesorios</div>
     <div class="ni" data-v="categorias"><span class="ni-ic">▦</span>Categorías</div>
     <div class="ni" data-v="inventario"><span class="ni-ic">📦</span>Inventario</div>
     <div class="ni" data-v="clientes"><span class="ni-ic">👥</span>Clientes</div>
@@ -371,6 +372,45 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
   </div>
 </div>
 
+<!-- Accessory Type Modal — permanent in DOM -->
+<div id="m-acc-type" class="ov">
+  <div class="modal" style="max-width:420px;">
+    <div class="mh"><span class="mt">＋ Nuevo Tipo de Accesorio</span><button class="mc" onclick="cm('m-acc-type')">✕</button></div>
+    <div style="padding:18px;display:flex;flex-direction:column;gap:12px;">
+      <div class="fg"><label class="fl">Nombre *</label><input class="fi" id="acct-name" placeholder="Ej: Tarjetas, Velas…"/></div>
+      <div class="tw"><div class="tog" id="acct-color-tog" onclick="this.classList.toggle('on')"><div class="tk"></div></div><span class="tl">Usa color</span></div>
+      <div class="tw"><div class="tog" id="acct-occ-tog" onclick="this.classList.toggle('on')"><div class="tk"></div></div><span class="tl">Usa ocasión</span></div>
+      <div class="tw"><div class="tog" id="acct-sizes-tog" onclick="this.classList.toggle('on')"><div class="tk"></div></div><span class="tl">Usa tamaños (Chico/Mediano/Grande)</span></div>
+    </div>
+    <div class="mf"><button class="btn bp" onclick="saveAccType()">Crear tipo</button></div>
+  </div>
+</div>
+
+<!-- Accessory Modal — permanent in DOM -->
+<div id="m-accessory" class="ov">
+  <div class="modal" style="max-width:560px;">
+    <div class="mh"><span class="mt" id="acc-modal-title">Nuevo Accesorio</span><button class="mc" onclick="cm('m-accessory')">✕</button></div>
+    <div style="padding:18px;display:flex;flex-direction:column;gap:12px;">
+      <input type="hidden" id="acc-id"/>
+      <div class="fg"><label class="fl">Tipo *</label><select class="fs" id="acc-type" onchange="onAccTypeChange()"></select></div>
+      <div class="fg"><label class="fl">Nombre *</label><input class="fi" id="acc-name" placeholder="Ej: Osito café grande"/></div>
+      <div class="fg" id="acc-color-wrap" style="display:none;"><label class="fl">Color</label><input class="fi" id="acc-color" placeholder="Ej: Rojo, Dorado…"/></div>
+      <div class="fg" id="acc-occasion-wrap" style="display:none;">
+        <label class="fl">Ocasión</label>
+        <div class="rcs" id="acc-occ-pills">
+          <div class="rc sel" onclick="setAccOcc(this,'CUMPLEANOS')">🎂 Cumpleaños</div>
+          <div class="rc" onclick="setAccOcc(this,'AMOR')">💝 Amor</div>
+          <div class="rc" onclick="setAccOcc(this,'ANIVERSARIO')">💑 Aniversario</div>
+          <div class="rc" onclick="setAccOcc(this,'OTRA')">🎊 Otra</div>
+        </div>
+        <input class="fi" id="acc-occ-other" placeholder="Especifica la ocasión…" style="display:none;margin-top:6px;"/>
+      </div>
+      <div id="acc-variants"></div>
+    </div>
+    <div class="mf"><button class="btn bp" onclick="saveAccessory()">Guardar</button></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 <div id="print-area" style="display:none;"></div>
 
@@ -417,12 +457,12 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
           </div>
           <div id="product-results" style="display:none;max-height:160px;overflow-y:auto;"></div>
           <div id="order-items"></div>
-          <div style="background:var(--ink3);border-radius:var(--r8);padding:9px;margin-top:7px;font-size:12px;">
-            <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Subtotal</span><span id="o-subtotal" style="color:var(--text);">$0.00</span></div>
-            <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Envío</span><span id="o-fee-d" style="color:var(--text);">$0.00</span></div>
-            <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Anticipo</span><span id="o-adv-d" style="color:var(--amber);">-$0.00</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding:7px 0 0;border-top:1px solid var(--rule);margin-top:4px;"><span>Total</span><span id="o-total" style="color:var(--sage);">$0.00</span></div>
-          </div>
+        </div>
+
+        <div class="fsec"><div class="fst">🎀 Accesorios</div>
+          <div class="sb2" style="margin-bottom:7px;"><span style="color:var(--dim);">⌕</span><input id="accessory-search" placeholder="Buscar accesorio…" oninput="searchAccessories(this.value)"/></div>
+          <div id="accessory-results" style="display:none;max-height:160px;overflow-y:auto;"></div>
+          <div id="accessory-items"></div>
         </div>
 
         <div class="fsec"><div class="fst">🎉 Ocasión</div>
@@ -433,14 +473,13 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
             <div class="rc" onclick="setOcc(this,'AMOR')">💝 Amor</div>
             <div class="rc" onclick="setOcc(this,'OTRA')">🎊 Otra</div>
           </div>
-          <div id="o-banda-wrap" style="display:none;margin-top:8px;" class="tw"><div class="tog" id="o-banda-tog" onclick="this.classList.toggle('on')"><div class="tk"></div></div><span class="tl">Incluir banda musical</span></div>
           <div id="o-reminder-note" style="display:none;margin-top:8px;font-size:11px;color:var(--amber);background:var(--amber-dim);padding:7px 9px;border-radius:var(--r6);">📅 Se generará recordatorio automático para el siguiente año.</div>
         </div>
 
         <div class="fsec"><div class="fst">💌 Mensaje</div>
           <div class="fr">
             <div class="fg"><label class="fl">De parte de</label><input class="fi" id="o-msg-from" placeholder="Nombre"/></div>
-            <div class="fg" style="padding-top:14px;"><div class="tw"><div class="tog" id="o-anon-tog" onclick="this.classList.toggle('on')"><div class="tk"></div></div><span class="tl">Anónimo</span></div></div>
+            <div class="fg" style="padding-top:14px;"><div class="tw"><div class="tog" id="o-anon-tog" onclick="this.classList.toggle('on');toggleAnonFrom()"><div class="tk"></div></div><span class="tl">Anónimo</span></div></div>
           </div>
           <div class="fg"><label class="fl">Mensaje para tarjeta</label><textarea class="fta" id="o-msg-text" placeholder="Mensaje…"></textarea></div>
         </div>
@@ -474,6 +513,13 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
         </div>
 
         <div class="fsec"><div class="fst">💰 Forma de Pago</div>
+          <div style="background:var(--ink3);border-radius:var(--r8);padding:9px;margin-bottom:11px;font-size:12px;">
+            <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Subtotal</span><span id="o-subtotal" style="color:var(--text);">$0.00</span></div>
+            <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Envío</span><span id="o-fee-d" style="color:var(--text);">$0.00</span></div>
+            <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>IVA (8%)</span><span id="o-iva-d" style="color:var(--text);">$0.00</span></div>
+            <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Anticipo</span><span id="o-adv-d" style="color:var(--amber);">-$0.00</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding:7px 0 0;border-top:1px solid var(--rule);margin-top:4px;"><span>Total</span><span id="o-total" style="color:var(--sage);">$0.00</span></div>
+          </div>
           <div class="rcs" id="o-pe" style="margin-bottom:10px;">
             <div class="rc sel" onclick="setPE(this,'RECIBIDO')">✅ Pago recibido</div>
             <div class="rc" onclick="setPE(this,'CREDITO')">📋 Crédito</div>
@@ -800,6 +846,31 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 </div>
 </div>
 
+<!-- ════ MODAL: PIN "ATENDIDO POR" ════ -->
+<div class="ov" id="m-attend-pin">
+<div class="modal msm">
+  <div class="mh"><div class="mt">Confirmar Atendido Por</div><button class="mx" onclick="cm('m-attend-pin')">✕</button></div>
+  <div style="padding:24px 28px 28px;">
+    <div style="text-align:center;font-size:12px;color:var(--mid);margin-bottom:14px;">
+      Ingresa el PIN de <strong id="apk-staff-name" style="color:var(--text);">—</strong> para confirmar
+    </div>
+    <div class="login-dots" id="apk-dots">
+      <div class="login-dot" id="apkd-0"></div><div class="login-dot" id="apkd-1"></div>
+      <div class="login-dot" id="apkd-2"></div><div class="login-dot" id="apkd-3"></div>
+      <div class="login-dot" id="apkd-4"></div><div class="login-dot" id="apkd-5"></div>
+    </div>
+    <div class="ppad">
+      <button class="pk" onclick="apk('1')">1</button><button class="pk" onclick="apk('2')">2</button><button class="pk" onclick="apk('3')">3</button>
+      <button class="pk" onclick="apk('4')">4</button><button class="pk" onclick="apk('5')">5</button><button class="pk" onclick="apk('6')">6</button>
+      <button class="pk" onclick="apk('7')">7</button><button class="pk" onclick="apk('8')">8</button><button class="pk" onclick="apk('9')">9</button>
+      <button class="pk sp" onclick="apk('c')">⌫</button><button class="pk" onclick="apk('0')">0</button>
+      <button class="pk ok" onclick="apk('ok')">OK</button>
+    </div>
+    <div class="login-err" id="apk-err"></div>
+  </div>
+</div>
+</div>
+
 <!-- ════ MODAL: PRODUCTO RÁPIDO (solo para este pedido) ════ -->
 <div class="ov" id="m-quick-product">
 <div class="modal msm">
@@ -890,8 +961,8 @@ function showLoginErr(msg) {
 
 // Role permissions — which nav items each role can see
 const ROLE_VIEWS = {
-  ADMIN:      ['dashboard','pedidos','nuevo','elaboracion','entregas','tareas','chat','productos','categorias','inventario','clientes','admin-gate','repartidor'],
-  OFFICE:     ['dashboard','pedidos','nuevo','elaboracion','entregas','tareas','chat','productos','categorias','inventario','clientes','repartidor'],
+  ADMIN:      ['dashboard','pedidos','nuevo','elaboracion','entregas','tareas','chat','productos','accesorios','categorias','inventario','clientes','admin-gate','repartidor'],
+  OFFICE:     ['dashboard','pedidos','nuevo','elaboracion','entregas','tareas','chat','productos','accesorios','categorias','inventario','clientes','repartidor'],
   FLORISTA:   ['elaboracion','tareas','inventario'],
   REPARTIDOR: ['entregas','tareas','inventario'],
 };
@@ -962,7 +1033,7 @@ function setBadge(id, n) {
 // ════════════════════════════════════════════
 // VIEW ROUTING
 // ════════════════════════════════════════════
-const VT = {dashboard:'Dashboard',pedidos:'Pedidos',elaboracion:'Elaboración de Arreglos',entregas:'Entregas',tareas:'Tareas',chat:'Chat con Clientes Web',productos:'Productos',categorias:'Categorías',inventario:'Inventario',admin:'Administración',repartidor:'Vista Repartidor',clientes:'Clientes'};
+const VT = {dashboard:'Dashboard',pedidos:'Pedidos',elaboracion:'Elaboración de Arreglos',entregas:'Entregas',tareas:'Tareas',chat:'Chat con Clientes Web',productos:'Productos',accesorios:'Accesorios',categorias:'Categorías',inventario:'Inventario',admin:'Administración',repartidor:'Vista Repartidor',clientes:'Clientes'};
 
 async function showView(v) {
   if (v === 'nuevo') { openOrderModal(); return; }
@@ -972,7 +1043,7 @@ async function showView(v) {
   const vc = document.getElementById('vc');
   vc.innerHTML = `<div class="loading"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>`;
   try {
-    const views = { dashboard:vDash, pedidos:vPeds, elaboracion:vElab, entregas:vEntr, tareas:vTar, chat:vChat, productos:vProds, categorias:vCats, inventario:vInv, admin:vAdmin, repartidor:vRep, clientes:vClientes };
+    const views = { dashboard:vDash, pedidos:vPeds, elaboracion:vElab, entregas:vEntr, tareas:vTar, chat:vChat, productos:vProds, accesorios:vAcc, categorias:vCats, inventario:vInv, admin:vAdmin, repartidor:vRep, clientes:vClientes };
     if (views[v]) await views[v]();
     else vc.innerHTML = `<div style="color:var(--dim);text-align:center;padding:80px;">Vista en desarrollo</div>`;
   } catch(e) { vc.innerHTML = `<div class="err-state">⚠ ${e.message}</div>`; }
@@ -1223,7 +1294,7 @@ ${orders.map((o,i) => {
   // All order items (in case there are multiple)
   const itemsHTML = allItems.length > 1 ? `
     <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);margin-bottom:5px;">Todos los productos</div>
-    ${allItems.map(it => `<div style="font-size:11.5px;padding:2px 0;color:var(--text);">• ${it.product?.name||'—'} × ${it.quantity}${it.notes?` <em style="color:var(--mid);">(${it.notes})</em>`:''}</div>`).join('')}
+    ${allItems.map(it => `<div style="font-size:11.5px;padding:2px 0;color:var(--text);">• ${it.product?.name||it.customName||'—'} × ${it.quantity}${it.notes?` <em style="color:var(--mid);">(${it.notes})</em>`:''}</div>`).join('')}
     <div style="height:1px;background:var(--rule);margin:8px 0;"></div>` : '';
 
   return `<div class="ec" id="ec-${o.id}">
@@ -1841,6 +1912,183 @@ async function saveProduct() {
 // ════════════════════════════════════════════
 // CATEGORÍAS
 // ════════════════════════════════════════════
+// ════════════════════════════════════════════
+// ACCESORIOS (Banda, Peluche, Chocolates, Globo Metálico, + tipos personalizados)
+// ════════════════════════════════════════════
+let accTypesCache = [], accFilterType = '';
+
+async function vAcc() {
+  const [types, accessories] = await Promise.all([
+    api('GET','/api/accessory-types'),
+    api('GET','/api/accessories'),
+  ]);
+  accTypesCache = types;
+  window._accStore = {};
+  accessories.forEach(a => window._accStore[a.id] = a);
+  renderAccView(accessories);
+}
+
+function renderAccView(accessories) {
+  const filtered = accFilterType ? accessories.filter(a=>a.typeId===accFilterType) : accessories;
+  document.getElementById('vc').innerHTML = `
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:9px;">
+  <div class="fps" style="margin-bottom:0;">
+    <div class="fp${!accFilterType?' act':''}" onclick="filterAccType('')">Todos (${accessories.length})</div>
+    ${accTypesCache.map(t=>`<div class="fp${accFilterType===t.id?' act':''}" onclick="filterAccType('${t.id}')">${t.name} (${accessories.filter(a=>a.typeId===t.id).length})</div>`).join('')}
+  </div>
+  <div style="display:flex;gap:7px;">
+    <button class="btn bg" onclick="om('m-acc-type')">＋ Nuevo tipo</button>
+    <button class="btn bp" onclick="openAccessoryModal(null)">＋ Agregar accesorio</button>
+  </div>
+</div>
+<div class="pgrid">
+${filtered.map(a=>accCard(a)).join('')}
+${filtered.length===0?'<div class="empty-state" style="grid-column:1/-1">Sin accesorios — agrega uno para empezar</div>':''}
+</div>`;
+}
+
+function filterAccType(typeId) {
+  accFilterType = typeId;
+  renderAccView(Object.values(window._accStore||{}));
+}
+
+function accCard(a) {
+  const v = a.variants||[];
+  const priceLabel = v.length<=1 ? `$${fmt(v[0]?.price||0)}` : v.map(x=>`${x.sizeLabel}: $${fmt(x.price)}`).join(' · ');
+  const thumb = v.find(x=>x.photoUrl)?.photoUrl;
+  const occText = a.occasion ? (a.occasion==='OTRA' ? (a.occasionOther||'Otra') : occLabel(a.occasion)) : '';
+  return `<div class="pc">
+  <div class="pc-img">${thumb?`<img src="${photoSrc(thumb)}"/>`:'🎀'}</div>
+  <div class="pc-b">
+    <div class="pc-n">${a.name}</div>
+    <div class="pc-c">${a.type?.name||''}${a.color?' · '+a.color:''}${occText?' · '+occText:''}</div>
+    <div style="font-size:11.5px;font-weight:700;color:var(--rose);margin-bottom:6px;">${priceLabel}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+      <div class="tw"><div class="tog${a.visible?' on':''}" onclick="toggleAccVisible('${a.id}',this)"><div class="tk"></div></div><span class="tl" style="font-size:11px;">${a.visible?'Visible':'Oculto'}</span></div>
+    </div>
+    <button class="btn bg bsm" style="width:100%;" onclick="openAccessoryModal('${a.id}')">✏️ Editar</button>
+  </div>
+</div>`;
+}
+
+async function toggleAccVisible(id, tog) {
+  const visible = !tog.classList.contains('on'); tog.classList.toggle('on', visible);
+  try { await api('PATCH', `/api/accessories/${id}/visible`, { visible }); toast(visible?'Visible ✓':'Oculto ✓'); }
+  catch(e) { tog.classList.toggle('on', !visible); toastErr(e.message); }
+}
+
+async function saveAccType() {
+  const name = document.getElementById('acct-name').value.trim();
+  if (!name) { toastErr('El nombre es requerido'); return; }
+  const hasColor = document.getElementById('acct-color-tog').classList.contains('on');
+  const hasOccasion = document.getElementById('acct-occ-tog').classList.contains('on');
+  const hasSizes = document.getElementById('acct-sizes-tog').classList.contains('on');
+  try {
+    await api('POST', '/api/accessory-types', { name, hasColor, hasOccasion, hasSizes });
+    document.getElementById('acct-name').value='';
+    document.getElementById('acct-color-tog').classList.remove('on');
+    document.getElementById('acct-occ-tog').classList.remove('on');
+    document.getElementById('acct-sizes-tog').classList.remove('on');
+    cm('m-acc-type');
+    toast('Tipo creado ✓');
+    vAcc();
+  } catch(e) { toastErr(e.message); }
+}
+
+let _editingAccId = null;
+function openAccessoryModal(accId) {
+  _editingAccId = accId || null;
+  const acc = accId ? window._accStore[accId] : null;
+  document.getElementById('acc-modal-title').textContent = acc ? 'Editar Accesorio' : 'Nuevo Accesorio';
+  document.getElementById('acc-id').value = accId || '';
+  document.getElementById('acc-name').value = acc?.name || '';
+  document.getElementById('acc-color').value = acc?.color || '';
+
+  const typeSel = document.getElementById('acc-type');
+  typeSel.innerHTML = accTypesCache.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  typeSel.value = acc?.typeId || accTypesCache[0]?.id || '';
+
+  // Occasion pills
+  const occVal = acc?.occasion || 'CUMPLEANOS';
+  const occMap = {CUMPLEANOS:0, AMOR:1, ANIVERSARIO:2, OTRA:3};
+  document.querySelectorAll('#acc-occ-pills .rc').forEach(p=>p.classList.remove('sel'));
+  const pills = document.querySelectorAll('#acc-occ-pills .rc');
+  (pills[occMap[occVal]||0]).classList.add('sel');
+  document.getElementById('acc-occ-other').value = acc?.occasionOther || '';
+  document.getElementById('acc-occ-other').style.display = occVal==='OTRA' ? 'block' : 'none';
+
+  onAccTypeChange(acc?.variants);
+  om('m-accessory');
+}
+
+function onAccTypeChange(existingVariants) {
+  const type = accTypesCache.find(t=>t.id===document.getElementById('acc-type').value);
+  document.getElementById('acc-color-wrap').style.display = type?.hasColor ? 'block' : 'none';
+  document.getElementById('acc-occasion-wrap').style.display = type?.hasOccasion ? 'block' : 'none';
+  renderAccVariantRows(type, existingVariants);
+}
+
+function setAccOcc(el, v) {
+  or(el, 'acc-occ-pills');
+  document.getElementById('acc-occ-other').style.display = v==='OTRA' ? 'block' : 'none';
+}
+
+function renderAccVariantRows(type, existingVariants) {
+  const sizeLabels = type?.hasSizes ? ['Chico','Mediano','Grande'] : [null];
+  document.getElementById('acc-variants').innerHTML = sizeLabels.map((label, i) => {
+    const existing = existingVariants?.[i];
+    return `<div class="fsec" style="margin-bottom:8px;">
+      ${label ? `<div class="fst" style="margin-bottom:8px;">${label}</div>` : ''}
+      <div class="fr">
+        <div class="fg"><label class="fl">Precio *</label><input class="fi acc-variant-price" type="number" step="0.01" value="${existing?.price||''}" data-size="${label||''}"/></div>
+        <div class="fg"><label class="fl">Foto</label>
+          <div id="acc-vphoto-${i}" style="border:1.5px dashed var(--rule2);border-radius:var(--r8);padding:6px;text-align:center;cursor:pointer;color:var(--dim);font-size:11px;min-height:44px;display:flex;align-items:center;justify-content:center;${existing?.photoUrl?`background:url(${photoSrc(existing.photoUrl)}) center/cover;`:''}" onclick="document.getElementById('acc-vfile-${i}').click()">
+            <span id="acc-vlbl-${i}" style="${existing?.photoUrl?'display:none;':''}">📷</span>
+            <input type="file" id="acc-vfile-${i}" accept="image/*" style="display:none;" onchange="previewProductPhoto(this,'acc-vphoto-${i}','acc-vlbl-${i}')"/>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function saveAccessory() {
+  const name = document.getElementById('acc-name').value.trim();
+  const typeId = document.getElementById('acc-type').value;
+  if (!name || !typeId) { toastErr('Tipo y nombre son requeridos'); return; }
+  const type = accTypesCache.find(t=>t.id===typeId);
+  const color = type?.hasColor ? document.getElementById('acc-color').value.trim() : '';
+  let occasion = '', occasionOther = '';
+  if (type?.hasOccasion) {
+    const sel = document.querySelector('#acc-occ-pills .sel');
+    const occMapRev = ['CUMPLEANOS','AMOR','ANIVERSARIO','OTRA'];
+    const idx = [...document.querySelectorAll('#acc-occ-pills .rc')].indexOf(sel);
+    occasion = occMapRev[idx] || 'CUMPLEANOS';
+    if (occasion==='OTRA') occasionOther = document.getElementById('acc-occ-other').value.trim();
+  }
+
+  const priceInputs = [...document.querySelectorAll('.acc-variant-price')];
+  const variants = priceInputs.map(inp => ({ sizeLabel: inp.dataset.size || null, price: parseFloat(inp.value) || 0 }));
+  if (!variants.length || variants.some(v=>!v.price)) { toastErr('Ingresa un precio válido para cada variante'); return; }
+
+  const fd = new FormData();
+  fd.append('data', JSON.stringify({ typeId, name, color, occasion, occasionOther, variants }));
+  document.querySelectorAll('[id^=acc-vfile-]').forEach((inp, i) => {
+    if (inp.files[0]) fd.append(`photo_${i}`, inp.files[0]);
+  });
+
+  const btn = document.querySelector('#m-accessory .btn.bp');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    if (_editingAccId) await api('PUT', `/api/accessories/${_editingAccId}`, fd, true);
+    else await api('POST', '/api/accessories', fd, true);
+    cm('m-accessory');
+    toast('Accesorio guardado ✓');
+    vAcc();
+  } catch(e) { toastErr(e.message); }
+  finally { btn.disabled=false; btn.textContent='Guardar'; }
+}
+
 async function vCats() {
   const cats = await api('GET','/api/categories');
   const allProds = cachedProducts.length ? cachedProducts : await api('GET','/api/products');
@@ -2143,7 +2391,7 @@ async function adjustStock(id, name) {
 // ════════════════════════════════════════════
 let atab='pagos';
 async function vAdmin() {
-  const tabs=[['pagos','💰 Pagos'],['diario','📊 Diario'],['mensual','📅 Mensual'],['rango','🗓 Rango'],['gastos','💸 Gastos'],['productos','📦 Productos'],['fechas','🚫 Fechas'],['horario','⏰ Horario'],['staff','👥 Staff'],['pin','🔑 PIN']];
+  const tabs=[['datos','🏬 Datos'],['pagos','💰 Pagos'],['diario','📊 Diario'],['mensual','📅 Mensual'],['rango','🗓 Rango'],['gastos','💸 Gastos'],['productos','📦 Productos'],['fechas','🚫 Fechas'],['horario','⏰ Horario'],['staff','👥 Staff'],['pin','🔑 PIN']];
   document.getElementById('vc').innerHTML = `
 <div style="display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap;">
   ${tabs.map(([k,l])=>`<button id="atb-${k}" class="btn ${atab===k?'bp':'bg'} bsm" onclick="aTab('${k}')">${l}</button>`).join('')}
@@ -2162,7 +2410,35 @@ async function aRender(t) {
   const el=document.getElementById('atc'); if(!el) return;
   el.innerHTML='<div class="loading"><div class="spinner"></div></div>';
   try {
-    if (t==='pagos') {
+    if (t==='datos') {
+      const d = await api('GET', '/api/settings').catch(()=>({}));
+      el.innerHTML=`<div class="card" style="max-width:520px;">
+        <div class="ch"><span class="ct">🏬 Datos de la Tienda</span></div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:14px;">Esta información se usa en el encabezado de los Recibos impresos.</div>
+        <div class="fg"><label class="fl">Logo</label>
+          <div id="datos-logo-wrap" style="border:1.5px dashed var(--rule2);border-radius:var(--r8);padding:10px;text-align:center;cursor:pointer;color:var(--dim);font-size:12px;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;${d.logoUrl?`background:url(${photoSrc(d.logoUrl)}) center/contain no-repeat;`:''}" onclick="document.getElementById('datos-logo-input').click()">
+            <span id="datos-logo-lbl" style="${d.logoUrl?'display:none;':''}">📷 Click para subir logo</span>
+            <input type="file" id="datos-logo-input" accept="image/*" style="display:none;" onchange="previewProductPhoto(this,'datos-logo-wrap','datos-logo-lbl')"/>
+          </div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Nombre de la tienda</label><input class="fi" id="d-store-name" value="${d.storeName||''}" placeholder="Florería y Regalos Karel"/></div>
+          <div class="fg"><label class="fl">WhatsApp</label><input class="fi" id="d-whatsapp" value="${d.whatsapp||''}" placeholder="(656) 130-3595"/></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Teléfono</label><input class="fi" id="d-phone" value="${d.phone||''}" placeholder="Opcional"/></div>
+          <div class="fg"><label class="fl">RFC</label><input class="fi" id="d-rfc" value="${d.rfc||''}" placeholder="GMB081001TH8"/></div>
+        </div>
+        <div class="fg"><label class="fl">Domicilio</label><input class="fi" id="d-address" value="${d.address||''}" placeholder="Av. de la Raza 5262, C.P. 32369, Ciudad Juárez"/></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Página web</label><input class="fi" id="d-website" value="${d.website||''}" placeholder="Opcional"/></div>
+          <div class="fg"><label class="fl">Correo electrónico</label><input class="fi" id="d-email" type="email" value="${d.email||''}" placeholder="Opcional"/></div>
+        </div>
+        <button class="btn bp" onclick="saveDatosSettings()">Guardar cambios</button>
+        <div id="datos-msg" style="margin-top:10px;font-size:12px;"></div>
+      </div>`;
+    }
+    else if (t==='pagos') {
       const data=await api('GET','/api/reports/pending-payments');
       el.innerHTML=`<div class="card"><div class="ch"><span class="ct">Pagos Pendientes</span><span style="color:var(--amber);font-weight:700;">$${fmt(data.total)}</span></div>
       <table class="tbl"><thead><tr><th>#</th><th>Cliente</th><th>F. Cobro</th><th>Total</th><th></th></tr></thead><tbody>
@@ -2541,6 +2817,27 @@ async function saveHorarioSettings() {
   }
 }
 
+async function saveDatosSettings() {
+  const msg = document.getElementById('datos-msg');
+  const fd = new FormData();
+  fd.append('storeName', document.getElementById('d-store-name').value.trim());
+  fd.append('whatsapp',  document.getElementById('d-whatsapp').value.trim());
+  fd.append('phone',     document.getElementById('d-phone').value.trim());
+  fd.append('address',   document.getElementById('d-address').value.trim());
+  fd.append('rfc',       document.getElementById('d-rfc').value.trim());
+  fd.append('website',   document.getElementById('d-website').value.trim());
+  fd.append('email',     document.getElementById('d-email').value.trim());
+  const logoFile = document.getElementById('datos-logo-input').files[0];
+  if (logoFile) fd.append('logo', logoFile);
+  try {
+    await api('PUT', '/api/settings', fd, true);
+    if (msg) { msg.textContent = '✓ Guardado — el Recibo usará esta información'; msg.style.color = 'var(--sage)'; }
+    toast('Datos guardados ✓');
+  } catch(e) {
+    if (msg) { msg.textContent = '⚠ Error: ' + e.message; msg.style.color = 'var(--red)'; }
+  }
+}
+
 async function changePIN() {
   const cur=document.getElementById('pin-cur').value, nw=document.getElementById('pin-new').value, cf=document.getElementById('pin-conf').value;
   if (!cur||!nw||!cf) { toastErr('Todos los campos son requeridos'); return; }
@@ -2572,7 +2869,7 @@ ${orders.length===0?'<div class="empty-state">Sin entregas asignadas hoy</div>':
     </div>
     ${o.items?.map(item=>`<div style="background:var(--ink3);border-radius:var(--r8);padding:11px;display:flex;gap:11px;align-items:center;margin-bottom:11px;">
       <div style="width:50px;height:50px;border-radius:var(--r8);background:var(--ink4);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">${item.product?.photo1Url?`<img src="${photoSrc(item.product.photo1Url)}" style="width:100%;height:100%;object-fit:cover;"/>`:'🌸'}</div>
-      <div><div style="font-size:12.5px;font-weight:600;">${item.product?.name||'—'}</div>${item.notes?`<div style="font-size:11px;color:var(--mid);">${item.notes}</div>`:''}</div>
+      <div><div style="font-size:12.5px;font-weight:600;">${item.product?.name||item.customName||'—'}</div>${item.notes?`<div style="font-size:11px;color:var(--mid);">${item.notes}</div>`:''}</div>
     </div>`).join('')||''}
     ${o.recipientNotes?`<div style="background:var(--amber-dim);border-radius:var(--r8);padding:9px;margin-bottom:11px;font-size:11.5px;color:var(--amber);">⚠️ ${o.recipientNotes}</div>`:''}
     <button class="btn bs blg" style="width:100%;" onclick="openDeliverModal('${o.id}')">📷 Confirmar Entrega</button>
@@ -2638,13 +2935,7 @@ function pickDay(iso) {
 // ════════════════════════════════════════════
 async function openOrderModal() {
   orderState = { clientId:null, items:[], occasion:'CUMPLEANOS', deliveryType:'DOMICILIO_CASA', paymentType:'RECIBIDO' };
-  document.getElementById('client-search').value='';
-  document.getElementById('client-results').innerHTML='';
-  document.getElementById('client-selected').style.display='none';
-  document.getElementById('order-items').innerHTML='';
-  document.getElementById('o-date').value='';
-  document.getElementById('o-date-display').value='';
-  document.getElementById('cal-container').style.display='none';
+  resetOrderForm();
   // Set today as default
   const today = new Date();
   const iso = today.toISOString().split('T')[0];
@@ -2656,6 +2947,58 @@ async function openOrderModal() {
     document.getElementById('o-staff').innerHTML = '<option value="">—</option>'+staff.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   } catch(e) {}
   om('m-order');
+}
+
+// Fully resets the Nuevo Pedido modal so nothing from a previous order leaks into the next one.
+function resetOrderForm() {
+  document.getElementById('client-search').value='';
+  document.getElementById('client-results').innerHTML='';
+  document.getElementById('client-selected').style.display='none';
+  document.getElementById('order-items').innerHTML='';
+  document.getElementById('accessory-search').value='';
+  document.getElementById('accessory-results').innerHTML='';
+  document.getElementById('accessory-results').style.display='none';
+  document.getElementById('accessory-items').innerHTML='';
+  document.getElementById('o-date').value='';
+  document.getElementById('o-date-display').value='';
+  document.getElementById('cal-container').style.display='none';
+  document.getElementById('o-win-type').value='antes';
+  document.getElementById('o-win-time').value='12:00';
+
+  // Delivery
+  ['o-r-name','o-r-phone','o-r-addr','o-r-col','o-r-zip','o-r-notes','o-biz-name','o-biz-dept'].forEach(id=>{
+    const el = document.getElementById(id); if (el) el.value='';
+  });
+  document.getElementById('o-fee').value='0';
+
+  // Message
+  document.getElementById('o-msg-from').value='';
+  document.getElementById('o-msg-text').value='';
+  document.getElementById('o-anon-tog').classList.remove('on');
+  toggleAnonFrom();
+
+  // Forma de pago
+  document.getElementById('o-advance').value='0';
+  document.getElementById('o-staff').value='';
+  document.getElementById('o-fac-tog').classList.remove('on');
+  document.getElementById('o-fac-f').style.display='none';
+  const rfcName = document.getElementById('o-rfc-name'); if (rfcName) rfcName.value='';
+  const cfdi = document.getElementById('o-cfdi'); if (cfdi) cfdi.value='G03';
+  const credDate = document.getElementById('o-cred-date'); if (credDate) credDate.value='';
+  const credLoc  = document.getElementById('o-cred-loc');  if (credLoc)  credLoc.value='';
+
+  // Pill groups back to their defaults
+  resetPillGroup('o-occ', 0, el=>setOcc(el,'CUMPLEANOS'));
+  resetPillGroup('o-del-t', 0, el=>setDelT(el,'DOMICILIO_CASA'));
+  resetPillGroup('o-pe', 0, el=>setPE(el,'RECIBIDO'));
+  resetPillGroup('o-pt', 0, el=>or(el,'o-pt'));
+  resetPillGroup('o-notif', 0, el=>or(el,'o-notif'));
+}
+
+function resetPillGroup(containerId, defaultIndex, applyFn) {
+  const c = document.getElementById(containerId); if (!c) return;
+  const pills = c.querySelectorAll('.rc');
+  if (pills[defaultIndex]) applyFn(pills[defaultIndex]);
 }
 
 async function searchClients(q) {
@@ -2779,10 +3122,60 @@ async function searchProducts(q) {
 
 function addOrderItem(id, name, price) {
   const itemId = `oi-${Date.now()}`;
-  orderState.items.push({ itemId, productId:id, name, unitPrice:Number(price), quantity:1, notes:'' });
+  orderState.items.push({ itemId, kind:'product', productId:id, name, unitPrice:Number(price), quantity:1, notes:'' });
   document.getElementById('product-search').value='';
   document.getElementById('product-results').style.display='none';
   renderOrderItems(); recalcTotal();
+}
+
+// ════════════════════════════════════════════
+// ACCESORIOS (Banda, Peluche, Chocolates, Globo Metálico, …)
+// ════════════════════════════════════════════
+async function searchAccessories(q) {
+  const res = document.getElementById('accessory-results');
+  if (q.length<1) { res.style.display='none'; return; }
+  try {
+    const data = await api('GET',`/api/accessories?visible=true&search=${encodeURIComponent(q)}`);
+    res.style.display = data.length?'block':'none';
+    res.innerHTML = data.map(a=>{
+      const variants = a.variants||[];
+      if (variants.length<=1) {
+        const v = variants[0];
+        return `<div class="prod-result" onclick="addAccessoryItem('${v?.id}','${a.name.replace(/'/g,"\\'")}',${v?Number(v.price):0})">
+          <span style="font-weight:600;">${a.name}</span> <span style="color:var(--dim);font-size:11px;">${a.type?.name||''}</span>
+          <span style="color:var(--rose);font-weight:700;float:right;">$${fmt(v?.price||0)}</span>
+        </div>`;
+      }
+      // Multiple sizes — show a chip per variant so staff picks the size/price
+      return `<div class="prod-result" style="cursor:default;">
+        <div style="font-weight:600;margin-bottom:5px;">${a.name} <span style="color:var(--dim);font-size:11px;font-weight:400;">${a.type?.name||''}</span></div>
+        <div class="rcs" style="gap:5px;">
+          ${variants.map(v=>`<div class="rc" onclick="addAccessoryItem('${v.id}','${a.name.replace(/'/g,"\\'")} - ${v.sizeLabel||''}',${Number(v.price)})">${v.sizeLabel||'—'} · $${fmt(v.price)}</div>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+function addAccessoryItem(variantId, label, price) {
+  const itemId = `ai-${Date.now()}`;
+  orderState.items.push({ itemId, kind:'accessory', productId:null, accessoryVariantId:variantId, name:label, unitPrice:Number(price), quantity:1, notes:'' });
+  document.getElementById('accessory-search').value='';
+  document.getElementById('accessory-results').style.display='none';
+  document.getElementById('accessory-results').innerHTML='';
+  renderAccessoryItems(); recalcTotal();
+}
+
+function renderAccessoryItems() {
+  document.getElementById('accessory-items').innerHTML = orderState.items.filter(i=>i.kind==='accessory').map(item=>`
+    <div class="order-item-card" id="${item.itemId}">
+      <button class="remove-oi" onclick="removeOI('${item.itemId}')">✕</button>
+      <div style="font-size:12px;font-weight:600;margin-bottom:5px;">${item.name}</div>
+      <div style="display:flex;gap:7px;margin-bottom:5px;">
+        <input class="fi" type="number" value="${item.quantity}" min="1" style="width:52px;padding:3px 6px;font-size:11px;" onchange="updOI('${item.itemId}','quantity',this.value)"/>
+        <span style="font-size:12px;color:var(--rose);font-weight:700;align-self:center;">$${fmt(item.unitPrice)} c/u</span>
+      </div>
+    </div>`).join('');
 }
 
 function addQuickProduct() {
@@ -2794,7 +3187,7 @@ function addQuickProduct() {
   if (isNaN(price) || price < 0) { toastErr('Ingresa un precio válido'); return; }
   const itemId = `oi-quick-${Date.now()}`;
   // productId null = custom/quick item; backend should accept null or a placeholder
-  orderState.items.push({ itemId, productId: null, name, unitPrice: price, quantity: qty, notes });
+  orderState.items.push({ itemId, kind:'quick', productId: null, name, unitPrice: price, quantity: qty, notes });
   // Reset form
   document.getElementById('qp-name').value  = '';
   document.getElementById('qp-price').value = '';
@@ -2806,7 +3199,7 @@ function addQuickProduct() {
 }
 
 function renderOrderItems() {
-  document.getElementById('order-items').innerHTML = orderState.items.map(item=>`
+  document.getElementById('order-items').innerHTML = orderState.items.filter(i=>i.kind!=='accessory').map(item=>`
     <div class="order-item-card" id="${item.itemId}">
       <button class="remove-oi" onclick="removeOI('${item.itemId}')">✕</button>
       <div style="font-size:12px;font-weight:600;margin-bottom:5px;">${item.name}</div>
@@ -2818,7 +3211,10 @@ function renderOrderItems() {
     </div>`).join('');
 }
 
-function removeOI(id) { orderState.items=orderState.items.filter(i=>i.itemId!==id); renderOrderItems(); recalcTotal(); }
+function removeOI(id) {
+  orderState.items=orderState.items.filter(i=>i.itemId!==id);
+  renderOrderItems(); renderAccessoryItems(); recalcTotal();
+}
 function updOI(id, field, val) {
   const item = orderState.items.find(i=>i.itemId===id); if(!item) return;
   if (field==='quantity') item.quantity=Math.max(1,parseInt(val)||1);
@@ -2826,23 +3222,28 @@ function updOI(id, field, val) {
   recalcTotal();
 }
 
+const TAX_RATE = 0.08; // IVA — matches site/index.html's IVA_RATE
 function recalcTotal() {
   const sub = orderState.items.reduce((s,i)=>s+(Number(i.unitPrice)||0)*(Number(i.quantity)||1),0);
   const fee = parseFloat(document.getElementById('o-fee')?.value)||0;
   const adv = parseFloat(document.getElementById('o-advance')?.value)||0;
-  const total = sub+fee-adv;
+  const tax = (sub+fee)*TAX_RATE;
+  const total = sub+fee+tax-adv;
   el('o-subtotal').textContent='$'+fmt(sub);
   el('o-fee-d').textContent='$'+fmt(fee);
+  el('o-iva-d').textContent='$'+fmt(tax);
   el('o-adv-d').textContent='-$'+fmt(adv);
   el('o-total').textContent='$'+fmt(total);
 }
 function el(id){return document.getElementById(id);}
 
-async function submitOrder() {
+function submitOrder() {
   if (!orderState.clientId) { toastErr('Selecciona un cliente'); return; }
   if (!orderState.items.length) { toastErr('Agrega al menos un producto'); return; }
   const date = document.getElementById('o-date').value;
   if (!date) { toastErr('Selecciona la fecha de entrega'); return; }
+  const attendedById = document.getElementById('o-staff')?.value;
+  if (!attendedById) { toastErr('Selecciona quién atendió el pedido'); return; }
   const winType = document.getElementById('o-win-type').value;
   const winTime = document.getElementById('o-win-time').value;
   const payType = orderState.paymentType;
@@ -2852,6 +3253,8 @@ async function submitOrder() {
   const sub = orderState.items.reduce((s,i)=>s+(Number(i.unitPrice)||0)*(Number(i.quantity)||1),0);
   const fee = parseFloat(document.getElementById('o-fee').value)||0;
   const adv = parseFloat(document.getElementById('o-advance').value)||0;
+  const tax = (sub+fee)*TAX_RATE;
+  const anon = document.getElementById('o-anon-tog').classList.contains('on');
   const body = {
     clientId:orderState.clientId,
     deliveryDate:date,
@@ -2866,12 +3269,16 @@ async function submitOrder() {
     recipientNotes:document.getElementById('o-r-notes').value,
     businessName:document.getElementById('o-biz-name').value,
     businessDept:document.getElementById('o-biz-dept').value,
-    messageFrom:document.getElementById('o-msg-from').value,
+    messageFrom:anon?'':document.getElementById('o-msg-from').value,
     messageText:document.getElementById('o-msg-text').value,
-    messageAnon:document.getElementById('o-anon-tog').classList.contains('on'),
+    messageAnon:anon,
     occasion:orderState.occasion,
-    hasBanda:document.getElementById('o-banda-tog')?.classList.contains('on')||false,
-    items:orderState.items.map(i=>({productId:i.productId,quantity:i.quantity,notes:i.notes,...(i.productId===null?{name:i.name,unitPrice:i.unitPrice}:{})})),
+    items:orderState.items.map(i=>({
+      productId:i.productId,
+      accessoryVariantId:i.accessoryVariantId||undefined,
+      quantity:i.quantity,notes:i.notes,
+      ...((i.productId===null && !i.accessoryVariantId)?{name:i.name,unitPrice:i.unitPrice}:{}),
+    })),
     paymentType:payType,
     paymentMethod:payType==='CREDITO'?null:payMethod,
     creditDueDate:document.getElementById('o-cred-date')?.value||undefined,
@@ -2880,10 +3287,14 @@ async function submitOrder() {
     needsInvoice:document.getElementById('o-fac-tog').classList.contains('on'),
     invoiceName:document.getElementById('o-rfc-name')?.value,
     invoiceCfdi:document.getElementById('o-cfdi')?.value,
-    attendedById:document.getElementById('o-staff')?.value||undefined,
+    attendedById,
     notifyVia:document.querySelector('#o-notif .sel')?.textContent?.includes('WhatsApp')?'whatsapp':document.querySelector('#o-notif .sel')?.textContent?.includes('Email')?'email':'none',
-    subtotal:sub, total:sub+fee-adv,
+    subtotal:sub, total:sub+fee+tax-adv,
   };
+  openAttendPinModal(body);
+}
+
+async function doCreateOrder(body) {
   const btn=document.getElementById('o-submit'); btn.disabled=true; btn.textContent='Creando…';
   try {
     const order = await api('POST', '/api/orders', body);
@@ -2922,13 +3333,71 @@ async function submitOrder() {
 }
 
 // ════════════════════════════════════════════
+// ATENDIDO POR — PIN confirmation before creating the order
+// ════════════════════════════════════════════
+let attendPin = '', pendingOrderBody = null;
+
+function openAttendPinModal(body) {
+  pendingOrderBody = body;
+  attendPin = '';
+  document.getElementById('apk-err').style.display = 'none';
+  updAttendDots();
+  const staffName = document.querySelector(`#o-staff option[value="${body.attendedById}"]`)?.textContent || '—';
+  document.getElementById('apk-staff-name').textContent = staffName;
+  om('m-attend-pin');
+}
+
+function apk(k) {
+  const err = document.getElementById('apk-err');
+  err.style.display = 'none';
+  if (k === 'c') { attendPin = attendPin.slice(0, -1); }
+  else if (k === 'ok') { if (attendPin.length === 6) verifyAttendPin(); else showAttendErr('El PIN debe ser de 6 dígitos'); return; }
+  else if (attendPin.length < 6) attendPin += k;
+  updAttendDots();
+  if (attendPin.length === 6) setTimeout(verifyAttendPin, 120);
+}
+
+function updAttendDots() {
+  for (let i = 0; i < 6; i++) {
+    document.getElementById(`apkd-${i}`).classList.toggle('filled', i < attendPin.length);
+  }
+}
+
+function showAttendErr(msg) {
+  const e = document.getElementById('apk-err');
+  e.textContent = msg; e.style.display = 'block';
+}
+
+async function verifyAttendPin() {
+  try {
+    const res = await api('POST', '/api/auth/verify-pin', { staffId: pendingOrderBody.attendedById, pin: attendPin });
+    if (res.valid) {
+      cm('m-attend-pin');
+      const body = pendingOrderBody;
+      pendingOrderBody = null;
+      doCreateOrder(body);
+    }
+  } catch(e) {
+    attendPin = ''; updAttendDots();
+    showAttendErr(e.message || 'PIN incorrecto');
+  }
+}
+
+// ════════════════════════════════════════════
 // PRINT / EMAIL / WHATSAPP ORDER
 // ════════════════════════════════════════════
-function printOrder() {
+async function printOrder() {
   if (!lastCreatedOrder) { toastErr('Sin pedido para imprimir'); return; }
   const o = lastCreatedOrder;
   const win = window.open('', '_blank', 'width=660,height=900');
   if (!win) { toastErr('Permite ventanas emergentes para imprimir'); return; }
+
+  const settings = await api('GET', '/api/settings').catch(()=>({}));
+  const storeName = settings.storeName || 'FLORERÍA Y REGALOS KAREL';
+  const storeAddress = settings.address || 'AV. DE LA RAZA 5262, C.P. 32369, CIUDAD JUÁREZ';
+  const storeRfc = settings.rfc || 'GMB081001TH8';
+  const storeWhatsapp = settings.whatsapp || '(656) 130-3595';
+  const storeLogo = settings.logoUrl ? photoSrc(settings.logoUrl) : null;
 
   const winLabel = fmtWindow(o.deliveryWindow);
   const clientName = [o.client?.firstName, o.client?.middleName, o.client?.lastNameP, o.client?.lastNameM].filter(Boolean).join(' ') || '—';
@@ -2985,13 +3454,13 @@ function printOrder() {
       ? `<img class="pimg" src="${photoSrc(i.product.photo1Url)}"/>`
       : `<div class="pph">🌸</div>`;
     const noteHTML = i.notes ? `<br/><small style="color:#888">${i.notes}</small>` : '';
-    return `<tr><td style="width:48px">${imgHTML}</td><td><b>${i.product?.name||'—'}</b>${noteHTML}</td><td style="text-align:right">${i.quantity}</td><td style="text-align:right;font-weight:700">$${fmt(i.unitPrice)}</td></tr>`;
+    return `<tr><td style="width:48px">${imgHTML}</td><td><b>${i.product?.name||i.customName||'—'}</b>${noteHTML}</td><td style="text-align:right">${i.quantity}</td><td style="text-align:right;font-weight:700">$${fmt(i.unitPrice)}</td></tr>`;
   }).join('') || `<tr><td colspan="4" style="color:#aaa;text-align:center">Sin productos</td></tr>`;
 
   const html = [
     '<div class="hdr">',
-      '<div class="logo-box"><div class="logo-area"><div class="flower">🌹</div><div><div class="brand">FLORERÍA Y REGALOS <em>KAREL</em></div><div class="sub">Ciudad Juárez · Est. 2008</div></div></div></div>',
-      '<div class="hdr-info">AV. DE LA RAZA 5262, C.P. 32369, CIUDAD JUÁREZ<br>RFC: <b>GMB081001TH8</b> &nbsp;|&nbsp; WhatsApp: <b>(656) 130-3595</b></div>',
+      `<div class="logo-box"><div class="logo-area"><div class="flower">${storeLogo?`<img src="${storeLogo}" style="width:40px;height:40px;object-fit:contain;"/>`:'🌹'}</div><div><div class="brand">${storeName}</div></div></div></div>`,
+      `<div class="hdr-info">${storeAddress}<br>RFC: <b>${storeRfc}</b> &nbsp;|&nbsp; WhatsApp: <b>${storeWhatsapp}</b>${settings.email?` &nbsp;|&nbsp; ${settings.email}`:''}</div>`,
       `<div class="badge">${o.orderNumber}</div>`,
       `<div class="odate">Fecha de orden: ${new Date(o.createdAt).toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>`,
     '</div>',
@@ -3014,6 +3483,7 @@ function printOrder() {
       `<table><thead><tr><th></th><th>Producto</th><th style="text-align:right">Cant.</th><th style="text-align:right">Precio</th></tr></thead><tbody>${productRows}</tbody></table>`,
       `<div class="subrow"><span>Subtotal</span><span>$${fmt(o.subtotal)}</span></div>`,
       Number(o.deliveryFee)>0 ? `<div class="subrow"><span>Envío</span><span>$${fmt(o.deliveryFee)}</span></div>` : '',
+      `<div class="subrow"><span>IVA (8%)</span><span>$${fmt((Number(o.subtotal)+Number(o.deliveryFee))*TAX_RATE)}</span></div>`,
       Number(o.advance)>0 ? `<div class="subrow"><span>Anticipo</span><span style="color:#C96E60">− $${fmt(o.advance)}</span></div>` : '',
       `<div class="totrow"><span class="totlbl">TOTAL</span><span class="totval">$${fmt(o.total)} MXN</span></div>`,
     '</div>',
@@ -3041,7 +3511,7 @@ function printOrder() {
       '</div>',
     ] : []),
 
-    '<div class="ftr">Gracias por su preferencia · Florería y Regalos Karel<br>Av. de la Raza 5262 · Ciudad Juárez · WhatsApp (656) 130-3595<br>RFC: GMB081001TH8</div>',
+    `<div class="ftr">Gracias por su preferencia · ${storeName}<br>${storeAddress} · WhatsApp ${storeWhatsapp}<br>RFC: ${storeRfc}</div>`,
   ].join('');
 
   win.document.open();
@@ -3067,7 +3537,7 @@ function waOrder() {
   const o = lastCreatedOrder;
   const winLabel = fmtWindow(o.deliveryWindow);
   const isPickup = o.deliveryType === 'RECOGER_TIENDA';
-  const items = (o.items||[]).map(i=>`  • ${i.product?.name||'—'} × ${i.quantity}`).join('\n') || '—';
+  const items = (o.items||[]).map(i=>`  • ${i.product?.name||i.customName||'—'} × ${i.quantity}`).join('\n') || '—';
   const deliveryInfo = o.delivery?.deliveredAt
     ? `\n\n✅ *Entrega confirmada*\nRecibió: ${o.delivery.receivedBy||'—'}\nHora: ${new Date(o.delivery.deliveredAt).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`
     : '';
@@ -3281,8 +3751,14 @@ function askAdminPin() { if (['ADMIN','OFFICE'].includes(currentStaff?.role)) { 
 // ════════════════════════════════════════════
 function setOcc(el, v) {
   or(el,'o-occ'); orderState.occasion=v;
-  document.getElementById('o-banda-wrap').style.display=v==='FUNERAL'?'flex':'none';
   document.getElementById('o-reminder-note').style.display=(v==='CUMPLEANOS'||v==='ANIVERSARIO')?'block':'none';
+}
+
+function toggleAnonFrom() {
+  const anon = document.getElementById('o-anon-tog').classList.contains('on');
+  const inp = document.getElementById('o-msg-from');
+  inp.disabled = anon;
+  if (anon) inp.value = '';
 }
 function setDelT(el, v) {
   or(el,'o-del-t'); orderState.deliveryType=v;

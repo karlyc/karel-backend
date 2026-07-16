@@ -139,10 +139,16 @@ router.post('/', upload.single('paymentProof'), [
     }
 
     // Resolve prices from DB (single price per product)
-   // UPDATED — supports catalog products AND quick/custom items
+   // UPDATED — supports catalog products, catalog accessories, AND quick/custom items
     const productIds = items.filter(i => i.productId).map(i => i.productId);
     const products = await prisma.product.findMany({ where: { id: { in: productIds } } });
     const productMap = Object.fromEntries(products.map(p => [p.id, p]));
+
+    const accessoryVariantIds = items.filter(i => i.accessoryVariantId).map(i => i.accessoryVariantId);
+    const variants = accessoryVariantIds.length
+      ? await prisma.accessoryVariant.findMany({ where: { id: { in: accessoryVariantIds } }, include: { accessory: true } })
+      : [];
+    const variantMap = Object.fromEntries(variants.map(v => [v.id, v]));
 
     let subtotal = 0;
     const itemData = items.map(item => {
@@ -155,6 +161,20 @@ router.post('/', upload.single('paymentProof'), [
         return {
           productId: item.productId,
           customName: null,
+          quantity: item.quantity,
+          unitPrice: price,
+          notes: item.notes || null,
+        };
+      } else if (item.accessoryVariantId) {
+        // Catalog accessory (Banda, Peluche, Chocolates, Globo Metálico, etc.)
+        const variant = variantMap[item.accessoryVariantId];
+        if (!variant) throw new Error(`Accessory variant ${item.accessoryVariantId} not found`);
+        const price = Number(variant.price);
+        subtotal += price * item.quantity;
+        return {
+          productId: null,
+          accessoryVariantId: item.accessoryVariantId,
+          customName: `${variant.accessory.name}${variant.sizeLabel ? ' - ' + variant.sizeLabel : ''}`,
           quantity: item.quantity,
           unitPrice: price,
           notes: item.notes || null,
