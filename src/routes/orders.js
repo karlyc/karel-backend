@@ -7,6 +7,66 @@ const { generateOrderNumber, computeLoyaltyTier } = require('../utils/orders');
 const { upload, uploadToCloudinary, isCloudinaryConfigured } = require('../utils/upload');
 const { sendOrderConfirmation } = require('../utils/email');
 const { sendOrderConfirmation: sendWAConfirmation, sendShopNewOrder } = require('../utils/whatsapp');
+
+// Resolves order line items (catalog products, catalog accessories, or quick/custom
+// items) into priced, DB-authoritative itemData — used by both create and edit so
+// prices are never trusted from the client in either flow.
+async function resolveOrderItems(items) {
+  const productIds = items.filter(i => i.productId).map(i => i.productId);
+  const products = await prisma.product.findMany({ where: { id: { in: productIds } } });
+  const productMap = Object.fromEntries(products.map(p => [p.id, p]));
+
+  const accessoryVariantIds = items.filter(i => i.accessoryVariantId).map(i => i.accessoryVariantId);
+  const variants = accessoryVariantIds.length
+    ? await prisma.accessoryVariant.findMany({ where: { id: { in: accessoryVariantIds } }, include: { accessory: true } })
+    : [];
+  const variantMap = Object.fromEntries(variants.map(v => [v.id, v]));
+
+  let subtotal = 0;
+  const itemData = items.map(item => {
+    if (item.productId) {
+      // Normal catalog product
+      const product = productMap[item.productId];
+      if (!product) throw new Error(`Product ${item.productId} not found`);
+      const price = Number(product.price);
+      subtotal += price * item.quantity;
+      return {
+        productId: item.productId,
+        customName: null,
+        quantity: item.quantity,
+        unitPrice: price,
+        notes: item.notes || null,
+      };
+    } else if (item.accessoryVariantId) {
+      // Catalog accessory (Banda, Peluche, Chocolates, Globo Metálico, etc.)
+      const variant = variantMap[item.accessoryVariantId];
+      if (!variant) throw new Error(`Accessory variant ${item.accessoryVariantId} not found`);
+      const price = Number(variant.price);
+      subtotal += price * item.quantity;
+      return {
+        productId: null,
+        accessoryVariantId: item.accessoryVariantId,
+        customName: `${variant.accessory.name}${variant.sizeLabel ? ' - ' + variant.sizeLabel : ''}`,
+        quantity: item.quantity,
+        unitPrice: price,
+        notes: item.notes || null,
+      };
+    } else {
+      // Quick/custom item — no catalog product
+      const price = Number(item.unitPrice) || 0;
+      subtotal += price * item.quantity;
+      return {
+        productId: null,
+        customName: item.name || 'Producto rápido',
+        quantity: item.quantity,
+        unitPrice: price,
+        notes: item.notes || null,
+      };
+    }
+  });
+  return { itemData, subtotal };
+}
+
 // ── GET /api/orders ──
 // List orders with filtering and search
 router.get('/', requireAuth, async (req, res) => {
@@ -147,60 +207,8 @@ router.post('/', upload.single('paymentProof'), [
       }
     }
 
-    // Resolve prices from DB (single price per product)
-   // UPDATED — supports catalog products, catalog accessories, AND quick/custom items
-    const productIds = items.filter(i => i.productId).map(i => i.productId);
-    const products = await prisma.product.findMany({ where: { id: { in: productIds } } });
-    const productMap = Object.fromEntries(products.map(p => [p.id, p]));
-
-    const accessoryVariantIds = items.filter(i => i.accessoryVariantId).map(i => i.accessoryVariantId);
-    const variants = accessoryVariantIds.length
-      ? await prisma.accessoryVariant.findMany({ where: { id: { in: accessoryVariantIds } }, include: { accessory: true } })
-      : [];
-    const variantMap = Object.fromEntries(variants.map(v => [v.id, v]));
-
-    let subtotal = 0;
-    const itemData = items.map(item => {
-      if (item.productId) {
-        // Normal catalog product
-        const product = productMap[item.productId];
-        if (!product) throw new Error(`Product ${item.productId} not found`);
-        const price = Number(product.price);
-        subtotal += price * item.quantity;
-        return {
-          productId: item.productId,
-          customName: null,
-          quantity: item.quantity,
-          unitPrice: price,
-          notes: item.notes || null,
-        };
-      } else if (item.accessoryVariantId) {
-        // Catalog accessory (Banda, Peluche, Chocolates, Globo Metálico, etc.)
-        const variant = variantMap[item.accessoryVariantId];
-        if (!variant) throw new Error(`Accessory variant ${item.accessoryVariantId} not found`);
-        const price = Number(variant.price);
-        subtotal += price * item.quantity;
-        return {
-          productId: null,
-          accessoryVariantId: item.accessoryVariantId,
-          customName: `${variant.accessory.name}${variant.sizeLabel ? ' - ' + variant.sizeLabel : ''}`,
-          quantity: item.quantity,
-          unitPrice: price,
-          notes: item.notes || null,
-        };
-      } else {
-        // Quick/custom item — no catalog product
-        const price = Number(item.unitPrice) || 0;
-        subtotal += price * item.quantity;
-        return {
-          productId: null,
-          customName: item.name || 'Producto rápido',
-          quantity: item.quantity,
-          unitPrice: price,
-          notes: item.notes || null,
-        };
-      }
-    });
+    // Resolve prices from DB — supports catalog products, catalog accessories, AND quick/custom items
+    const { itemData, subtotal } = await resolveOrderItems(items);
 
     // For web orders, use the total sent from frontend (includes IVA)
     // For POS orders, calculate from subtotal + fee - advance
@@ -329,6 +337,116 @@ router.post('/', upload.single('paymentProof'), [
   }
 });
 
+// ── PUT /api/orders/:id ──
+// Full edit of an existing order (client, items, delivery, message, payment, invoice).
+// Does not touch paymentStatus, paymentReviewed, attendedById, or orderNumber — those
+// are outside the scope of a details correction. Sends no customer notifications.
+router.put('/:id', requireAuth, requireOffice, upload.single('paymentProof'), async (req, res) => {
+  let bodyData = req.body;
+  if (req.body.data && typeof req.body.data === 'string') {
+    try { bodyData = JSON.parse(req.body.data); } catch(e) {}
+  }
+
+  const {
+    clientId, deliveryDate, deliveryType, deliveryWindow,
+    deliveryFee = 0,
+    recipientName, recipientPhone, recipientAddress, recipientColonia,
+    recipientZip, recipientNotes, businessName, businessDept,
+    messageFrom, messageText, messageAnon,
+    occasion = 'OTRA',
+    items, paymentMethod,
+    advance = 0,
+    needsInvoice = false, invoiceRfc, invoiceName, invoiceCfdi, invoiceEmail,
+    notifyVia,
+  } = bodyData;
+
+  const validOccasions = ['CUMPLEANOS', 'ANIVERSARIO', 'FUNERAL', 'AMOR', 'GRADUACION', 'RECUPERACION', 'OTRA'];
+  const normalizedOccasion = validOccasions.includes(occasion) ? occasion : 'OTRA';
+
+  if (!clientId) return res.status(400).json({ error: 'Client is required' });
+  if (!deliveryDate) return res.status(400).json({ error: 'Delivery date is required' });
+  if (!deliveryType) return res.status(400).json({ error: 'Delivery type is required' });
+  if (!items || !items.length) return res.status(400).json({ error: 'At least one item required' });
+
+  try {
+    const existing = await prisma.order.findUnique({ where: { id: req.params.id }, include: { delivery: true } });
+    if (!existing) return res.status(404).json({ error: 'Order not found' });
+    if (existing.orderStatus === 'CANCELADA') return res.status(400).json({ error: 'No se puede editar un pedido cancelado' });
+
+    const { itemData, subtotal } = await resolveOrderItems(items);
+
+    const sentTotal = bodyData.total ? Number(bodyData.total) : null;
+    const total = (sentTotal && sentTotal > subtotal)
+      ? sentTotal
+      : subtotal + Number(deliveryFee) - Number(advance);
+
+    let paymentProofUrl = existing.paymentProofUrl;
+    if (req.file) {
+      paymentProofUrl = isCloudinaryConfigured()
+        ? await uploadToCloudinary(req.file.buffer, 'karel/payment-proofs')
+        : `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.orderItem.deleteMany({ where: { orderId: req.params.id } });
+
+      const order = await tx.order.update({
+        where: { id: req.params.id },
+        data: {
+          clientId,
+          occasion: normalizedOccasion,
+          deliveryType,
+          deliveryDate: new Date(deliveryDate),
+          deliveryWindow: deliveryWindow || '',
+          deliveryFee,
+          recipientName, recipientPhone, recipientAddress, recipientColonia,
+          recipientZip: recipientZip || null,
+          recipientNotes,
+          businessName, businessDept,
+          messageFrom, messageText, messageAnon,
+          paymentMethod,
+          subtotal,
+          advance,
+          total,
+          needsInvoice,
+          invoiceRfc, invoiceName, invoiceCfdi, invoiceEmail,
+          notifyVia,
+          paymentProofUrl,
+          items: { create: itemData },
+        },
+        include: { items: true },
+      });
+
+      // Keep the Delivery record in sync with deliveryType — never touch a delivery
+      // that's already been confirmed (has a deliveredAt) just because details changed.
+      if (deliveryType === 'RECOGER_TIENDA') {
+        if (existing.delivery && !existing.delivery.deliveredAt) {
+          await tx.delivery.delete({ where: { orderId: req.params.id } });
+        }
+      } else if (!existing.delivery) {
+        await tx.delivery.create({ data: { orderId: req.params.id } });
+      }
+
+      // Auto-create the invoice task only the first time needsInvoice turns on
+      if (needsInvoice && !existing.needsInvoice) {
+        await tx.task.create({
+          data: {
+            description: `Hacer factura #${existing.orderNumber} — ${invoiceName || ''}`,
+            orderId: req.params.id,
+          },
+        });
+      }
+
+      return order;
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error('PUT order error:', err);
+    res.status(500).json({ error: err.message || 'Failed to update order' });
+  }
+});
+
 // ── PATCH /api/orders/:id/status ──
 // Update order status (florista moves EN_PROCESO → POR_ENTREGAR)
 router.patch('/:id/status', requireAuth, async (req, res) => {
@@ -421,10 +539,12 @@ router.patch('/:id/proof', requireAuth, upload.single('paymentProof'), async (re
 });
 
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
+  const reason = req.body?.reason?.trim();
+  if (!reason) return res.status(400).json({ error: 'El motivo de cancelación es requerido' });
   try {
     await prisma.order.update({
       where: { id: req.params.id },
-      data: { orderStatus: 'CANCELADA' },
+      data: { orderStatus: 'CANCELADA', cancelReason: reason, canceledAt: new Date() },
     });
     res.json({ message: 'Order cancelled' });
   } catch (err) {

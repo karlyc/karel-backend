@@ -209,6 +209,8 @@ model Order {
   paymentReviewedAt DateTime?
   notifyVia        String?
   orderStatus      OrderStatus   @default(EN_PROCESO)
+  cancelReason     String?
+  canceledAt       DateTime?
   attendedById     String?
   attendedBy       Staff?        @relation("AttendedBy", fields: [attendedById], references: [id])
   createdAt        DateTime      @default(now())

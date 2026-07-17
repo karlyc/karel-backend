@@ -12,6 +12,7 @@ const SETTINGS_FILE = path.join(__dirname, '../../settings.json');
 const DEFAULTS = {
   blockSundays: true,
   cutoffHour: 13,
+  ivaRate: 8,
   storeName: '', whatsapp: '', phone: '', address: '',
   rfc: '', website: '', email: '', logoUrl: '',
 };
@@ -38,12 +39,16 @@ router.get('/', (req, res) => {
 router.put('/', requireAuth, requireOffice, upload.single('logo'), async (req, res) => {
   try {
     const current = loadSettings();
-    const { blockSundays, cutoffHour, storeName, whatsapp, phone, address, rfc, website, email } = req.body;
+    const { blockSundays, cutoffHour, ivaRate, storeName, whatsapp, phone, address, rfc, website, email } = req.body;
 
     if (blockSundays !== undefined) current.blockSundays = blockSundays === true || blockSundays === 'true';
     if (cutoffHour !== undefined) {
       const n = Number(cutoffHour);
       if (!isNaN(n) && n >= 0 && n <= 23) current.cutoffHour = n;
+    }
+    if (ivaRate !== undefined) {
+      const n = Number(ivaRate);
+      if (!isNaN(n) && n >= 0 && n <= 100) current.ivaRate = n;
     }
     if (storeName !== undefined) current.storeName = storeName;
     if (whatsapp  !== undefined) current.whatsapp  = whatsapp;

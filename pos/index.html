@@ -516,7 +516,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
           <div style="background:var(--ink3);border-radius:var(--r8);padding:9px;margin-bottom:11px;font-size:12px;">
             <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Subtotal</span><span id="o-subtotal" style="color:var(--text);">$0.00</span></div>
             <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Envío</span><span id="o-fee-d" style="color:var(--text);">$0.00</span></div>
-            <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>IVA (8%)</span><span id="o-iva-d" style="color:var(--text);">$0.00</span></div>
+            <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span id="o-iva-label">IVA (8%)</span><span id="o-iva-d" style="color:var(--text);">$0.00</span></div>
             <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Anticipo</span><span id="o-adv-d" style="color:var(--amber);">-$0.00</span></div>
             <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding:7px 0 0;border-top:1px solid var(--rule);margin-top:4px;"><span>Total</span><span id="o-total" style="color:var(--sage);">$0.00</span></div>
           </div>
@@ -801,6 +801,11 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
       <div style="font-size:12px;color:var(--mid);margin-top:4px;" id="done-client">—</div>
       <div id="done-status" style="margin-top:8px;"></div>
     </div>
+    <!-- Cancellation banner (shown when the order is CANCELADA) -->
+    <div id="done-cancel-info" style="display:none;background:var(--red-dim);border:1px solid rgba(192,80,80,.2);border-radius:var(--r10);padding:12px;margin-bottom:14px;">
+      <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:6px;">✕ Pedido Cancelado</div>
+      <div style="font-size:12px;color:var(--text);" id="done-cancel-reason">—</div>
+    </div>
     <!-- Payment proof (shown when available) -->
     <div id="done-proof" style="display:none;background:var(--sage-dim);border:1px solid rgba(107,148,105,.2);border-radius:var(--r10);padding:12px;margin-bottom:14px;"></div>
     <!-- Comprobante upload (shown for non-cash payments after order creation) -->
@@ -824,6 +829,10 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
         </div>
       </div>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;" id="done-edit-cancel-row">
+      <button class="btn bg" onclick="editOrderFromDetails()">✏️ Editar Pedido</button>
+      <button class="btn" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(192,80,80,.2);" onclick="openCancelOrderModal()">✕ Cancelar Pedido</button>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
       <button class="btn bg" style="flex-direction:column;height:64px;gap:3px;" onclick="printOrder()">🖨️<span style="font-size:10px;">Imprimir</span></button>
       <button class="btn bg" style="flex-direction:column;height:64px;gap:3px;" onclick="emailOrder()">📧<span style="font-size:10px;">Enviar Email</span></button>
@@ -831,6 +840,18 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     </div>
   </div>
   <div class="mf"><button class="btn bp" onclick="cm('m-order-done');showView('pedidos')">Ver pedidos →</button></div>
+</div>
+</div>
+
+<!-- ════ MODAL: CANCELAR PEDIDO ════ -->
+<div class="ov" id="m-cancel-order">
+<div class="modal msm">
+  <div class="mh"><span class="mt">Cancelar Pedido</span><button class="mx" onclick="cm('m-cancel-order')">✕</button></div>
+  <div style="padding:18px;">
+    <p style="font-size:12px;color:var(--mid);margin-bottom:12px;">Esta acción cancelará el pedido <strong id="cancel-order-num">—</strong>. El pedido no se elimina, solo se marca como cancelado.</p>
+    <div class="fg"><label class="fl">Motivo de cancelación *</label><textarea class="fta" id="cancel-reason" placeholder="Ej: Cliente canceló, error en el pedido…"></textarea></div>
+  </div>
+  <div class="mf"><button class="btn bg" onclick="cm('m-cancel-order')">Cerrar</button><button class="btn br" onclick="confirmCancelOrder()">Cancelar Pedido</button></div>
 </div>
 </div>
 
@@ -864,6 +885,7 @@ const API_BASE = (location.hostname === 'localhost' || location.hostname === '12
 // ════════════════════════════════════════════
 let token = null, currentStaff = null, loginPin = '';
 let cachedProducts = [], cachedCategories = [], cachedInventory = [];
+let IVA_PERCENT = 8; // default fallback — loaded from /api/settings on login, editable in Administración > Datos
 let orderState = { clientId:null, items:[], occasion:'CUMPLEANOS', deliveryType:'DOMICILIO_CASA' };
 let lastCreatedOrder = null;
 let recipeItems = []; // [{inventoryItemId, name, quantity, unit}]
@@ -958,6 +980,11 @@ function enterApp() {
   document.querySelectorAll('.admin-only-field').forEach(el => {
     el.style.display = currentStaff.role === 'ADMIN' ? '' : 'none';
   });
+
+  // Load the configured IVA rate (used in Nuevo Pedido totals, product cost/margin, receipts)
+  api('GET', '/api/settings').then(s => {
+    if (s?.ivaRate !== undefined && !isNaN(Number(s.ivaRate))) IVA_PERCENT = Number(s.ivaRate);
+  }).catch(()=>{});
 
   // Route to first allowed view
   const firstView = allowed[0] || 'dashboard';
@@ -1156,6 +1183,7 @@ async function openOrderActions(id) {
       (order.client?.phone ? ` · ${order.client.phone}` : '');
     document.getElementById('done-status').innerHTML =
       `${sb(order.orderStatus)} ${pb(order.paymentStatus)}`;
+    updateOrderDetailExtras(order);
 
     // Delivery confirmation section
     const delivery = order.delivery;
@@ -1210,6 +1238,48 @@ async function openOrderActions(id) {
     }
 
     om('m-order-done');
+  } catch(e) { toastErr(e.message); }
+}
+
+// Shows the cancelled banner (and hides Editar/Cancelar) or vice versa, on the
+// order-detail modal — shared by both the "just created" and "view details" paths.
+function updateOrderDetailExtras(order) {
+  const cancelInfo = document.getElementById('done-cancel-info');
+  const editCancelRow = document.getElementById('done-edit-cancel-row');
+  if (order.orderStatus === 'CANCELADA') {
+    cancelInfo.style.display = 'block';
+    document.getElementById('done-cancel-reason').textContent = order.cancelReason || 'Sin motivo especificado';
+    editCancelRow.style.display = 'none';
+  } else {
+    cancelInfo.style.display = 'none';
+    editCancelRow.style.display = 'grid';
+  }
+}
+
+function editOrderFromDetails() {
+  if (!lastCreatedOrder) return;
+  cm('m-order-done');
+  openOrderModal(lastCreatedOrder);
+}
+
+let cancelingOrderId = null;
+function openCancelOrderModal() {
+  if (!lastCreatedOrder) return;
+  cancelingOrderId = lastCreatedOrder.id;
+  document.getElementById('cancel-order-num').textContent = lastCreatedOrder.orderNumber;
+  document.getElementById('cancel-reason').value = '';
+  om('m-cancel-order');
+}
+
+async function confirmCancelOrder() {
+  const reason = document.getElementById('cancel-reason').value.trim();
+  if (!reason) { toastErr('El motivo de cancelación es requerido'); return; }
+  try {
+    await api('DELETE', `/api/orders/${cancelingOrderId}`, { reason });
+    toast('Pedido cancelado ✓');
+    cm('m-cancel-order');
+    cm('m-order-done');
+    if (document.querySelector('.ni.on')?.dataset.v === 'pedidos') vPeds();
   } catch(e) { toastErr(e.message); }
 }
 
@@ -1770,10 +1840,9 @@ function updateCostSummary() {
   if (!el) return;
   const baseCost = recipeItems.reduce((s, r) => s + (r.costPerUnit * r.quantity), 0);
   if (baseCost === 0) { el.style.display = 'none'; return; }
-  const TAX_RATE = 0.08;
-  const tax = baseCost * TAX_RATE;
-  const totalCost = baseCost + tax;
   const price = parseFloat(document.getElementById('p-price').value) || 0;
+  const tax = price * (IVA_PERCENT/100);
+  const totalCost = baseCost + tax;
   const margin = price > 0 ? ((price - totalCost) / price * 100).toFixed(1) : null;
   const profit = price - totalCost;
   const marginColor = margin === null ? 'var(--dim)' : margin >= 50 ? 'var(--sage)' : margin >= 25 ? 'var(--amber)' : 'var(--red)';
@@ -1784,7 +1853,7 @@ function updateCostSummary() {
         <span>Costo ingredientes</span><span>$${fmt(baseCost)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim);">
-        <span>IVA (8%)</span><span>$${fmt(tax)}</span>
+        <span>IVA (${IVA_PERCENT}% del precio)</span><span>$${fmt(tax)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:var(--rose);border-top:1px solid var(--rule);padding-top:6px;">
         <span>Costo total</span><span>$${fmt(totalCost)}</span>
@@ -2397,6 +2466,7 @@ async function aRender(t) {
           <div class="fg"><label class="fl">Página web</label><input class="fi" id="d-website" value="${d.website||''}" placeholder="Opcional"/></div>
           <div class="fg"><label class="fl">Correo electrónico</label><input class="fi" id="d-email" type="email" value="${d.email||''}" placeholder="Opcional"/></div>
         </div>
+        <div class="fg" style="max-width:160px;"><label class="fl">IVA (%)</label><input class="fi" id="d-iva" type="number" min="0" max="100" step="0.1" value="${d.ivaRate ?? 8}" placeholder="8"/></div>
         <button class="btn bp" onclick="saveDatosSettings()">Guardar cambios</button>
         <div id="datos-msg" style="margin-top:10px;font-size:12px;"></div>
       </div>`;
@@ -2476,7 +2546,6 @@ async function aRender(t) {
           : (i.cost ? Number(i.cost) : 0);
       });
 
-      const TAX = 0.08;
       const totalGastos = exp.items.reduce((s,e) => s + Number(e.amount), 0);
 
       // Load saved avg orders from localStorage
@@ -2486,9 +2555,9 @@ async function aRender(t) {
         const fixedPerOrder = avgOrders > 0 ? totalGastos / avgOrders : 0;
         return prods.map(p => {
           const baseCost = (p.recipe||[]).reduce((s,r) => s + (invMap[r.inventoryItemId]||0) * Number(r.quantity), 0);
-          const ingredientCost = baseCost * (1 + TAX);
-          const totalCost = ingredientCost + fixedPerOrder;
           const price = Number(p.price||p.priceStd||0);
+          const ingredientCost = baseCost + (price * (IVA_PERCENT/100));
+          const totalCost = ingredientCost + fixedPerOrder;
           const margin = price > 0 ? ((price - totalCost) / price * 100) : null;
           const profit = price - totalCost;
           return { p, baseCost, ingredientCost, fixedPerOrder, totalCost, price, margin, profit };
@@ -2509,7 +2578,7 @@ async function aRender(t) {
 
         document.getElementById('prod-table-wrap').innerHTML = `
           <table class="tbl"><thead><tr>
-            <th>Producto</th><th>Precio</th><th>Ingredientes + IVA</th><th>Costo fijo</th><th>Costo total</th><th>Ganancia</th><th>Margen real</th>
+            <th>Producto</th><th>Precio</th><th>Ingredientes + IVA (${IVA_PERCENT}% del precio)</th><th>Costo fijo</th><th>Costo total</th><th>Ganancia</th><th>Margen real</th>
           </tr></thead><tbody>
           ${rows.map(({p, baseCost, ingredientCost, fixedPerOrder, totalCost, price, margin, profit}) => {
             const hasRecipe = p.recipe?.length > 0;
@@ -2786,10 +2855,12 @@ async function saveDatosSettings() {
   fd.append('rfc',       document.getElementById('d-rfc').value.trim());
   fd.append('website',   document.getElementById('d-website').value.trim());
   fd.append('email',     document.getElementById('d-email').value.trim());
+  fd.append('ivaRate',   document.getElementById('d-iva').value.trim() || '8');
   const logoFile = document.getElementById('datos-logo-input').files[0];
   if (logoFile) fd.append('logo', logoFile);
   try {
-    await api('PUT', '/api/settings', fd, true);
+    const updated = await api('PUT', '/api/settings', fd, true);
+    if (updated?.ivaRate !== undefined) IVA_PERCENT = Number(updated.ivaRate);
     if (msg) { msg.textContent = '✓ Guardado — el Recibo usará esta información'; msg.style.color = 'var(--sage)'; }
     toast('Datos guardados ✓');
   } catch(e) {
@@ -2892,15 +2963,83 @@ function pickDay(iso) {
 // ════════════════════════════════════════════
 // ORDER MODAL
 // ════════════════════════════════════════════
-async function openOrderModal() {
+let editingOrderId = null;
+async function openOrderModal(order=null) {
   orderState = { clientId:null, items:[], occasion:'CUMPLEANOS', deliveryType:'DOMICILIO_CASA' };
+  editingOrderId = order?.id || null;
+  document.getElementById('m-order-title').textContent = order ? `Editar Pedido ${order.orderNumber}` : 'Nuevo Pedido';
+  document.getElementById('o-submit').textContent = order ? 'Guardar Cambios' : 'Crear Pedido';
   resetOrderForm();
-  // Set today as default
-  const today = new Date();
-  const iso = today.toISOString().split('T')[0];
-  pickDay(iso);
-  recalcTotal();
+  if (order) {
+    populateOrderForm(order);
+  } else {
+    // Set today as default
+    const today = new Date();
+    const iso = today.toISOString().split('T')[0];
+    pickDay(iso);
+    recalcTotal();
+  }
   om('m-order');
+}
+
+// Pre-fills the Nuevo Pedido form with an existing order's data for editing.
+function populateOrderForm(order) {
+  if (order.client) {
+    selectClient(order.client.id, `${order.client.firstName} ${order.client.lastNameP}`, order.client.phone, order.client.loyaltyTier, order.client.orderCount);
+  }
+
+  pickDay(order.deliveryDate.split('T')[0]);
+  const [winType, winTime] = (order.deliveryWindow || 'antes_12:00').split('_');
+  document.getElementById('o-win-type').value = winType || 'antes';
+  document.getElementById('o-win-time').value = winTime || '12:00';
+
+  orderState.items = (order.items || []).map(item => {
+    if (item.productId) {
+      return { itemId:`edit-${item.id}`, kind:'product', productId:item.productId, accessoryVariantId:null, name:item.product?.name||item.customName||'Producto', unitPrice:Number(item.unitPrice), quantity:item.quantity, notes:item.notes||'' };
+    }
+    if (item.accessoryVariantId) {
+      return { itemId:`edit-${item.id}`, kind:'accessory', productId:null, accessoryVariantId:item.accessoryVariantId, name:item.customName||'Accesorio', unitPrice:Number(item.unitPrice), quantity:item.quantity, notes:item.notes||'' };
+    }
+    return { itemId:`edit-${item.id}`, kind:'quick', productId:null, accessoryVariantId:null, name:item.customName||'Producto rápido', unitPrice:Number(item.unitPrice), quantity:item.quantity, notes:item.notes||'' };
+  });
+  renderOrderItems();
+  renderAccessoryItems();
+
+  const occOrder = ['CUMPLEANOS','ANIVERSARIO','FUNERAL','AMOR','OTRA'];
+  resetPillGroup('o-occ', Math.max(0, occOrder.indexOf(order.occasion)), el=>setOcc(el, order.occasion||'CUMPLEANOS'));
+
+  const delOrder = ['DOMICILIO_CASA','DOMICILIO_NEGOCIO','RECOGER_TIENDA'];
+  resetPillGroup('o-del-t', Math.max(0, delOrder.indexOf(order.deliveryType)), el=>setDelT(el, order.deliveryType||'DOMICILIO_CASA'));
+  document.getElementById('o-r-name').value = order.recipientName||'';
+  document.getElementById('o-r-phone').value = order.recipientPhone||'';
+  document.getElementById('o-r-addr').value = order.recipientAddress||'';
+  document.getElementById('o-r-col').value = order.recipientColonia||'';
+  document.getElementById('o-r-zip').value = order.recipientZip||'';
+  document.getElementById('o-r-notes').value = order.recipientNotes||'';
+  document.getElementById('o-biz-name').value = order.businessName||'';
+  document.getElementById('o-biz-dept').value = order.businessDept||'';
+  document.getElementById('o-fee').value = order.deliveryFee||0;
+
+  document.getElementById('o-msg-text').value = order.messageText||'';
+  document.getElementById('o-anon-tog').classList.toggle('on', !!order.messageAnon);
+  toggleAnonFrom();
+  if (!order.messageAnon) document.getElementById('o-msg-from').value = order.messageFrom||'';
+
+  const payOrder = ['EFECTIVO','TRANSFERENCIA','TERMINAL','CASHAPP','APPLE_PAY','LINK_PAGO','CHEQUE','ZELLE'];
+  resetPillGroup('o-pt', Math.max(0, payOrder.indexOf(order.paymentMethod)), el=>or(el,'o-pt'));
+  document.getElementById('o-advance').value = order.advance||0;
+
+  if (order.needsInvoice) {
+    document.getElementById('o-fac-tog').classList.add('on');
+    document.getElementById('o-fac-f').style.display = 'block';
+    const rfcName = document.getElementById('o-rfc-name'); if (rfcName) rfcName.value = order.invoiceName||'';
+    const cfdi = document.getElementById('o-cfdi'); if (cfdi && order.invoiceCfdi) cfdi.value = order.invoiceCfdi;
+  }
+
+  const notifOrder = ['whatsapp','email','none'];
+  resetPillGroup('o-notif', Math.max(0, notifOrder.indexOf(order.notifyVia)), el=>or(el,'o-notif'));
+
+  recalcTotal();
 }
 
 // Fully resets the Nuevo Pedido modal so nothing from a previous order leaks into the next one.
@@ -3172,17 +3311,17 @@ function updOI(id, field, val) {
   recalcTotal();
 }
 
-const TAX_RATE = 0.08; // IVA — matches site/index.html's IVA_RATE
 const PAY_METHOD_LABELS = {EFECTIVO:'Efectivo', TRANSFERENCIA:'Transferencia', TERMINAL:'Terminal', CASHAPP:'CashApp', APPLE_PAY:'Apple Pay', LINK_PAGO:'Link de pago', CHEQUE:'Cheque', ZELLE:'Zelle', STRIPE:'Stripe / Web'};
 const PROOF_REQUIRED_METHODS = ['TRANSFERENCIA','TERMINAL','CASHAPP','APPLE_PAY','LINK_PAGO','ZELLE','CHEQUE'];
 function recalcTotal() {
   const sub = orderState.items.reduce((s,i)=>s+(Number(i.unitPrice)||0)*(Number(i.quantity)||1),0);
   const fee = parseFloat(document.getElementById('o-fee')?.value)||0;
   const adv = parseFloat(document.getElementById('o-advance')?.value)||0;
-  const tax = (sub+fee)*TAX_RATE;
+  const tax = (sub+fee)*(IVA_PERCENT/100);
   const total = sub+fee+tax-adv;
   el('o-subtotal').textContent='$'+fmt(sub);
   el('o-fee-d').textContent='$'+fmt(fee);
+  const ivaLabel = el('o-iva-label'); if (ivaLabel) ivaLabel.textContent = `IVA (${IVA_PERCENT}%)`;
   el('o-iva-d').textContent='$'+fmt(tax);
   el('o-adv-d').textContent='-$'+fmt(adv);
   el('o-total').textContent='$'+fmt(total);
@@ -3202,7 +3341,7 @@ function submitOrder() {
   const sub = orderState.items.reduce((s,i)=>s+(Number(i.unitPrice)||0)*(Number(i.quantity)||1),0);
   const fee = parseFloat(document.getElementById('o-fee').value)||0;
   const adv = parseFloat(document.getElementById('o-advance').value)||0;
-  const tax = (sub+fee)*TAX_RATE;
+  const tax = (sub+fee)*(IVA_PERCENT/100);
   const anon = document.getElementById('o-anon-tog').classList.contains('on');
   const body = {
     clientId:orderState.clientId,
@@ -3233,11 +3372,28 @@ function submitOrder() {
     needsInvoice:document.getElementById('o-fac-tog').classList.contains('on'),
     invoiceName:document.getElementById('o-rfc-name')?.value,
     invoiceCfdi:document.getElementById('o-cfdi')?.value,
-    attendedById:currentStaff?.id,
     notifyVia:document.querySelector('#o-notif .sel')?.textContent?.includes('WhatsApp')?'whatsapp':document.querySelector('#o-notif .sel')?.textContent?.includes('Email')?'email':'none',
     subtotal:sub, total:sub+fee+tax-adv,
   };
-  doCreateOrder(body);
+  if (editingOrderId) {
+    updateOrder(editingOrderId, body);
+  } else {
+    body.attendedById = currentStaff?.id;
+    doCreateOrder(body);
+  }
+}
+
+async function updateOrder(id, body) {
+  const btn=document.getElementById('o-submit'); btn.disabled=true; btn.textContent='Guardando…';
+  try {
+    await api('PUT', `/api/orders/${id}`, body);
+    cm('m-order');
+    toast('Pedido actualizado ✓');
+    editingOrderId = null;
+    await openOrderActions(id);
+    if (document.querySelector('.ni.on')?.dataset.v === 'pedidos') vPeds();
+  } catch(e) { toastErr(e.message); }
+  finally { btn.disabled=false; }
 }
 
 async function doCreateOrder(body) {
@@ -3255,6 +3411,7 @@ async function doCreateOrder(body) {
       [fullOrder.client?.firstName, fullOrder.client?.lastNameP].filter(Boolean).join(' ') +
       (fullOrder.client?.phone ? ` · ${fullOrder.client.phoneCode||'+52'} ${fullOrder.client.phone}` : '');
     document.getElementById('done-status').innerHTML = `${sb(fullOrder.orderStatus)} ${pb(fullOrder.paymentStatus)}`;
+    updateOrderDetailExtras(fullOrder);
     document.getElementById('done-delivery').style.display = 'none';
     document.getElementById('done-proof').style.display = 'none';
 
@@ -3377,7 +3534,7 @@ async function printOrder() {
       `<table><thead><tr><th></th><th>Producto</th><th style="text-align:right">Cant.</th><th style="text-align:right">Precio</th></tr></thead><tbody>${productRows}</tbody></table>`,
       `<div class="subrow"><span>Subtotal</span><span>$${fmt(o.subtotal)}</span></div>`,
       Number(o.deliveryFee)>0 ? `<div class="subrow"><span>Envío</span><span>$${fmt(o.deliveryFee)}</span></div>` : '',
-      `<div class="subrow"><span>IVA (8%)</span><span>$${fmt((Number(o.subtotal)+Number(o.deliveryFee))*TAX_RATE)}</span></div>`,
+      `<div class="subrow"><span>IVA (${IVA_PERCENT}%)</span><span>$${fmt((Number(o.subtotal)+Number(o.deliveryFee))*(IVA_PERCENT/100))}</span></div>`,
       Number(o.advance)>0 ? `<div class="subrow"><span>Anticipo</span><span style="color:#C96E60">− $${fmt(o.advance)}</span></div>` : '',
       `<div class="totrow"><span class="totlbl">TOTAL</span><span class="totval">$${fmt(o.total)} MXN</span></div>`,
     '</div>',
