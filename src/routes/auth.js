@@ -73,30 +73,4 @@ router.put('/pin', requireAuth, [
   }
 });
 
-// POST /api/auth/verify-pin — confirm a specific staff member's own PIN
-// (used to confirm "Atendido por" before creating a POS order)
-router.post('/verify-pin', requireAuth, [
-  body('staffId').notEmpty(),
-  body('pin').isLength({ min: 6, max: 6 }),
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ valid: false, errors: errors.array() });
-
-  const { staffId, pin } = req.body;
-  try {
-    const staff = await prisma.staff.findUnique({ where: { id: staffId } });
-    if (!staff || !staff.active) return res.status(404).json({ valid: false, error: 'Staff no encontrado' });
-
-    // NOTE: intentionally not 401 — the frontend's api() helper treats any 401
-    // as "session expired" and force-logs-out the current user, which would be
-    // wrong here (this failure is about the *target* staff's PIN, not the session).
-    const valid = await bcrypt.compare(pin, staff.pin);
-    if (!valid) return res.status(400).json({ valid: false, error: 'PIN incorrecto' });
-
-    res.json({ valid: true });
-  } catch(err) {
-    res.status(500).json({ valid: false, error: 'Verification failed' });
-  }
-});
-
 module.exports = router;

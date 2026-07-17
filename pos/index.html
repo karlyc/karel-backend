@@ -523,10 +523,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
           <div class="rcs" id="o-pt" style="gap:5px;margin-bottom:10px;">
             <div class="rc sel" onclick="or(this,'o-pt')">💵 Efectivo</div><div class="rc" onclick="or(this,'o-pt')">🏦 Transf.</div><div class="rc" onclick="or(this,'o-pt')">💳 Terminal</div><div class="rc" onclick="or(this,'o-pt')">📱 CashApp</div><div class="rc" onclick="or(this,'o-pt')">🍎 Apple Pay</div><div class="rc" onclick="or(this,'o-pt')">🔗 Link</div><div class="rc" onclick="or(this,'o-pt')">📄 Cheque</div><div class="rc" onclick="or(this,'o-pt')">💱 Zelle</div>
           </div>
-          <div class="fr" style="margin-top:4px;">
-            <div class="fg"><label class="fl">Anticipo</label><input class="fi" id="o-advance" type="number" value="0" oninput="recalcTotal()"/></div>
-            <div class="fg"><label class="fl">Atendido por</label><select class="fs" id="o-staff"><option value="">—</option></select></div>
-          </div>
+          <div class="fg" style="margin-top:4px;"><label class="fl">Anticipo</label><input class="fi" id="o-advance" type="number" value="0" oninput="recalcTotal()"/></div>
           <div class="tw" style="margin-top:4px;">
             <div class="tog" id="o-fac-tog" onclick="this.classList.toggle('on');document.getElementById('o-fac-f').style.display=this.classList.contains('on')?'block':'none'"><div class="tk"></div></div>
             <span class="tl">Requiere factura</span>
@@ -834,31 +831,6 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     </div>
   </div>
   <div class="mf"><button class="btn bp" onclick="cm('m-order-done');showView('pedidos')">Ver pedidos →</button></div>
-</div>
-</div>
-
-<!-- ════ MODAL: PIN "ATENDIDO POR" ════ -->
-<div class="ov" id="m-attend-pin">
-<div class="modal msm">
-  <div class="mh"><div class="mt">Confirmar Atendido Por</div><button class="mx" onclick="cm('m-attend-pin')">✕</button></div>
-  <div style="padding:24px 28px 28px;">
-    <div style="text-align:center;font-size:12px;color:var(--mid);margin-bottom:14px;">
-      Ingresa el PIN de <strong id="apk-staff-name" style="color:var(--text);">—</strong> para confirmar
-    </div>
-    <div class="login-dots" id="apk-dots">
-      <div class="login-dot" id="apkd-0"></div><div class="login-dot" id="apkd-1"></div>
-      <div class="login-dot" id="apkd-2"></div><div class="login-dot" id="apkd-3"></div>
-      <div class="login-dot" id="apkd-4"></div><div class="login-dot" id="apkd-5"></div>
-    </div>
-    <div class="ppad">
-      <button class="pk" onclick="apk('1')">1</button><button class="pk" onclick="apk('2')">2</button><button class="pk" onclick="apk('3')">3</button>
-      <button class="pk" onclick="apk('4')">4</button><button class="pk" onclick="apk('5')">5</button><button class="pk" onclick="apk('6')">6</button>
-      <button class="pk" onclick="apk('7')">7</button><button class="pk" onclick="apk('8')">8</button><button class="pk" onclick="apk('9')">9</button>
-      <button class="pk sp" onclick="apk('c')">⌫</button><button class="pk" onclick="apk('0')">0</button>
-      <button class="pk ok" onclick="apk('ok')">OK</button>
-    </div>
-    <div class="login-err" id="apk-err"></div>
-  </div>
 </div>
 </div>
 
@@ -2928,11 +2900,6 @@ async function openOrderModal() {
   const iso = today.toISOString().split('T')[0];
   pickDay(iso);
   recalcTotal();
-  // Load staff
-  try {
-    const staff = await api('GET','/api/staff');
-    document.getElementById('o-staff').innerHTML = '<option value="">—</option>'+staff.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-  } catch(e) {}
   om('m-order');
 }
 
@@ -2966,7 +2933,6 @@ function resetOrderForm() {
 
   // Forma de pago
   document.getElementById('o-advance').value='0';
-  document.getElementById('o-staff').value='';
   document.getElementById('o-fac-tog').classList.remove('on');
   document.getElementById('o-fac-f').style.display='none';
   const rfcName = document.getElementById('o-rfc-name'); if (rfcName) rfcName.value='';
@@ -3228,8 +3194,6 @@ function submitOrder() {
   if (!orderState.items.length) { toastErr('Agrega al menos un producto'); return; }
   const date = document.getElementById('o-date').value;
   if (!date) { toastErr('Selecciona la fecha de entrega'); return; }
-  const attendedById = document.getElementById('o-staff')?.value;
-  if (!attendedById) { toastErr('Selecciona quién atendió el pedido'); return; }
   const winType = document.getElementById('o-win-type').value;
   const winTime = document.getElementById('o-win-time').value;
   const payMethodEl = document.querySelector('#o-pt .sel');
@@ -3269,11 +3233,11 @@ function submitOrder() {
     needsInvoice:document.getElementById('o-fac-tog').classList.contains('on'),
     invoiceName:document.getElementById('o-rfc-name')?.value,
     invoiceCfdi:document.getElementById('o-cfdi')?.value,
-    attendedById,
+    attendedById:currentStaff?.id,
     notifyVia:document.querySelector('#o-notif .sel')?.textContent?.includes('WhatsApp')?'whatsapp':document.querySelector('#o-notif .sel')?.textContent?.includes('Email')?'email':'none',
     subtotal:sub, total:sub+fee+tax-adv,
   };
-  openAttendPinModal(body);
+  doCreateOrder(body);
 }
 
 async function doCreateOrder(body) {
@@ -3312,57 +3276,6 @@ async function doCreateOrder(body) {
     loadBadges();
   } catch(e) { toastErr(e.message); }
   finally { btn.disabled=false; btn.textContent='Crear Pedido'; }
-}
-
-// ════════════════════════════════════════════
-// ATENDIDO POR — PIN confirmation before creating the order
-// ════════════════════════════════════════════
-let attendPin = '', pendingOrderBody = null;
-
-function openAttendPinModal(body) {
-  pendingOrderBody = body;
-  attendPin = '';
-  document.getElementById('apk-err').style.display = 'none';
-  updAttendDots();
-  const staffName = document.querySelector(`#o-staff option[value="${body.attendedById}"]`)?.textContent || '—';
-  document.getElementById('apk-staff-name').textContent = staffName;
-  om('m-attend-pin');
-}
-
-function apk(k) {
-  const err = document.getElementById('apk-err');
-  err.style.display = 'none';
-  if (k === 'c') { attendPin = attendPin.slice(0, -1); }
-  else if (k === 'ok') { if (attendPin.length === 6) verifyAttendPin(); else showAttendErr('El PIN debe ser de 6 dígitos'); return; }
-  else if (attendPin.length < 6) attendPin += k;
-  updAttendDots();
-  if (attendPin.length === 6) setTimeout(verifyAttendPin, 120);
-}
-
-function updAttendDots() {
-  for (let i = 0; i < 6; i++) {
-    document.getElementById(`apkd-${i}`).classList.toggle('filled', i < attendPin.length);
-  }
-}
-
-function showAttendErr(msg) {
-  const e = document.getElementById('apk-err');
-  e.textContent = msg; e.style.display = 'block';
-}
-
-async function verifyAttendPin() {
-  try {
-    const res = await api('POST', '/api/auth/verify-pin', { staffId: pendingOrderBody.attendedById, pin: attendPin });
-    if (res.valid) {
-      cm('m-attend-pin');
-      const body = pendingOrderBody;
-      pendingOrderBody = null;
-      doCreateOrder(body);
-    }
-  } catch(e) {
-    attendPin = ''; updAttendDots();
-    showAttendErr(e.message || 'PIN incorrecto');
-  }
 }
 
 // ════════════════════════════════════════════
