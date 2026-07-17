@@ -15,9 +15,11 @@ router.get('/', requireAuth, async (req, res) => {
       search,
       orderStatus,
       paymentStatus,
+      paymentReviewed,
       date,        // YYYY-MM-DD
       dateFrom,
       dateTo,
+      createdDate, // YYYY-MM-DD — filters by order-creation date, not delivery date
       page = 1,
       limit = 50,
     } = req.query;
@@ -26,6 +28,7 @@ router.get('/', requireAuth, async (req, res) => {
 
     if (orderStatus) where.orderStatus = orderStatus;
     if (paymentStatus) where.paymentStatus = paymentStatus;
+    if (paymentReviewed !== undefined) where.paymentReviewed = paymentReviewed === 'true';
 
     if (date) {
       const d = new Date(date);
@@ -35,6 +38,12 @@ router.get('/', requireAuth, async (req, res) => {
       where.deliveryDate = {};
       if (dateFrom) where.deliveryDate.gte = new Date(dateFrom);
       if (dateTo)   where.deliveryDate.lte = new Date(dateTo);
+    }
+
+    if (createdDate) {
+      const d = new Date(createdDate);
+      const next = new Date(d); next.setDate(next.getDate() + 1);
+      where.createdAt = { gte: d, lt: next };
     }
 
     if (search) {
@@ -370,6 +379,21 @@ router.patch('/:id/payment', requireAuth, requireOffice, async (req, res) => {
     res.json(order);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update payment status' });
+  }
+});
+
+// ── PATCH /api/orders/:id/payment-review ──
+// Admin confirms (or undoes) that they've checked a payment for the day's reconciliation
+router.patch('/:id/payment-review', requireAuth, requireOffice, async (req, res) => {
+  const { reviewed } = req.body;
+  try {
+    const order = await prisma.order.update({
+      where: { id: req.params.id },
+      data: { paymentReviewed: !!reviewed, paymentReviewedAt: reviewed ? new Date() : null },
+    });
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update payment review status' });
   }
 });
 

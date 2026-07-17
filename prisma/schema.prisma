@@ -205,6 +205,8 @@ model Order {
   invoiceEmail     String?
   invoiceFileUrl   String?
   paymentProofUrl  String?
+  paymentReviewed  Boolean       @default(false)
+  paymentReviewedAt DateTime?
   notifyVia        String?
   orderStatus      OrderStatus   @default(EN_PROCESO)
   attendedById     String?

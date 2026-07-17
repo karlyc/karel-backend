@@ -520,17 +520,8 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
             <div style="display:flex;justify-content:space-between;color:var(--mid);padding:2px 0;"><span>Anticipo</span><span id="o-adv-d" style="color:var(--amber);">-$0.00</span></div>
             <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding:7px 0 0;border-top:1px solid var(--rule);margin-top:4px;"><span>Total</span><span id="o-total" style="color:var(--sage);">$0.00</span></div>
           </div>
-          <div class="rcs" id="o-pe" style="margin-bottom:10px;">
-            <div class="rc sel" onclick="setPE(this,'RECIBIDO')">✅ Pago recibido</div>
-            <div class="rc" onclick="setPE(this,'CREDITO')">📋 Crédito</div>
-          </div>
-          <div id="o-pr-f">
-            <div class="rcs" id="o-pt" style="gap:5px;">
-              <div class="rc sel" onclick="or(this,'o-pt')">💵 Efectivo</div><div class="rc" onclick="or(this,'o-pt')">🏦 Transf.</div><div class="rc" onclick="or(this,'o-pt')">💳 Terminal</div><div class="rc" onclick="or(this,'o-pt')">📱 CashApp</div><div class="rc" onclick="or(this,'o-pt')">🍎 Apple Pay</div><div class="rc" onclick="or(this,'o-pt')">🔗 Link</div><div class="rc" onclick="or(this,'o-pt')">📄 Cheque</div><div class="rc" onclick="or(this,'o-pt')">💱 Zelle</div>
-            </div>
-          </div>
-          <div id="o-pc-f" style="display:none;">
-            <div class="fr"><div class="fg"><label class="fl">Fecha de cobro</label><input class="fi" id="o-cred-date" type="date"/></div><div class="fg"><label class="fl">Lugar de cobro</label><input class="fi" id="o-cred-loc" placeholder="Tienda, domicilio…"/></div></div>
+          <div class="rcs" id="o-pt" style="gap:5px;margin-bottom:10px;">
+            <div class="rc sel" onclick="or(this,'o-pt')">💵 Efectivo</div><div class="rc" onclick="or(this,'o-pt')">🏦 Transf.</div><div class="rc" onclick="or(this,'o-pt')">💳 Terminal</div><div class="rc" onclick="or(this,'o-pt')">📱 CashApp</div><div class="rc" onclick="or(this,'o-pt')">🍎 Apple Pay</div><div class="rc" onclick="or(this,'o-pt')">🔗 Link</div><div class="rc" onclick="or(this,'o-pt')">📄 Cheque</div><div class="rc" onclick="or(this,'o-pt')">💱 Zelle</div>
           </div>
           <div class="fr" style="margin-top:4px;">
             <div class="fg"><label class="fl">Anticipo</label><input class="fi" id="o-advance" type="number" value="0" oninput="recalcTotal()"/></div>
@@ -901,7 +892,7 @@ const API_BASE = (location.hostname === 'localhost' || location.hostname === '12
 // ════════════════════════════════════════════
 let token = null, currentStaff = null, loginPin = '';
 let cachedProducts = [], cachedCategories = [], cachedInventory = [];
-let orderState = { clientId:null, items:[], occasion:'CUMPLEANOS', deliveryType:'DOMICILIO_CASA', paymentType:'RECIBIDO' };
+let orderState = { clientId:null, items:[], occasion:'CUMPLEANOS', deliveryType:'DOMICILIO_CASA' };
 let lastCreatedOrder = null;
 let recipeItems = []; // [{inventoryItemId, name, quantity, unit}]
 let calDate = new Date(); // calendar display month
@@ -1159,7 +1150,7 @@ async function vPeds(filterStatus='', filterPayment='') {
       <td>${o.recipientName||'Recoger'}</td>
       <td style="font-size:11px;color:var(--mid);">${fmtWindow(o.deliveryWindow)}</td>
       <td style="color:var(--sage);font-weight:700;">$${fmt(o.total)}</td>
-      <td>${pb(o.paymentStatus)}</td><td>${sb(o.orderStatus)}</td>
+      <td>${payMethodBadge(o)}</td><td>${sb(o.orderStatus)}</td>
       <td><div style="display:flex;gap:4px;">
         ${o.orderStatus!=='COMPLETADA'&&o.orderStatus!=='CANCELADA'?`<button class="btn bs bsm" onclick="openDeliverModal('${o.id}')">Entregar</button>`:''}
         ${o.paymentStatus==='PENDIENTE'?`<button class="btn ba bsm" onclick="markPaid('${o.id}')">$ Cobrar</button>`:''}
@@ -1176,7 +1167,7 @@ async function searchOrders(q) {
   try {
     const data = await api('GET', `/api/orders?search=${encodeURIComponent(q)}`);
     const tbody = document.querySelector('.tbl tbody');
-    if (tbody) tbody.innerHTML = data.orders.map(o=>`<tr><td><span class="tlink">${o.orderNumber}</span></td><td style="color:var(--mid);">${o.deliveryDate?.split('T')[0]||'—'}</td><td>${o.client?.firstName||''} ${o.client?.lastNameP||''}</td><td>${o.recipientName||'—'}</td><td>${fmtWindow(o.deliveryWindow)}</td><td style="color:var(--sage);font-weight:700;">$${fmt(o.total)}</td><td>${pb(o.paymentStatus)}</td><td>${sb(o.orderStatus)}</td><td><button class="btn bg bsm" onclick="openOrderActions('${o.id}')">⋯</button></td></tr>`).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--dim);">Sin resultados</td></tr>';
+    if (tbody) tbody.innerHTML = data.orders.map(o=>`<tr><td><span class="tlink">${o.orderNumber}</span></td><td style="color:var(--mid);">${o.deliveryDate?.split('T')[0]||'—'}</td><td>${o.client?.firstName||''} ${o.client?.lastNameP||''}</td><td>${o.recipientName||'—'}</td><td>${fmtWindow(o.deliveryWindow)}</td><td style="color:var(--sage);font-weight:700;">$${fmt(o.total)}</td><td>${payMethodBadge(o)}</td><td>${sb(o.orderStatus)}</td><td><button class="btn bg bsm" onclick="openOrderActions('${o.id}')">⋯</button></td></tr>`).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--dim);">Sin resultados</td></tr>';
   } catch(e) {}
 }
 
@@ -2439,11 +2430,7 @@ async function aRender(t) {
       </div>`;
     }
     else if (t==='pagos') {
-      const data=await api('GET','/api/reports/pending-payments');
-      el.innerHTML=`<div class="card"><div class="ch"><span class="ct">Pagos Pendientes</span><span style="color:var(--amber);font-weight:700;">$${fmt(data.total)}</span></div>
-      <table class="tbl"><thead><tr><th>#</th><th>Cliente</th><th>F. Cobro</th><th>Total</th><th></th></tr></thead><tbody>
-      ${data.pending.map(o=>`<tr><td><span class="tlink">${o.orderNumber}</span></td><td>${o.client?.firstName||''} ${o.client?.lastNameP||''}<br/><span style="font-size:10px;color:var(--dim);">${o.client?.phone||''}</span></td><td style="color:var(--mid);">${o.creditDueDate?new Date(o.creditDueDate).toLocaleDateString('es'):'—'}</td><td style="color:var(--amber);font-weight:700;">$${fmt(o.total)}</td><td><button class="btn bs bsm" onclick="markPaid('${o.id}')">✓ Cobrado</button></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--dim);">Sin pagos pendientes 🎉</td></tr>'}
-      </tbody></table></div>`;
+      await renderPagosSub();
     }
     else if (t==='diario') {
       const date=new Date().toISOString().split('T')[0];
@@ -2934,7 +2921,7 @@ function pickDay(iso) {
 // ORDER MODAL
 // ════════════════════════════════════════════
 async function openOrderModal() {
-  orderState = { clientId:null, items:[], occasion:'CUMPLEANOS', deliveryType:'DOMICILIO_CASA', paymentType:'RECIBIDO' };
+  orderState = { clientId:null, items:[], occasion:'CUMPLEANOS', deliveryType:'DOMICILIO_CASA' };
   resetOrderForm();
   // Set today as default
   const today = new Date();
@@ -2984,13 +2971,10 @@ function resetOrderForm() {
   document.getElementById('o-fac-f').style.display='none';
   const rfcName = document.getElementById('o-rfc-name'); if (rfcName) rfcName.value='';
   const cfdi = document.getElementById('o-cfdi'); if (cfdi) cfdi.value='G03';
-  const credDate = document.getElementById('o-cred-date'); if (credDate) credDate.value='';
-  const credLoc  = document.getElementById('o-cred-loc');  if (credLoc)  credLoc.value='';
 
   // Pill groups back to their defaults
   resetPillGroup('o-occ', 0, el=>setOcc(el,'CUMPLEANOS'));
   resetPillGroup('o-del-t', 0, el=>setDelT(el,'DOMICILIO_CASA'));
-  resetPillGroup('o-pe', 0, el=>setPE(el,'RECIBIDO'));
   resetPillGroup('o-pt', 0, el=>or(el,'o-pt'));
   resetPillGroup('o-notif', 0, el=>or(el,'o-notif'));
 }
@@ -3223,6 +3207,8 @@ function updOI(id, field, val) {
 }
 
 const TAX_RATE = 0.08; // IVA — matches site/index.html's IVA_RATE
+const PAY_METHOD_LABELS = {EFECTIVO:'Efectivo', TRANSFERENCIA:'Transferencia', TERMINAL:'Terminal', CASHAPP:'CashApp', APPLE_PAY:'Apple Pay', LINK_PAGO:'Link de pago', CHEQUE:'Cheque', ZELLE:'Zelle', STRIPE:'Stripe / Web'};
+const PROOF_REQUIRED_METHODS = ['TRANSFERENCIA','TERMINAL','CASHAPP','APPLE_PAY','LINK_PAGO','ZELLE','CHEQUE'];
 function recalcTotal() {
   const sub = orderState.items.reduce((s,i)=>s+(Number(i.unitPrice)||0)*(Number(i.quantity)||1),0);
   const fee = parseFloat(document.getElementById('o-fee')?.value)||0;
@@ -3246,7 +3232,6 @@ function submitOrder() {
   if (!attendedById) { toastErr('Selecciona quién atendió el pedido'); return; }
   const winType = document.getElementById('o-win-type').value;
   const winTime = document.getElementById('o-win-time').value;
-  const payType = orderState.paymentType;
   const payMethodEl = document.querySelector('#o-pt .sel');
   const payMap = {'💵 Efectivo':'EFECTIVO','🏦 Transf.':'TRANSFERENCIA','💳 Terminal':'TERMINAL','📱 CashApp':'CASHAPP','🍎 Apple Pay':'APPLE_PAY','🔗 Link':'LINK_PAGO','📄 Cheque':'CHEQUE','💱 Zelle':'ZELLE'};
   const payMethod = payMethodEl ? (payMap[payMethodEl.textContent.trim()]||'EFECTIVO') : 'EFECTIVO';
@@ -3279,10 +3264,7 @@ function submitOrder() {
       quantity:i.quantity,notes:i.notes,
       ...((i.productId===null && !i.accessoryVariantId)?{name:i.name,unitPrice:i.unitPrice}:{}),
     })),
-    paymentType:payType,
-    paymentMethod:payType==='CREDITO'?null:payMethod,
-    creditDueDate:document.getElementById('o-cred-date')?.value||undefined,
-    creditLocation:document.getElementById('o-cred-loc')?.value||undefined,
+    paymentMethod:payMethod,
     advance:adv,
     needsInvoice:document.getElementById('o-fac-tog').classList.contains('on'),
     invoiceName:document.getElementById('o-rfc-name')?.value,
@@ -3312,11 +3294,11 @@ async function doCreateOrder(body) {
     document.getElementById('done-delivery').style.display = 'none';
     document.getElementById('done-proof').style.display = 'none';
 
-    // Show comprobante upload for non-cash payments
-    const isEfectivo = body.paymentMethod === 'EFECTIVO' || body.paymentType === 'CREDITO' || body.paymentMethod === 'STRIPE';
+    // Show comprobante upload only for payment methods that require proof
+    const needsProof = PROOF_REQUIRED_METHODS.includes(body.paymentMethod);
     const proofUpload = document.getElementById('done-proof-upload');
     if (proofUpload) {
-      proofUpload.style.display = isEfectivo ? 'none' : 'block';
+      proofUpload.style.display = needsProof ? 'block' : 'none';
       // Reset the upload area
       const wrap = document.getElementById('done-proof-wrap');
       const lbl  = document.getElementById('done-proof-lbl');
@@ -3406,8 +3388,7 @@ async function printOrder() {
   const deliveryAddr = isPickup
     ? 'RECOGER EN TIENDA — Av. de la Raza 5262, Villa del Norte, C.P. 32369'
     : [o.recipientAddress, o.recipientColonia, o.recipientZip].filter(Boolean).join(', ');
-  const payMap = { EFECTIVO:'Efectivo', TRANSFERENCIA:'Transferencia', TERMINAL:'Terminal', CASHAPP:'CashApp', APPLE_PAY:'Apple Pay', LINK_PAGO:'Link de pago', CHEQUE:'Cheque', ZELLE:'Zelle', STRIPE:'Stripe / Web' };
-  const payLabel = o.paymentStatus === 'PENDIENTE' ? 'Crédito (pendiente de pago)' : (payMap[o.paymentMethod] || o.paymentMethod || '—');
+  const payLabel = o.paymentStatus === 'PENDIENTE' ? 'Crédito (pendiente de pago)' : (PAY_METHOD_LABELS[o.paymentMethod] || o.paymentMethod || '—');
 
   const css = [
     '*{margin:0;padding:0;box-sizing:border-box;}',
@@ -3742,6 +3723,84 @@ async function markPaid(id) {
 }
 
 // ════════════════════════════════════════════
+// ADMINISTRACIÓN > PAGOS — daily reconciliation
+// ════════════════════════════════════════════
+let pagosSubTab = 'dia'; // 'dia' | 'pendientes' | 'revisados'
+let pagosRenderToken = 0;
+
+async function renderPagosSub() {
+  const el = document.getElementById('atc'); if (!el) return;
+  const myToken = ++pagosRenderToken;
+  const activeTab = pagosSubTab; // capture now — must not read the mutable global again after the await
+  const todayStr = new Date().toISOString().split('T')[0];
+  const url = activeTab === 'dia'        ? `/api/orders?createdDate=${todayStr}&limit=200`
+            : activeTab === 'pendientes' ? `/api/orders?paymentReviewed=false&limit=200`
+            :                               `/api/orders?paymentReviewed=true&limit=200`;
+  const { orders } = await api('GET', url);
+  if (myToken !== pagosRenderToken) return; // a newer tab switch has since superseded this request — discard
+  el.innerHTML = `
+    <div class="fps">
+      <div class="fp${activeTab==='dia'?' act':''}" onclick="switchPagosSub('dia')">Pagos del día</div>
+      <div class="fp${activeTab==='pendientes'?' act':''}" onclick="switchPagosSub('pendientes')">Pagos pendientes</div>
+      <div class="fp${activeTab==='revisados'?' act':''}" onclick="switchPagosSub('revisados')">Revisados</div>
+    </div>
+    <div class="card"><table class="tbl">
+      <thead><tr><th>#</th><th>Cliente</th><th>Método</th><th>Total</th><th>Comprobante</th>${activeTab==='pendientes'?'<th>Recordatorio</th>':''}<th></th></tr></thead>
+      <tbody>${orders.map(o=>pagoRow(o,activeTab)).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--dim);">Sin pedidos</td></tr>`}</tbody>
+    </table></div>`;
+}
+
+function switchPagosSub(t) { pagosSubTab = t; renderPagosSub(); }
+
+function pagoRow(o, activeTab) {
+  const needsProof = PROOF_REQUIRED_METHODS.includes(o.paymentMethod);
+  const proofCell = o.paymentProofUrl
+    ? `<a href="${photoSrc(o.paymentProofUrl)}" target="_blank" style="color:var(--blue);font-size:11px;">Ver foto</a>`
+    : (needsProof ? '<span style="color:var(--red);font-size:11px;">Falta</span>' : '<span style="color:var(--dim);font-size:11px;">No requiere</span>');
+  const actionCell = o.paymentReviewed
+    ? `<button class="btn bg bsm" onclick="setPaymentReviewed('${o.id}',false)">↩ Deshacer</button>`
+    : `<button class="btn bs bsm" onclick="setPaymentReviewed('${o.id}',true)">✓ Revisado</button>`;
+  const reminderCell = activeTab==='pendientes'
+    ? `<select class="fs" style="font-size:11px;padding:3px 6px;" onchange="setPaymentReminder('${o.id}','${o.orderNumber}',this.value);this.value=''">
+        <option value="">⏰ Recordar…</option>
+        <option value="1">En 1 día</option>
+        <option value="7">En 7 días</option>
+        <option value="14">En 14 días</option>
+      </select>`
+    : '';
+  return `<tr>
+    <td><span class="tlink" onclick="openOrderActions('${o.id}')">${o.orderNumber}</span></td>
+    <td>${o.client?.firstName||''} ${o.client?.lastNameP||''}</td>
+    <td>${payMethodBadge(o)}</td>
+    <td style="color:var(--sage);font-weight:700;">$${fmt(o.total)}</td>
+    <td>${proofCell}</td>
+    ${activeTab==='pendientes'?`<td>${reminderCell}</td>`:''}
+    <td>${actionCell}</td>
+  </tr>`;
+}
+
+async function setPaymentReviewed(id, reviewed) {
+  try {
+    await api('PATCH', `/api/orders/${id}/payment-review`, { reviewed });
+    toast(reviewed ? 'Marcado como revisado ✓' : 'Movido a pendientes');
+    renderPagosSub();
+  } catch(e) { toastErr(e.message); }
+}
+
+async function setPaymentReminder(id, orderNumber, days) {
+  if (!days) return;
+  const due = new Date(); due.setDate(due.getDate() + parseInt(days));
+  try {
+    await api('POST', '/api/tasks', {
+      description: `Revisar pago del pedido ${orderNumber}`,
+      dueDate: due.toISOString().split('T')[0],
+      orderId: id,
+    });
+    toast(`Recordatorio creado ✓`);
+  } catch(e) { toastErr(e.message); }
+}
+
+// ════════════════════════════════════════════
 // ADMIN PIN GATE
 // ════════════════════════════════════════════
 function askAdminPin() { if (['ADMIN','OFFICE'].includes(currentStaff?.role)) { showView('admin'); } else { toastErr('Sin permisos de administrador'); } }
@@ -3765,11 +3824,6 @@ function setDelT(el, v) {
   document.getElementById('o-del-f').style.display=v==='RECOGER_TIENDA'?'none':'block';
   document.getElementById('o-biz-wrap').style.display=v==='DOMICILIO_NEGOCIO'?'block':'none';
 }
-function setPE(el, v) {
-  or(el,'o-pe'); orderState.paymentType=v;
-  document.getElementById('o-pr-f').style.display=v==='CREDITO'?'none':'block';
-  document.getElementById('o-pc-f').style.display=v==='CREDITO'?'block':'none';
-}
 function or(el, cid) {
   const c=document.getElementById(cid)||el.closest('.rcs');
   if(c) c.querySelectorAll('.rc').forEach(r=>r.classList.remove('sel'));
@@ -3783,6 +3837,11 @@ document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.
 // LABELS & UTILS
 // ════════════════════════════════════════════
 const pb=p=>({PENDIENTE:`<span class="badge ba2">Pendiente</span>`,PAGO_RECIBIDO:`<span class="badge bb">Pago recibido</span>`,PAGADA:`<span class="badge bg2">Pagada</span>`}[p]||`<span class="badge bm">${p||'—'}</span>`);
+function payMethodBadge(o) {
+  const label = PAY_METHOD_LABELS[o.paymentMethod] || o.paymentMethod || '—';
+  const missing = PROOF_REQUIRED_METHODS.includes(o.paymentMethod) && !o.paymentProofUrl;
+  return `<span class="badge ${missing?'br2':'bm'}">${label}</span>`;
+}
 const sb=s=>({EN_PROCESO:`<span class="badge ba2">En proceso</span>`,POR_ENTREGAR:`<span class="badge bb">Por entregar</span>`,COMPLETADA:`<span class="badge bg2">Completada</span>`,CANCELADA:`<span class="badge br2">Cancelada</span>`}[s]||`<span class="badge bm">${s||'—'}</span>`);
 const occLabel=o=>({CUMPLEANOS:'🎂 Cumpleaños',ANIVERSARIO:'💑 Aniversario',FUNERAL:'⚱️ Funeral',AMOR:'💝 Amor',GRADUACION:'🎓 Graduación',RECUPERACION:'🌿 Recuperación',OTRA:'🎊 Otra'}[o]||o);
 // Returns full photo URL — Cloudinary URLs are already absolute, local ones need API_BASE
