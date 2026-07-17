@@ -36,11 +36,11 @@ async function buildReport(where) {
     byMethod[m] = (byMethod[m] || 0) + Number(o.total);
   }
 
-  // Top products
+  // Top products — falls back to customName for quick/accessory items with no catalog product
   const productCounts = {};
   for (const o of orders) {
     for (const item of o.items) {
-      const name = item.product.name;
+      const name = item.product?.name || item.customName || 'Producto';
       productCounts[name] = (productCounts[name] || 0) + item.quantity;
     }
   }
