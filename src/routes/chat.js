@@ -44,6 +44,8 @@ router.post('/sessions', async (req, res) => {
         data: { sessionId: session.id, text: text.trim(), fromStaff: false },
       });
       await prisma.chatSession.update({ where: { id: session.id }, data: { updatedAt: new Date() } });
+      // Notify connected POS staff in real time
+      req.io?.of('/pos').emit('notification:chat', { sessionId: session.id, text: text.trim(), visitorName: session.visitorName });
     }
     res.json(session);
   } catch (err) { res.status(500).json({ error: 'Failed to create session' }); }
@@ -63,7 +65,11 @@ router.post('/sessions/:id/messages', async (req, res) => {
       },
     });
     // Bump session updatedAt so it appears at top of list
-    await prisma.chatSession.update({ where: { id: req.params.id }, data: { updatedAt: new Date() } });
+    const session = await prisma.chatSession.update({ where: { id: req.params.id }, data: { updatedAt: new Date() } });
+    // Notify connected POS staff in real time — only for visitor messages, not staff replies
+    if (!fromStaff) {
+      req.io?.of('/pos').emit('notification:chat', { sessionId: req.params.id, text: text.trim(), visitorName: session.visitorName });
+    }
     res.status(201).json(message);
   } catch (err) { res.status(500).json({ error: 'Failed to save message' }); }
 });

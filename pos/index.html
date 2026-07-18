@@ -338,6 +338,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
   <div class="topbar">
     <span class="tb-t" id="vt">Dashboard</span>
     <div class="tb-r">
+      <button class="btn bg bsm" onclick="requestChatNotifPermission()" title="Activar notificaciones de chat">🔔</button>
       <button class="btn bg bsm" onclick="syncAll()">⟳ Sync</button>
       <button class="btn bp" onclick="showView('nuevo')">＋ Nuevo Pedido</button>
     </div>
@@ -880,12 +881,20 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
   ? 'http://localhost:3000' : 'https://karel-backend-production.up.railway.app';
 
+// Load the socket.io client from the backend itself (guarantees version match with the server)
+(function loadSocketIoClient() {
+  const s = document.createElement('script');
+  s.src = `${API_BASE}/socket.io/socket.io.js`;
+  document.head.appendChild(s);
+})();
+
 // ════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════
 let token = null, currentStaff = null, loginPin = '';
 let cachedProducts = [], cachedCategories = [], cachedInventory = [];
 let IVA_PERCENT = 8; // default fallback — loaded from /api/settings on login, editable in Administración > Datos
+let posSocket = null, unreadChatCount = 0;
 let orderState = { clientId:null, items:[], occasion:'CUMPLEANOS', deliveryType:'DOMICILIO_CASA' };
 let lastCreatedOrder = null;
 let recipeItems = []; // [{inventoryItemId, name, quantity, unit}]
@@ -989,10 +998,16 @@ function enterApp() {
   // Route to first allowed view
   const firstView = allowed[0] || 'dashboard';
   showView(firstView);
-  if (['ADMIN','OFFICE'].includes(currentStaff.role)) loadBadges();
+  if (['ADMIN','OFFICE'].includes(currentStaff.role)) {
+    loadBadges();
+    connectPosSocket();
+    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  }
 }
 
 function logout() {
+  disconnectPosSocket();
+  unreadChatCount = 0;
   token = null; currentStaff = null; loginPin = ''; updLoginDots();
   document.getElementById('l-user').value = '';
   document.getElementById('login-screen').style.display = 'flex';
@@ -1018,6 +1033,64 @@ async function loadBadges() {
 function setBadge(id, n) {
   const el = document.getElementById(id); if (!el) return;
   el.textContent = n; el.style.display = n > 0 ? 'inline-flex' : 'none';
+}
+
+// ════════════════════════════════════════════
+// CHAT NOTIFICATIONS — real-time alert when a website visitor messages
+// ════════════════════════════════════════════
+function connectPosSocket() {
+  if (typeof io === 'undefined') { setTimeout(connectPosSocket, 500); return; } // socket.io client still loading
+  if (posSocket) return; // already connected
+  posSocket = io(`${API_BASE}/pos`);
+  posSocket.on('notification:chat', (data) => {
+    const onThatConversation = document.querySelector('.ni.on')?.dataset.v === 'chat' && activeChatSession === data.sessionId;
+    if (onThatConversation) return; // already looking at this exact conversation
+    unreadChatCount++;
+    setBadge('nb-c', unreadChatCount);
+    playNotifSound();
+    showChatNotification(data);
+    if (document.querySelector('.ni.on')?.dataset.v === 'chat') vChat(); // refresh conversation list if on the chat view
+  });
+}
+
+function disconnectPosSocket() {
+  posSocket?.disconnect();
+  posSocket = null;
+}
+
+function playNotifSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880; osc.type = 'sine';
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.start(); osc.stop(ctx.currentTime + 0.35);
+  } catch(e) {}
+}
+
+function showChatNotification(data) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const n = new Notification(`💬 ${data.visitorName || 'Visitante web'}`, {
+    body: data.text,
+    icon: undefined,
+    tag: `chat-${data.sessionId}`, // collapses repeated pings from the same conversation
+  });
+  n.onclick = () => {
+    window.focus();
+    showView('chat');
+    n.close();
+  };
+}
+
+function requestChatNotifPermission() {
+  if (!('Notification' in window)) { toastErr('Tu navegador no soporta notificaciones'); return; }
+  if (Notification.permission === 'granted') { toast('Notificaciones ya activadas ✓'); return; }
+  Notification.requestPermission().then(perm => {
+    if (perm === 'granted') toast('Notificaciones activadas ✓');
+    else toastErr('Notificaciones bloqueadas — actívalas en la configuración del navegador');
+  });
 }
 
 // ════════════════════════════════════════════
@@ -1532,6 +1605,8 @@ async function saveTask() {
 // CHAT
 // ════════════════════════════════════════════
 async function vChat() {
+  unreadChatCount = 0;
+  setBadge('nb-c', 0);
   const sessions = await api('GET','/api/chat/sessions');
   document.getElementById('vc').innerHTML = `
 <div class="cwrap" style="height:calc(100vh - 110px);">
