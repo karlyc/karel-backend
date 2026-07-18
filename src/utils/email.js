@@ -327,7 +327,53 @@ async function sendDeliveryNotification(order, delivery) {
   }
 }
 
-module.exports = { sendOrderConfirmation, sendDeliveryNotification, sendContactEmail };
+// ─── Send chat message notification (to shop) ────────────────
+async function sendChatNotificationEmail({ visitorName, text }) {
+  if (!process.env.RESEND_API_KEY) return { skipped: true, reason: 'RESEND_API_KEY not set' };
+  const SHOP_EMAIL = process.env.SHOP_EMAIL || 'karla@floreriakarel.com';
+
+  const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f5f0ee;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f0ee;padding:32px 16px;">
+<tr><td align="center">
+<table width="480" cellpadding="0" cellspacing="0" style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+  <tr><td style="background:linear-gradient(135deg,#EC7FA9,#e08070);padding:28px 32px;text-align:center;">
+    <div style="font-size:2rem;margin-bottom:6px;">💬</div>
+    <div style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:white;">Nuevo mensaje en Chat Web</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.85);margin-top:4px;">Florería y Regalos Karel — Sitio web</div>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <div style="font-size:13px;color:#888;margin-bottom:10px;">De: <strong style="color:#1a1a1a;">${visitorName || 'Visitante web'}</strong></div>
+    <div style="background:#f9f5f5;border-left:3px solid #EC7FA9;border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:20px;">
+      <div style="font-size:14px;color:#333;line-height:1.7;white-space:pre-wrap;">${text}</div>
+    </div>
+    <p style="font-size:12px;color:#888;line-height:1.6;margin:0;">Entra a la sección Chat Web en la POS para responder.</p>
+  </td></tr>
+  <tr><td style="background:#2e2320;padding:16px 32px;text-align:center;">
+    <div style="font-size:11px;color:rgba(255,255,255,.5);">Florería y Regalos Karel</div>
+  </td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>`;
+
+  try {
+    const result = await getResend().emails.send({
+      from: FROM,
+      to: SHOP_EMAIL,
+      subject: `💬 Nuevo mensaje de ${visitorName || 'Visitante web'} — Chat Web`,
+      html,
+    });
+    console.log(`[Email] Chat notification sent to ${SHOP_EMAIL}`);
+    return { sent: true, id: result.data?.id };
+  } catch (err) {
+    console.error('[Email] Chat notification failed:', err.message);
+    return { sent: false, error: err.message };
+  }
+}
+
+module.exports = { sendOrderConfirmation, sendDeliveryNotification, sendContactEmail, sendChatNotificationEmail };
 
 async function sendContactEmail({ name, phone, email, subject, message }) {
   if (!process.env.RESEND_API_KEY) return { skipped: true, reason: 'RESEND_API_KEY not set' };

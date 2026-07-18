@@ -2,6 +2,7 @@
 const router = require('express').Router();
 const { prisma } = require('../db/prisma');
 const { requireAuth } = require('../middleware/auth');
+const { sendChatNotificationEmail } = require('../utils/email');
 
 // GET /api/chat/sessions — all open sessions (POS staff)
 router.get('/sessions', requireAuth, async (_req, res) => {
@@ -46,6 +47,7 @@ router.post('/sessions', async (req, res) => {
       await prisma.chatSession.update({ where: { id: session.id }, data: { updatedAt: new Date() } });
       // Notify connected POS staff in real time
       req.io?.of('/pos').emit('notification:chat', { sessionId: session.id, text: text.trim(), visitorName: session.visitorName });
+      sendChatNotificationEmail({ visitorName: session.visitorName, text: text.trim() }).catch(e => console.error('[Chat] Notification email failed:', e.message));
     }
     res.json(session);
   } catch (err) { res.status(500).json({ error: 'Failed to create session' }); }
@@ -69,6 +71,7 @@ router.post('/sessions/:id/messages', async (req, res) => {
     // Notify connected POS staff in real time — only for visitor messages, not staff replies
     if (!fromStaff) {
       req.io?.of('/pos').emit('notification:chat', { sessionId: req.params.id, text: text.trim(), visitorName: session.visitorName });
+      sendChatNotificationEmail({ visitorName: session.visitorName, text: text.trim() }).catch(e => console.error('[Chat] Notification email failed:', e.message));
     }
     res.status(201).json(message);
   } catch (err) { res.status(500).json({ error: 'Failed to save message' }); }
