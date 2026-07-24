@@ -314,6 +314,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     <div class="ni" data-v="elaboracion"><span class="ni-ic">🌸</span>Elaboración<span class="nb a" id="nb-e" style="display:none"></span></div>
     <div class="ni" data-v="entregas"><span class="ni-ic">🚐</span>Entregas<span class="nb g" id="nb-d" style="display:none"></span></div>
     <div class="ni" data-v="tareas"><span class="ni-ic">✓</span>Tareas</div>
+    <div class="ni" data-v="gastos"><span class="ni-ic">💸</span>Gastos</div>
     <div class="ni" data-v="chat"><span class="ni-ic">💬</span>Chat Web<span class="nb g" id="nb-c" style="display:none"></span></div>
   </div>
   <div class="sb-sec">Catálogo</div>
@@ -704,28 +705,28 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 <!-- ════ MODAL: GASTO ════ -->
 <div class="ov" id="m-gasto">
 <div class="modal mmd">
-  <div class="mh"><div class="mt">Agregar Gasto</div><button class="mx" onclick="cm('m-gasto')">✕</button></div>
+  <div class="mh"><div class="mt" id="gasto-modal-title">Agregar Gasto</div><button class="mx" onclick="cm('m-gasto')">✕</button></div>
   <div class="mb">
     <div class="fr">
-      <div class="fg"><label class="fl">Tipo</label>
+      <div class="fg" id="g-type-wrap" style="display:none;"><label class="fl">Tipo</label>
         <select class="fs" id="g-type">
-          <option value="MENSUAL">Mensual fijo</option>
           <option value="MISCELANEA">Miscelánea</option>
+          <option value="MENSUAL">Mensual fijo</option>
         </select>
       </div>
       <div class="fg"><label class="fl">Fecha</label><input class="fi" id="g-date" type="date"/></div>
     </div>
     <div class="fr">
       <div class="fg"><label class="fl">Categoría</label>
-        <select class="fs" id="g-cat">
-          <option>Renta</option><option>Luz</option><option>Agua</option><option>Teléfono/Internet</option>
-          <option>Salarios</option><option>Flores / Insumos</option><option>Empaques</option>
-          <option>Mantenimiento</option><option>Marketing</option><option>Miscelánea</option>
-        </select>
+        <select class="fs" id="g-cat"></select>
       </div>
       <div class="fg"><label class="fl">Monto *</label><input class="fi" id="g-amount" type="number" placeholder="$0.00"/></div>
     </div>
     <div class="fg"><label class="fl">Descripción</label><input class="fi" id="g-desc" placeholder="Descripción del gasto…"/></div>
+    <div class="tw" id="g-private-wrap" style="display:none;margin-top:4px;">
+      <div class="tog on" id="g-private-tog" onclick="this.classList.toggle('on')"><div class="tk"></div></div>
+      <span class="tl">Privado (solo administradores)</span>
+    </div>
   </div>
   <div class="mf"><button class="btn bg" onclick="cm('m-gasto')">Cancelar</button><button class="btn bp" onclick="saveGasto()">Guardar Gasto</button></div>
 </div>
@@ -955,8 +956,8 @@ function showLoginErr(msg) {
 
 // Role permissions — which nav items each role can see
 const ROLE_VIEWS = {
-  ADMIN:      ['dashboard','pedidos','nuevo','elaboracion','entregas','tareas','chat','productos','accesorios','categorias','inventario','clientes','admin-gate','repartidor'],
-  OFFICE:     ['dashboard','pedidos','nuevo','elaboracion','entregas','tareas','chat','productos','accesorios','categorias','inventario','clientes','repartidor'],
+  ADMIN:      ['dashboard','pedidos','nuevo','elaboracion','entregas','tareas','gastos','chat','productos','accesorios','categorias','inventario','clientes','admin-gate','repartidor'],
+  OFFICE:     ['dashboard','pedidos','nuevo','elaboracion','entregas','tareas','gastos','chat','productos','accesorios','categorias','inventario','clientes','repartidor'],
   FLORISTA:   ['elaboracion','tareas','inventario'],
   REPARTIDOR: ['entregas','tareas','inventario'],
 };
@@ -1096,7 +1097,7 @@ function requestChatNotifPermission() {
 // ════════════════════════════════════════════
 // VIEW ROUTING
 // ════════════════════════════════════════════
-const VT = {dashboard:'Dashboard',pedidos:'Pedidos',elaboracion:'Elaboración de Arreglos',entregas:'Entregas',tareas:'Tareas',chat:'Chat con Clientes Web',productos:'Productos',accesorios:'Accesorios',categorias:'Categorías',inventario:'Inventario',admin:'Administración',repartidor:'Vista Repartidor',clientes:'Clientes'};
+const VT = {dashboard:'Dashboard',pedidos:'Pedidos',elaboracion:'Elaboración de Arreglos',entregas:'Entregas',tareas:'Tareas',gastos:'Gastos',chat:'Chat con Clientes Web',productos:'Productos',accesorios:'Accesorios',categorias:'Categorías',inventario:'Inventario',admin:'Administración',repartidor:'Vista Repartidor',clientes:'Clientes'};
 
 async function showView(v) {
   if (v === 'nuevo') { openOrderModal(); return; }
@@ -1106,7 +1107,7 @@ async function showView(v) {
   const vc = document.getElementById('vc');
   vc.innerHTML = `<div class="loading"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>`;
   try {
-    const views = { dashboard:vDash, pedidos:vPeds, elaboracion:vElab, entregas:vEntr, tareas:vTar, chat:vChat, productos:vProds, accesorios:vAcc, categorias:vCats, inventario:vInv, admin:vAdmin, repartidor:vRep, clientes:vClientes };
+    const views = { dashboard:vDash, pedidos:vPeds, elaboracion:vElab, entregas:vEntr, tareas:vTar, gastos:vGastosStaff, chat:vChat, productos:vProds, accesorios:vAcc, categorias:vCats, inventario:vInv, admin:vAdmin, repartidor:vRep, clientes:vClientes };
     if (views[v]) await views[v]();
     else vc.innerHTML = `<div style="color:var(--dim);text-align:center;padding:80px;">Vista en desarrollo</div>`;
   } catch(e) { vc.innerHTML = `<div class="err-state">⚠ ${e.message}</div>`; }
@@ -1599,6 +1600,44 @@ async function saveTask() {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Guardar'; }
   }
+}
+
+// ════════════════════════════════════════════
+// GASTOS (staff-facing — Operaciones > Gastos)
+// ════════════════════════════════════════════
+let staffGastoMonth = new Date().getMonth() + 1, staffGastoYear = new Date().getFullYear();
+
+async function vGastosStaff() {
+  const exp = await api('GET', `/api/expenditures?month=${staffGastoMonth}&year=${staffGastoYear}&scope=staff`);
+  const monthLabel = new Date(staffGastoYear, staffGastoMonth-1, 1).toLocaleDateString('es',{month:'long',year:'numeric'});
+  document.getElementById('vc').innerHTML = `
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+  <div style="font-size:13px;font-weight:700;">Gastos · ${monthLabel}</div>
+  <div style="display:flex;gap:7px;">
+    <button class="btn bg bsm" onclick="staffGastosMes(-1)">‹ Mes anterior</button>
+    <button class="btn bg bsm" onclick="staffGastosMes(1)">Mes siguiente ›</button>
+    <button class="btn bp bsm" onclick="openGastoModal(null,'staff')">＋ Agregar Gasto</button>
+  </div>
+</div>
+<div class="card">
+  <table class="tbl"><thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Monto</th><th>Agregado por</th><th></th></tr></thead><tbody>
+  ${exp.items.map(e=>`<tr>
+    <td style="color:var(--mid);">${new Date(e.date).toLocaleDateString('es')}</td>
+    <td>${e.category}</td>
+    <td>${e.description}</td>
+    <td style="color:var(--red);font-weight:700;">$${fmt(e.amount)}</td>
+    <td style="color:var(--mid);font-size:11px;">${e.submittedBy?.name||'—'}</td>
+    <td>${e.submittedById===currentStaff?.id?`<button class="btn bg bsm" onclick="openGastoModal(${JSON.stringify(e).replace(/"/g,'&quot;')},'staff')">✏️ Editar</button>`:''}</td>
+  </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--dim);">Sin gastos este mes</td></tr>'}
+  </tbody></table>
+</div>`;
+}
+
+function staffGastosMes(delta) {
+  staffGastoMonth += delta;
+  if (staffGastoMonth > 12) { staffGastoMonth=1; staffGastoYear++; }
+  if (staffGastoMonth < 1) { staffGastoMonth=12; staffGastoYear--; }
+  vGastosStaff();
 }
 
 // ════════════════════════════════════════════
@@ -2588,20 +2627,29 @@ async function aRender(t) {
       el.innerHTML=`<div class="card" style="margin-bottom:12px;"><div class="ch"><span class="ct">Rango de Fechas</span></div><div style="display:flex;gap:11px;align-items:flex-end;flex-wrap:wrap;"><div class="fg" style="margin:0;"><label class="fl">Desde</label><input class="fi" type="date" id="r-from" value="${new Date().toISOString().split('T')[0]}"/></div><div class="fg" style="margin:0;"><label class="fl">Hasta</label><input class="fi" type="date" id="r-to" value="${new Date().toISOString().split('T')[0]}"/></div><button class="btn bp" onclick="genReport()">Generar</button></div></div><div id="report-result"></div>`;
     }
     else if (t==='gastos') {
-      const now=new Date();
-      const exp=await api('GET',`/api/expenditures?month=${now.getMonth()+1}&year=${now.getFullYear()}`);
+      const exp=await api('GET',`/api/expenditures?month=${gastoMonth}&year=${gastoYear}`);
+      const monthLabel = new Date(gastoYear,gastoMonth-1,1).toLocaleDateString('es',{month:'long',year:'numeric'});
       el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div style="font-size:13px;font-weight:700;">Gastos · ${now.toLocaleDateString('es',{month:'long',year:'numeric'})}</div>
+        <div style="font-size:13px;font-weight:700;">Gastos · ${monthLabel}</div>
         <div style="display:flex;gap:7px;">
           <button class="btn bg bsm" onclick="aGastosMes(-1)">‹ Mes anterior</button>
           <button class="btn bg bsm" onclick="aGastosMes(1)">Mes siguiente ›</button>
-          <button class="btn bp bsm" onclick="om('m-gasto')">＋ Agregar Gasto</button>
+          <button class="btn bp bsm" onclick="openGastoModal(null,'admin')">＋ Agregar Gasto</button>
         </div>
       </div>
       <div class="card">
         <div class="ch"><span class="ct">Total del mes</span><span style="color:var(--red);font-weight:700;font-size:13px;">$${fmt(exp.total)}</span></div>
-        <table class="tbl"><thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th>Monto</th><th></th></tr></thead><tbody>
-        ${exp.items.map(e=>`<tr><td style="color:var(--mid);">${new Date(e.date).toLocaleDateString('es')}</td><td><span class="badge ${e.type==='MENSUAL'?'bb':'ba2'}">${e.type==='MENSUAL'?'Fijo':'Misc.'}</span></td><td>${e.category}</td><td>${e.description}</td><td style="color:var(--red);font-weight:700;">$${fmt(e.amount)}</td><td><button class="btn bg bsm" style="color:var(--red);" onclick="deleteGasto('${e.id}')">✕</button></td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--dim);">Sin gastos este mes</td></tr>'}
+        <table class="tbl"><thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th>Monto</th><th>Agregado por</th><th></th><th></th></tr></thead><tbody>
+        ${exp.items.map(e=>`<tr>
+          <td style="color:var(--mid);">${new Date(e.date).toLocaleDateString('es')}</td>
+          <td><span class="badge ${e.type==='MENSUAL'?'bb':'ba2'}">${e.type==='MENSUAL'?'Fijo':'Misc.'}</span></td>
+          <td>${e.category}</td>
+          <td>${e.description}${e.isPrivate?' <span class="badge brose" style="margin-left:4px;">🔒 Privado</span>':''}</td>
+          <td style="color:var(--red);font-weight:700;">$${fmt(e.amount)}</td>
+          <td style="color:var(--mid);font-size:11px;">${e.submittedBy?.name||'—'}</td>
+          <td><button class="btn bg bsm" onclick="openGastoModal(${JSON.stringify(e).replace(/"/g,'&quot;')},'admin')">✏️</button></td>
+          <td><button class="btn bg bsm" style="color:var(--red);" onclick="deleteGasto('${e.id}')">✕</button></td>
+        </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--dim);">Sin gastos este mes</td></tr>'}
         </tbody></table>
       </div>`;
     }
@@ -2846,36 +2894,69 @@ async function aGastosMes(delta) {
   gastoMonth += delta;
   if (gastoMonth > 12) { gastoMonth=1; gastoYear++; }
   if (gastoMonth < 1) { gastoMonth=12; gastoYear--; }
-  const exp = await api('GET',`/api/expenditures?month=${gastoMonth}&year=${gastoYear}`);
-  const monthName = new Date(gastoYear,gastoMonth-1,1).toLocaleDateString('es',{month:'long',year:'numeric'});
-  // Re-render just the table area (simplified)
-  toast(`Mostrando ${monthName}`);
   await aRender('gastos');
 }
 
+// ════════════════════════════════════════════
+// GASTOS — shared add/edit modal for both the staff-facing
+// Operaciones > Gastos page and Administración > Gastos
+// ════════════════════════════════════════════
+const STAFF_GASTO_CATEGORIES = ['Flores','Bases','Material','Gasolina','Otro'];
+const ADMIN_GASTO_CATEGORIES = ['Salarios','Marketing','Taxes','Flores','Bases','Material','Gasolina','Otro'];
+
+let editingGastoId = null, gastoContext = 'staff';
+
+function openGastoModal(gasto, context) {
+  editingGastoId = gasto?.id || null;
+  gastoContext = context;
+  const isAdmin = context === 'admin';
+
+  document.getElementById('gasto-modal-title').textContent = gasto ? 'Editar Gasto' : 'Agregar Gasto';
+  document.getElementById('g-type-wrap').style.display = isAdmin ? 'block' : 'none';
+  document.getElementById('g-private-wrap').style.display = isAdmin ? 'flex' : 'none';
+
+  const catSel = document.getElementById('g-cat');
+  catSel.innerHTML = (isAdmin ? ADMIN_GASTO_CATEGORIES : STAFF_GASTO_CATEGORIES).map(c=>`<option>${c}</option>`).join('');
+
+  document.getElementById('g-date').value = gasto ? gasto.date.split('T')[0] : new Date().toISOString().split('T')[0];
+  document.getElementById('g-cat').value = gasto?.category || catSel.options[0]?.value || '';
+  document.getElementById('g-amount').value = gasto?.amount || '';
+  document.getElementById('g-desc').value = gasto?.description || '';
+  if (isAdmin) {
+    document.getElementById('g-type').value = gasto?.type || 'MISCELANEA';
+    document.getElementById('g-private-tog').classList.toggle('on', gasto ? !!gasto.isPrivate : true);
+  }
+  om('m-gasto');
+}
+
 async function saveGasto() {
+  const isAdmin = gastoContext === 'admin';
+  // Always send type/isPrivate explicitly — an ADMIN account can also use the staff-facing
+  // page (context='staff'), and the server can't tell context apart from the caller's role
+  // alone, so relying on "send only when admin, let the server default" is ambiguous.
   const body = {
-    type:document.getElementById('g-type').value,
     category:document.getElementById('g-cat').value,
     description:document.getElementById('g-desc').value,
     amount:document.getElementById('g-amount').value,
     date:document.getElementById('g-date').value||new Date().toISOString().split('T')[0],
+    type: isAdmin ? document.getElementById('g-type').value : 'MISCELANEA',
+    isPrivate: isAdmin ? document.getElementById('g-private-tog').classList.contains('on') : false,
   };
   if (!body.amount||!body.description) { toastErr('Monto y descripción son requeridos'); return; }
-  try { await api('POST','/api/expenditures',body); cm('m-gasto'); toast('Gasto guardado ✓'); await aRender('gastos'); }
-  catch(e) { toastErr(e.message); }
+  try {
+    if (editingGastoId) await api('PUT',`/api/expenditures/${editingGastoId}`,body);
+    else await api('POST','/api/expenditures',body);
+    cm('m-gasto');
+    toast('Gasto guardado ✓');
+    editingGastoId = null;
+    if (isAdmin) await aRender('gastos'); else await vGastosStaff();
+  } catch(e) { toastErr(e.message); }
 }
 
 async function deleteGasto(id) {
   if (!confirm('¿Eliminar este gasto?')) return;
   try { await api('DELETE',`/api/expenditures/${id}`); toast('Gasto eliminado'); await aRender('gastos'); }
   catch(e) { toastErr(e.message); }
-}
-
-// Open gasto modal pre-set today's date
-function om_gasto() {
-  document.getElementById('g-date').value = new Date().toISOString().split('T')[0];
-  om('m-gasto');
 }
 
 async function genReport() {

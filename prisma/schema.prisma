@@ -27,6 +27,7 @@ model Staff {
   updatedAt DateTime  @updatedAt
   ordersAttended Order[]    @relation("AttendedBy")
   deliveries     Delivery[] @relation("AssignedTo")
+  expenditures   Expenditure[]
 }
 
 enum ClientSource { 
@@ -307,16 +308,19 @@ enum ExpenditureType {
 }
 
 model Expenditure {
-  id          String          @id @default(cuid())
-  type        ExpenditureType
-  category    String
-  description String
-  amount      Decimal         @db.Decimal(10,2)
-  date        DateTime        @default(now())
-  month       Int
-  year        Int
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id            String          @id @default(cuid())
+  type          ExpenditureType
+  category      String
+  description   String
+  amount        Decimal         @db.Decimal(10,2)
+  date          DateTime        @default(now())
+  month         Int
+  year          Int
+  submittedById String?
+  submittedBy   Staff?          @relation(fields: [submittedById], references: [id])
+  isPrivate     Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 }
 
 model Reminder {
