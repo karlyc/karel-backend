@@ -7,6 +7,7 @@ const { generateOrderNumber, computeLoyaltyTier } = require('../utils/orders');
 const { upload, uploadToCloudinary, isCloudinaryConfigured } = require('../utils/upload');
 const { sendOrderConfirmation } = require('../utils/email');
 const { sendOrderConfirmation: sendWAConfirmation, sendShopNewOrder } = require('../utils/whatsapp');
+const { loadSettings } = require('./settings');
 
 // Resolves order line items (catalog products, catalog accessories, or quick/custom
 // items) into priced, DB-authoritative itemData — used by both create and edit so
@@ -322,7 +323,7 @@ router.post('/', upload.single('paymentProof'), [
       },
     });
     if (fullOrder?.client?.email) {
-      sendOrderConfirmation(fullOrder).catch(e => console.error('[Email] Order confirmation failed:', e.message));
+      sendOrderConfirmation(fullOrder, loadSettings().ivaRate).catch(e => console.error('[Email] Order confirmation failed:', e.message));
     }
     // WhatsApp notifications (fire and forget)
     if (fullOrder?.client?.phone) {
@@ -566,7 +567,7 @@ router.post('/:id/send-confirmation-email', requireAuth, async (req, res) => {
     if (!order) return res.status(404).json({ error: 'Pedido no encontrado' });
     if (!order.client?.email) return res.status(400).json({ error: 'El cliente no tiene correo registrado' });
 
-    await sendOrderConfirmation(order);
+    await sendOrderConfirmation(order, loadSettings().ivaRate);
     res.json({ ok: true });
   } catch(err) {
     console.error('[send-confirmation-email] Error:', err.message);

@@ -21,8 +21,16 @@ function fmtWindow(w) {
   return `${labels[type] || type} ${time || ''}`;
 }
 
+function fmtDeliveryDate(d) {
+  if (!d) return '—';
+  const date = new Date(d);
+  const weekday = date.toLocaleDateString('es-MX', { weekday: 'long' });
+  const month = date.toLocaleDateString('es-MX', { month: 'long' });
+  return `${weekday} ${date.getDate()} de ${month}, ${date.getFullYear()}`.toUpperCase();
+}
+
 // ─── Build HTML receipt ──────────────────────────────────────
-function buildReceiptHTML(order) {
+function buildReceiptHTML(order, ivaRate = 8) {
   const isPickup   = order.deliveryType === 'RECOGER_TIENDA';
   const clientName = [order.client?.firstName, order.client?.middleName, order.client?.lastNameP, order.client?.lastNameM].filter(Boolean).join(' ') || '—';
   const clientPhone = order.client?.phone ? `${order.client.phoneCode || '+52'} ${order.client.phone}` : '';
@@ -72,28 +80,10 @@ function buildReceiptHTML(order) {
 
   <!-- HEADER -->
   <tr>
-    <td style="background:linear-gradient(135deg,#EC7FA9,#e08070);padding:32px 36px;text-align:center;color:#BE5985;">
-      <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1773958184/000LOGO_mrylkc.png" width="80" style="display:block;margin:0 auto 8px;height:auto;" alt="Florería Karel"/>
-      <div style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:white;letter-spacing:.02em;text-transform:uppercase;">
-        FLORERÍA Y REGALOS KAREL
-      </div>
-      <div style="font-size:11px;color:rgba(255,255,255,.85);margin-top:4px;letter-spacing:.1em;">
-        AV. DE LA RAZA 5262 · C.P. 32369 · CIUDAD JUÁREZ
-      </div>
-      <div style="font-size:11px;color:rgba(255,255,255,.85);margin-top:2px;">
-        RFC: GMB081001TH8 &nbsp;|&nbsp; WhatsApp: (656) 130-3595
-      </div>
-    </td>
-  </tr>
-
-  <!-- ORDER NUMBER BADGE -->
-  <tr>
-    <td style="padding:28px 36px 0;text-align:center;">
-      <div style="display:inline-block;background:#fff5f3;border:2px solid #EC7FA9;border-radius:100px;padding:10px 28px;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#EC7FA9;margin-bottom:4px;">Número de Pedido</div>
-        <div style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:#1a1a1a;">${order.orderNumber}</div>
-      </div>
-      <div style="font-size:12px;color:#888;margin-top:10px;">${orderDate}</div>
+    <td style="background:white;padding:32px 36px 18px;text-align:center;border-bottom:2px solid #EC7FA9;">
+      <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1773958184/000LOGO_mrylkc.png" width="200" style="display:block;margin:0 auto 14px;height:auto;max-width:100%;" alt="Florería Karel"/>
+      <div style="display:inline-block;background:#EC7FA9;color:white;padding:10px 28px;border-radius:100px;font-size:16px;font-weight:700;letter-spacing:.06em;margin-bottom:8px;">${order.orderNumber}</div>
+      <div style="font-size:12px;color:#888;">Fecha de orden: ${orderDate}</div>
     </td>
   </tr>
 
@@ -102,7 +92,7 @@ function buildReceiptHTML(order) {
 
     <!-- CLIENT -->
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-      <tr><td colspan="2" style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;margin-bottom:10px;">👤 Cliente</td></tr>
+      <tr><td colspan="2" style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;margin-bottom:10px;">Cliente</td></tr>
       <tr>
         <td style="padding:6px 0;font-size:13px;color:#888;width:110px;">Nombre</td>
         <td style="padding:6px 0;font-size:13px;font-weight:600;">${clientName}</td>
@@ -113,10 +103,10 @@ function buildReceiptHTML(order) {
 
     <!-- DELIVERY -->
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-      <tr><td colspan="2" style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;">🚐 Entrega</td></tr>
+      <tr><td colspan="2" style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;">Entrega</td></tr>
       <tr>
         <td style="padding:6px 0;font-size:13px;color:#888;width:110px;">Fecha</td>
-        <td style="padding:6px 0;font-size:13px;font-weight:600;">${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('es-MX', {weekday:'long', year:'numeric', month:'long', day:'numeric'}) : '—'}</td>
+        <td style="padding:6px 0;font-size:13px;font-weight:700;color:#C96E60;">${fmtDeliveryDate(order.deliveryDate)}</td>
       </tr>
       <tr>
         <td style="padding:6px 0;font-size:13px;color:#888;">Horario</td>
@@ -153,7 +143,7 @@ function buildReceiptHTML(order) {
     </table>
 
     <!-- PRODUCTS -->
-    <div style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;margin-bottom:12px;">🌺 Productos</div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;margin-bottom:12px;">Productos</div>
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:10px;overflow:hidden;margin-bottom:16px;">
       <thead>
         <tr style="background:#f9f5f5;">
@@ -173,6 +163,7 @@ function buildReceiptHTML(order) {
         <td style="padding:4px 0;font-size:13px;text-align:right;">$${fmt(order.subtotal)}</td>
       </tr>
       ${Number(order.deliveryFee) > 0 ? `<tr><td style="padding:4px 0;font-size:13px;color:#888;">Envío</td><td style="padding:4px 0;font-size:13px;text-align:right;">$${fmt(order.deliveryFee)}</td></tr>` : ''}
+      <tr><td style="padding:4px 0;font-size:13px;color:#888;">IVA (${ivaRate}%)</td><td style="padding:4px 0;font-size:13px;text-align:right;">$${fmt((Number(order.subtotal) + Number(order.deliveryFee)) * (ivaRate / 100))}</td></tr>
       ${Number(order.advance) > 0 ? `<tr><td style="padding:4px 0;font-size:13px;color:#888;">Anticipo</td><td style="padding:4px 0;font-size:13px;text-align:right;color:#EC7FA9;">− $${fmt(order.advance)}</td></tr>` : ''}
       <tr>
         <td colspan="2" style="border-top:2px solid #1a1a1a;padding-top:10px;"></td>
@@ -184,24 +175,22 @@ function buildReceiptHTML(order) {
     </table>
 
     <!-- PAYMENT -->
-    <div style="background:#f0faf0;border:1.5px solid #a5d6a7;border-radius:10px;padding:12px 16px;margin-bottom:24px;">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#2e7d32;margin-bottom:4px;">💳 Forma de Pago</div>
-      <div style="font-size:13px;font-weight:600;color:#1a1a1a;">${payLabel}</div>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;margin-bottom:10px;">Forma de Pago</div>
+      <span style="display:inline-block;background:#e8f5e9;color:#2e7d32;padding:4px 14px;border-radius:100px;font-size:12px;font-weight:700;">${payLabel}</span>
     </div>
 
   </td></tr>
 
   <!-- FOOTER -->
   <tr>
-    <td style="background:#BE5985;padding:24px 36px;text-align:center;">
-      <div style="font-family:Georgia,serif;font-size:14px;color:white;margin-bottom:6px;">Florería y Regalos Karel</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.8;">
-        Av. de la Raza 5262 · Ciudad Juárez, Chih.<br/>
-        Tel: 656 611 1124 &nbsp;·&nbsp; WhatsApp: (656) 130-3595<br/>
-        RFC: GMB081001TH8
+    <td style="background:white;padding:24px 36px;text-align:center;border-top:1px solid #eee;">
+      <div style="font-size:11px;color:#aaa;margin-bottom:12px;">
+        Gracias por su preferencia
       </div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:12px;">
-        Gracias por su preferencia 🌸
+      <div style="font-size:10px;color:#aaa;line-height:1.8;">
+        Florería y Regalos Karel<br/>
+        Av. de la Raza 5262, C.P. 32369, Ciudad Juárez · WhatsApp (656) 130-3595
       </div>
     </td>
   </tr>
@@ -215,7 +204,7 @@ function buildReceiptHTML(order) {
 }
 
 // ─── Send order confirmation ─────────────────────────────────
-async function sendOrderConfirmation(order) {
+async function sendOrderConfirmation(order, ivaRate = 8) {
   const email = order.client?.email;
   if (!email) return { skipped: true, reason: 'No email on file' };
   if (!process.env.RESEND_API_KEY) return { skipped: true, reason: 'RESEND_API_KEY not set' };
@@ -223,7 +212,7 @@ async function sendOrderConfirmation(order) {
   const SHOP_EMAIL = process.env.SHOP_EMAIL || 'karla@floreriakarel.com';
 
   try {
-    const html = buildReceiptHTML(order);
+    const html = buildReceiptHTML(order, ivaRate);
     const subject = `Pedido ${order.orderNumber} confirmado — Florería y Regalos Karel 🌸`;
 
     // Send to customer

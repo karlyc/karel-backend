@@ -70,3 +70,4 @@ router.put('/', requireAuth, requireOffice, upload.single('logo'), async (req, r
 });
 
 module.exports = router;
+module.exports.loadSettings = loadSettings;
