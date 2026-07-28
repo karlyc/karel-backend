@@ -3989,13 +3989,22 @@ function switchPagosSub(t) { pagosSubTab = t; renderPagosSub(); }
 function pagoRow(o, activeTab) {
   const needsProof = PROOF_REQUIRED_METHODS.includes(o.paymentMethod);
   const proofCell = o.paymentProofUrl
-    ? `<a href="${photoSrc(o.paymentProofUrl)}" target="_blank" style="color:var(--blue);font-size:11px;">Ver foto</a>`
+    ? `<a href="${photoSrc(o.paymentProofUrl)}" target="_blank" style="color:var(--blue);font-size:11px;">Ver foto</a>
+       <button class="btn br bsm" style="padding:2px 7px;margin-left:6px;" title="Eliminar comprobante" onclick="removePaymentProof('${o.id}')">🗑</button>`
     : (needsProof ? '<span style="color:var(--red);font-size:11px;">Falta</span>' : '<span style="color:var(--dim);font-size:11px;">No requiere</span>');
   const actionCell = o.paymentReviewed
     ? `<button class="btn bg bsm" onclick="setPaymentReviewed('${o.id}',false)">↩ Deshacer</button>`
     : `<button class="btn bs bsm" onclick="setPaymentReviewed('${o.id}',true)">✓ Revisado</button>`;
+  const reminderTask = (o.tasks || []).slice().sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate))[0];
+  const reminderCountdown = reminderTask ? (() => {
+    const days = Math.ceil((new Date(reminderTask.dueDate) - new Date()) / 86400000);
+    const label = days > 0 ? `${days} día${days===1?'':'s'} para recordatorio`
+                : days === 0 ? 'Recordatorio: hoy'
+                : `Recordatorio vencido (${Math.abs(days)}d)`;
+    return `<div style="color:#E07070;font-weight:700;font-size:11px;">⏰ ${label}</div>`;
+  })() : '';
   const reminderCell = activeTab==='pendientes'
-    ? `<select class="fs" style="font-size:11px;padding:3px 6px;" onchange="setPaymentReminder('${o.id}','${o.orderNumber}',this.value);this.value=''">
+    ? `${reminderCountdown}<select class="fs" style="font-size:11px;padding:3px 6px;" onchange="setPaymentReminder('${o.id}','${o.orderNumber}',this.value);this.value=''">
         <option value="">⏰ Recordar…</option>
         <option value="1">En 1 día</option>
         <option value="7">En 7 días</option>
@@ -4017,6 +4026,15 @@ async function setPaymentReviewed(id, reviewed) {
   try {
     await api('PATCH', `/api/orders/${id}/payment-review`, { reviewed });
     toast(reviewed ? 'Marcado como revisado ✓' : 'Movido a pendientes');
+    renderPagosSub();
+  } catch(e) { toastErr(e.message); }
+}
+
+async function removePaymentProof(id) {
+  if (!confirm('¿Eliminar el comprobante de pago? Podrás subir uno nuevo después.')) return;
+  try {
+    await api('DELETE', `/api/orders/${id}/proof`);
+    toast('Comprobante eliminado ✓');
     renderPagosSub();
   } catch(e) { toastErr(e.message); }
 }

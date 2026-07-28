@@ -126,6 +126,7 @@ router.get('/', requireAuth, async (req, res) => {
           items: { include: { product: { select: { name:true, photo1Url:true, photo2Url:true, description:true, notes:true, width:true, height:true, recipe:{ include:{ inventoryItem:{ select:{ name:true, unit:true } } } } } } } },
           attendedBy: { select: { name: true } },
           delivery: { select: { assignedToId: true, deliveredAt: true, photoUrl: true } },
+          tasks: { where: { completed: false, dueDate: { not: null } }, select: { id: true, dueDate: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip: (Number(page) - 1) * Number(limit),
@@ -536,6 +537,19 @@ router.patch('/:id/proof', requireAuth, upload.single('paymentProof'), async (re
   } catch(err) {
     console.error('Proof upload error:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── DELETE /api/orders/:id/proof — remove an incorrect payment proof photo ──
+router.delete('/:id/proof', requireAuth, requireOffice, async (req, res) => {
+  try {
+    const order = await prisma.order.update({
+      where: { id: req.params.id },
+      data: { paymentProofUrl: null },
+    });
+    res.json(order);
+  } catch(err) {
+    res.status(500).json({ error: 'Failed to remove payment proof' });
   }
 });
 
