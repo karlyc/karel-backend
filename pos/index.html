@@ -273,13 +273,12 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     </div>
     <div class="fg">
       <label class="fl">Usuario</label>
-      <input class="fi" id="l-user" placeholder="Ingresa tu usuario" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('l-pin-disp').focus()"/>
+      <input class="fi" id="l-user" placeholder="Ingresa tu usuario" autocomplete="username" onkeydown="if(event.key==='Enter'){this.blur();}"/>
     </div>
-    <div class="fg" style="margin-bottom:8px;"><label class="fl">PIN (6 dígitos)</label></div>
+    <div class="fg" style="margin-bottom:8px;"><label class="fl">PIN (4 dígitos)</label></div>
     <div class="login-dots" id="login-dots">
       <div class="login-dot" id="ld-0"></div><div class="login-dot" id="ld-1"></div>
       <div class="login-dot" id="ld-2"></div><div class="login-dot" id="ld-3"></div>
-      <div class="login-dot" id="ld-4"></div><div class="login-dot" id="ld-5"></div>
     </div>
     <div class="ppad">
       <button class="pk" onclick="lpk('1')">1</button><button class="pk" onclick="lpk('2')">2</button><button class="pk" onclick="lpk('3')">3</button>
@@ -917,28 +916,39 @@ async function api(method, path, body=null, isFormData=false) {
 }
 
 // ════════════════════════════════════════════
-// LOGIN — username + 6-digit PIN
+// LOGIN — username + 4-digit PIN
 // ════════════════════════════════════════════
+const PIN_LENGTH = 4;
 function lpk(k) {
   const err = document.getElementById('login-err');
   err.style.display = 'none';
   if (k === 'c') { loginPin = loginPin.slice(0, -1); }
-  else if (k === 'ok') { if (loginPin.length === 6) doLogin(); else showLoginErr('El PIN debe ser de 6 dígitos'); return; }
-  else if (loginPin.length < 6) loginPin += k;
+  else if (k === 'ok') { if (loginPin.length === PIN_LENGTH) doLogin(); else showLoginErr(`El PIN debe ser de ${PIN_LENGTH} dígitos`); return; }
+  else if (loginPin.length < PIN_LENGTH) loginPin += k;
   updLoginDots();
-  if (loginPin.length === 6) setTimeout(doLogin, 120);
+  if (loginPin.length === PIN_LENGTH) setTimeout(doLogin, 120);
 }
 
 function updLoginDots() {
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < PIN_LENGTH; i++) {
     document.getElementById(`ld-${i}`).classList.toggle('filled', i < loginPin.length);
   }
 }
 
+// Keyboard support for the login screen — digits, Backspace, Enter.
+// Ignored while typing in the username field so it doesn't steal keystrokes.
+document.addEventListener('keydown', (e) => {
+  if (document.getElementById('login-screen').style.display === 'none') return;
+  if (document.activeElement?.id === 'l-user') return;
+  if (/^[0-9]$/.test(e.key)) { e.preventDefault(); lpk(e.key); }
+  else if (e.key === 'Backspace') { e.preventDefault(); lpk('c'); }
+  else if (e.key === 'Enter') { e.preventDefault(); lpk('ok'); }
+});
+
 async function doLogin() {
   const username = document.getElementById('l-user').value.trim();
   if (!username) { showLoginErr('Ingresa tu usuario'); loginPin = ''; updLoginDots(); return; }
-  if (loginPin.length < 6) { showLoginErr('El PIN debe ser de 6 dígitos'); return; }
+  if (loginPin.length < PIN_LENGTH) { showLoginErr(`El PIN debe ser de ${PIN_LENGTH} dígitos`); return; }
   try {
     const data = await api('POST', '/api/auth/login', { username, pin: loginPin });
     token = data.token; currentStaff = data.staff;
@@ -2863,7 +2873,7 @@ async function aRender(t) {
       </div>`;
     }
     else if (t==='pin') {
-      el.innerHTML=`<div class="card" style="max-width:320px;"><div class="ch"><span class="ct">Cambiar PIN</span></div><div class="fg"><label class="fl">PIN Actual (6 dígitos)</label><input class="fi" id="pin-cur" type="password" maxlength="6" placeholder="••••••"/></div><div class="fg"><label class="fl">Nuevo PIN (6 dígitos)</label><input class="fi" id="pin-new" type="password" maxlength="6" placeholder="••••••"/></div><div class="fg"><label class="fl">Confirmar Nuevo PIN</label><input class="fi" id="pin-conf" type="password" maxlength="6" placeholder="••••••"/></div><button class="btn bp" onclick="changePIN()">Cambiar PIN</button></div>`;
+      el.innerHTML=`<div class="card" style="max-width:320px;"><div class="ch"><span class="ct">Cambiar PIN</span></div><div class="fg"><label class="fl">PIN Actual (4 dígitos)</label><input class="fi" id="pin-cur" type="password" maxlength="4" placeholder="••••"/></div><div class="fg"><label class="fl">Nuevo PIN (4 dígitos)</label><input class="fi" id="pin-new" type="password" maxlength="4" placeholder="••••"/></div><div class="fg"><label class="fl">Confirmar Nuevo PIN</label><input class="fi" id="pin-conf" type="password" maxlength="4" placeholder="••••"/></div><button class="btn bp" onclick="changePIN()">Cambiar PIN</button></div>`;
     }
   } catch(e) { el.innerHTML=`<div class="err-state">⚠ ${e.message}</div>`; }
 }
@@ -3028,7 +3038,7 @@ async function changePIN() {
   const cur=document.getElementById('pin-cur').value, nw=document.getElementById('pin-new').value, cf=document.getElementById('pin-conf').value;
   if (!cur||!nw||!cf) { toastErr('Todos los campos son requeridos'); return; }
   if (nw!==cf) { toastErr('Los PINs no coinciden'); return; }
-  if (nw.length!==6) { toastErr('El PIN debe ser de 6 dígitos'); return; }
+  if (nw.length!==4) { toastErr('El PIN debe ser de 4 dígitos'); return; }
   try { await api('PUT','/api/auth/pin',{currentPin:cur,newPin:nw}); toast('PIN actualizado ✓'); }
   catch(e) { toastErr(e.message); }
 }
@@ -3129,10 +3139,8 @@ async function openOrderModal(order=null) {
   if (order) {
     populateOrderForm(order);
   } else {
-    // Set today as default
-    const today = new Date();
-    const iso = today.toISOString().split('T')[0];
-    pickDay(iso);
+    // Set today as default (local calendar day)
+    pickDay(todayLocalISO());
     recalcTotal();
   }
   om('m-order');
@@ -3663,11 +3671,13 @@ async function printOrder() {
     return `<tr><td style="width:48px">${imgHTML}</td><td><b>${i.product?.name||i.customName||'—'}</b>${noteHTML}</td><td style="text-align:right">${i.quantity}</td><td style="text-align:right;font-weight:700">$${fmt(i.unitPrice)}</td></tr>`;
   }).join('') || `<tr><td colspan="4" style="color:#aaa;text-align:center">Sin productos</td></tr>`;
 
+  // deliveryDate is stored as UTC midnight for the intended calendar day — read it back
+  // with UTC getters, not local ones, or it displays a day early in timezones behind UTC.
   const deliveryDateStr = o.deliveryDate ? [
-    new Date(o.deliveryDate).toLocaleDateString('es-MX',{weekday:'long'}),
-    new Date(o.deliveryDate).getDate(),
-    'de', new Date(o.deliveryDate).toLocaleDateString('es-MX',{month:'long'}) + ',',
-    new Date(o.deliveryDate).getFullYear(),
+    new Date(o.deliveryDate).toLocaleDateString('es-MX',{weekday:'long', timeZone:'UTC'}),
+    new Date(o.deliveryDate).getUTCDate(),
+    'de', new Date(o.deliveryDate).toLocaleDateString('es-MX',{month:'long', timeZone:'UTC'}) + ',',
+    new Date(o.deliveryDate).getUTCFullYear(),
   ].join(' ').toUpperCase() : '—';
 
   const html = [
@@ -3966,7 +3976,7 @@ async function renderPagosSub() {
   const el = document.getElementById('atc'); if (!el) return;
   const myToken = ++pagosRenderToken;
   const activeTab = pagosSubTab; // capture now — must not read the mutable global again after the await
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = todayLocalISO();
   const url = activeTab === 'dia'        ? `/api/orders?createdDate=${todayStr}&limit=200`
             : activeTab === 'pendientes' ? `/api/orders?paymentReviewed=false&limit=200`
             :                               `/api/orders?paymentReviewed=true&limit=200`;
@@ -4045,7 +4055,7 @@ async function setPaymentReminder(id, orderNumber, days) {
   try {
     await api('POST', '/api/tasks', {
       description: `Revisar pago del pedido ${orderNumber}`,
-      dueDate: due.toISOString().split('T')[0],
+      dueDate: todayLocalISO(due),
       orderId: id,
     });
     toast(`Recordatorio creado ✓`);
@@ -4088,6 +4098,12 @@ document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.
 // ════════════════════════════════════════════
 // LABELS & UTILS
 // ════════════════════════════════════════════
+// Local calendar-day ISO string ("YYYY-MM-DD") — NOT Date#toISOString(), which converts
+// to UTC first and rolls over to the next/previous day in the evening/early morning for
+// any timezone offset from UTC (e.g. Ciudad Juárez).
+function todayLocalISO(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 const pb=p=>({PENDIENTE:`<span class="badge ba2">Pendiente</span>`,PAGO_RECIBIDO:`<span class="badge bb">Pago recibido</span>`,PAGADA:`<span class="badge bg2">Pagada</span>`}[p]||`<span class="badge bm">${p||'—'}</span>`);
 function payMethodBadge(o) {
   const label = PAY_METHOD_LABELS[o.paymentMethod] || o.paymentMethod || '—';
