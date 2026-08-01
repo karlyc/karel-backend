@@ -89,8 +89,10 @@ async function sendOrderConfirmation(order, client) {
   // Customer order confirmation is sent via email (Resend)
   // WhatsApp template for customer not submitted yet — using free-form as fallback
   const items = (order.items || []).map(i => `  • ${i.product?.name || 'Producto'} x${i.quantity}`).join('\n');
+  // deliveryDate is a date-only value stored as UTC midnight — format it with timeZone:'UTC'
+  // or it displays a day early in timezones behind UTC (like Ciudad Juárez).
   const delivDate = order.deliveryDate
-    ? new Date(order.deliveryDate).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
+    ? new Date(order.deliveryDate).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
     : 'Por confirmar';
 
   const message = `🌸 *Florería y Regalos Karel*\n\n¡Hola ${client?.firstName || 'cliente'}! Tu pedido ha sido confirmado ✅\n\n*Pedido:* #${order.orderNumber}\n*Entrega:* ${delivDate}\n*Horario:* ${order.deliveryWindow || ''}\n\n*Productos:*\n${items}\n\n*Total:* $${Number(order.total || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN\n\n¡Gracias por tu pedido! 💐\n📞 656 611-1124`;
@@ -116,8 +118,10 @@ async function sendShopNewOrder(order, client) {
   const shopPhone = process.env.SHOP_WHATSAPP;
   if (!shopPhone) { console.log('[WA] SHOP_WHATSAPP not set'); return; }
 
+  // deliveryDate is a date-only value stored as UTC midnight — format it with timeZone:'UTC'
+  // or it displays a day early in timezones behind UTC (like Ciudad Juárez).
   const delivDate = order.deliveryDate
-    ? new Date(order.deliveryDate).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
+    ? new Date(order.deliveryDate).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
     : 'Por confirmar';
   // Use | separator — commas can cause "Invalid parameter" in Meta templates
   const products = (order.items || []).map(i => `${i.product?.name || 'Producto'} x${i.quantity}`).join(' | ');

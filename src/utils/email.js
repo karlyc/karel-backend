@@ -14,6 +14,10 @@ const FROM = process.env.FROM_EMAIL || 'Florería Karel <pedidos@floreriakarel.c
 // ─── Helpers ────────────────────────────────────────────────
 const fmt = n => Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Store timezone — kept explicit so date formatting is correct regardless of the
+// server host's system timezone (e.g. a UTC-configured cloud host).
+const STORE_TZ = 'America/Ciudad_Juarez';
+
 function fmtWindow(w) {
   if (!w) return '—';
   const [type, time] = w.split('_');
@@ -21,12 +25,15 @@ function fmtWindow(w) {
   return `${labels[type] || type} ${time || ''}`;
 }
 
+// deliveryDate is a date-only value stored as UTC midnight (e.g. "2026-07-27" ->
+// 2026-07-27T00:00:00.000Z), so it must be read back with UTC getters/timeZone — local
+// ones shift it back a day in any timezone behind UTC (like Ciudad Juárez).
 function fmtDeliveryDate(d) {
   if (!d) return '—';
   const date = new Date(d);
-  const weekday = date.toLocaleDateString('es-MX', { weekday: 'long' });
-  const month = date.toLocaleDateString('es-MX', { month: 'long' });
-  return `${weekday} ${date.getDate()} de ${month}, ${date.getFullYear()}`.toUpperCase();
+  const weekday = date.toLocaleDateString('es-MX', { weekday: 'long', timeZone: 'UTC' });
+  const month = date.toLocaleDateString('es-MX', { month: 'long', timeZone: 'UTC' });
+  return `${weekday} ${date.getUTCDate()} de ${month}, ${date.getUTCFullYear()}`.toUpperCase();
 }
 
 // ─── Build HTML receipt ──────────────────────────────────────
@@ -64,7 +71,7 @@ function buildReceiptHTML(order, ivaRate = 8) {
   }).join('');
 
   const orderDate = new Date(order.createdAt).toLocaleDateString('es-MX', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: STORE_TZ
   });
 
   return `<!DOCTYPE html>

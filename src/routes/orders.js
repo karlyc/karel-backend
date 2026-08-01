@@ -283,10 +283,12 @@ router.post('/', upload.single('paymentProof'), [
       // Auto-create reminder for next year (birthday/anniversary)
       if (generateReminder) {
         const client = await tx.client.findUnique({ where: { id: clientId } });
+        // deliveryDate is UTC midnight for the intended calendar day — use UTC setters so
+        // this stays correct regardless of the server host's system timezone.
         const deliveryDt = new Date(deliveryDate);
         const nextYear = new Date(deliveryDt);
-        nextYear.setFullYear(nextYear.getFullYear() + 1);
-        nextYear.setDate(nextYear.getDate() - 2); // 2 days before
+        nextYear.setUTCFullYear(nextYear.getUTCFullYear() + 1);
+        nextYear.setUTCDate(nextYear.getUTCDate() - 2); // 2 days before
         await tx.reminder.create({
           data: {
             clientId,
