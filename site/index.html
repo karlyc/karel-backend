@@ -1435,7 +1435,7 @@ function applyDateCutoff() {
   if (siteSettings.blockSundays) {
     while (minDateObj.getDay() === 0) minDateObj.setDate(minDateObj.getDate() + 1);
   }
-  const minDate = minDateObj.toISOString().split('T')[0];
+  const minDate = todayLocalISO(minDateObj);
   document.querySelectorAll('input[type=date]').forEach(el => el.min = minDate);
 }
 
@@ -1464,7 +1464,7 @@ function validateDeliveryDate(dateStr) {
   if (siteSettings.blockSundays && new Date(dateStr + 'T12:00').getDay() === 0) return 'No hacemos entregas los domingos 🌸';
   if (closedDates.has(dateStr)) return 'No hacemos entregas en esa fecha 🌸';
   // Check cutoff for same-day delivery
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayLocalISO();
   if (dateStr === today && new Date().getHours() >= siteSettings.cutoffHour) {
     return `Ya pasó la hora de corte (${siteSettings.cutoffHour}:00). Por favor selecciona el día de mañana 🌸`;
   }
@@ -2534,6 +2534,12 @@ function addToCartFromDetail() {
 // ═══════════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════════
+// Local calendar-day ISO string ("YYYY-MM-DD") — NOT Date#toISOString(), which converts
+// to UTC first and rolls over to the next/previous day in the evening/early morning for
+// any timezone offset from UTC (e.g. Ciudad Juárez).
+function todayLocalISO(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 const fmt = n => Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const photoSrc = url => url ? (url.startsWith('http') ? url : API_BASE + url) : null;
@@ -2552,7 +2558,7 @@ function checkDeliveryDate(dateStr) {
     document.getElementById('d-date').style.borderColor = 'var(--accent)';
   } else {
     // Show cutoff reminder for same-day orders
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayLocalISO();
     if (dateStr === today) {
       warn.textContent = '⏰ Pedido en el mismo día — ordena antes de la 1:00 PM';
       warn.style.color = 'var(--accent)';
@@ -2855,7 +2861,9 @@ async function loadProfileOrders() {
       };
       const items = (o.items||[]).map(i => `${i.product?.name || 'Producto'} ×${i.quantity}`).join(' · ');
       const date = new Date(o.createdAt).toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
-      const delivDate = o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString('es-MX',{day:'numeric',month:'long'}) : null;
+      // deliveryDate is stored as UTC midnight for the intended calendar day — read it back
+      // with timeZone:'UTC', or it displays a day early in timezones behind UTC.
+      const delivDate = o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString('es-MX',{day:'numeric',month:'long',timeZone:'UTC'}) : null;
       return `<div class="order-card">
         <div class="order-card-head">
           <div>
