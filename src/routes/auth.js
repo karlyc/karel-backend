@@ -6,10 +6,10 @@ const { body, validationResult } = require('express-validator');
 const { prisma } = require('../db/prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
-// POST /api/auth/login — username + 6-digit PIN
+// POST /api/auth/login — username + 4-digit PIN
 router.post('/login', [
   body('username').notEmpty().withMessage('Username required'),
-  body('pin').isLength({ min: 6, max: 6 }).withMessage('PIN must be exactly 6 digits'),
+  body('pin').isLength({ min: 4, max: 4 }).withMessage('PIN must be exactly 4 digits'),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
@@ -44,7 +44,7 @@ router.get('/me', requireAuth, (req, res) => {
 // Change PIN (admin only, or staff changing their own)
 router.put('/pin', requireAuth, [
   body('currentPin').notEmpty(),
-  body('newPin').isLength({ min: 4, max: 8 }).withMessage('PIN must be 4–8 digits'),
+  body('newPin').isLength({ min: 4, max: 4 }).withMessage('PIN must be exactly 4 digits'),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });

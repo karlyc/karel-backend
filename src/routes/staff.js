@@ -17,7 +17,7 @@ router.get('/', requireAuth, requireAdmin, async (_req, res) => {
 
 router.post('/', requireAuth, requireAdmin, [
   body('name').notEmpty(),
-  body('pin').isLength({ min: 4, max: 8 }),
+  body('pin').isLength({ min: 4, max: 4 }),
   body('role').isIn(['ADMIN','OFFICE','FLORISTA','REPARTIDOR']),
 ], async (req, res) => {
   const errors = validationResult(req);
