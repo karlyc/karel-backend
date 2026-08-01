@@ -2275,7 +2275,7 @@ async function processMPPayment(formData) {
     const fullPhone = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
 
     // Process payment via backend — send formData directly as MP official docs show
-    const payRes = await apiPost('/api/mp/process-payment', formData);
+    const payRes = await apiPost('/api/mp/process-order', formData);
 
     if (payRes.status === 'approved') {
       // Payment approved — create order
