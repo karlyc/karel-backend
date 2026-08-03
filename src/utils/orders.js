@@ -1,11 +1,17 @@
 // src/utils/orders.js
 
 // Generate sequential order number like KAR-2049
+// Takes the max numeric suffix among well-formed "KAR-<digits>" numbers, rather than just
+// incrementing whatever order has the latest createdAt — a differently-formatted orderNumber
+// (e.g. a manually-inserted test row) must not derail the sequence with a non-numeric suffix.
 async function generateOrderNumber(tx) {
-  const last = await tx.order.findFirst({ orderBy: { createdAt: 'desc' } });
-  if (!last) return 'KAR-1001';
-  const num = parseInt(last.orderNumber.split('-')[1], 10);
-  return `KAR-${num + 1}`;
+  const [row] = await tx.$queryRaw`
+    SELECT MAX(CAST(SUBSTRING("orderNumber" FROM 5) AS INTEGER)) AS max
+    FROM "Order"
+    WHERE "orderNumber" ~ '^KAR-[0-9]+$'
+  `;
+  const max = row?.max;
+  return `KAR-${(max ? Number(max) : 1000) + 1}`;
 }
 
 // Compute loyalty tier based on total order count
