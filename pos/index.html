@@ -1632,7 +1632,7 @@ async function vGastosStaff() {
 <div class="card">
   <table class="tbl"><thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Monto</th><th>Agregado por</th><th></th></tr></thead><tbody>
   ${exp.items.map(e=>`<tr>
-    <td style="color:var(--mid);">${new Date(e.date).toLocaleDateString('es')}</td>
+    <td style="color:var(--mid);">${new Date(e.date).toLocaleDateString('es',{timeZone:'UTC'})}</td>
     <td>${e.category}</td>
     <td>${e.description}</td>
     <td style="color:var(--red);font-weight:700;">$${fmt(e.amount)}</td>
@@ -2651,7 +2651,7 @@ async function aRender(t) {
         <div class="ch"><span class="ct">Total del mes</span><span style="color:var(--red);font-weight:700;font-size:13px;">$${fmt(exp.total)}</span></div>
         <table class="tbl"><thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th>Monto</th><th>Agregado por</th><th></th><th></th></tr></thead><tbody>
         ${exp.items.map(e=>`<tr>
-          <td style="color:var(--mid);">${new Date(e.date).toLocaleDateString('es')}</td>
+          <td style="color:var(--mid);">${new Date(e.date).toLocaleDateString('es',{timeZone:'UTC'})}</td>
           <td><span class="badge ${e.type==='MENSUAL'?'bb':'ba2'}">${e.type==='MENSUAL'?'Fijo':'Misc.'}</span></td>
           <td>${e.category}</td>
           <td>${e.description}${e.isPrivate?' <span class="badge brose" style="margin-left:4px;">🔒 Privado</span>':''}</td>
@@ -2928,7 +2928,7 @@ function openGastoModal(gasto, context) {
   const catSel = document.getElementById('g-cat');
   catSel.innerHTML = (isAdmin ? ADMIN_GASTO_CATEGORIES : STAFF_GASTO_CATEGORIES).map(c=>`<option>${c}</option>`).join('');
 
-  document.getElementById('g-date').value = gasto ? gasto.date.split('T')[0] : new Date().toISOString().split('T')[0];
+  document.getElementById('g-date').value = gasto ? gasto.date.split('T')[0] : todayLocalISO();
   document.getElementById('g-cat').value = gasto?.category || catSel.options[0]?.value || '';
   document.getElementById('g-amount').value = gasto?.amount || '';
   document.getElementById('g-desc').value = gasto?.description || '';
@@ -2948,7 +2948,7 @@ async function saveGasto() {
     category:document.getElementById('g-cat').value,
     description:document.getElementById('g-desc').value,
     amount:document.getElementById('g-amount').value,
-    date:document.getElementById('g-date').value||new Date().toISOString().split('T')[0],
+    date:document.getElementById('g-date').value||todayLocalISO(),
     type: isAdmin ? document.getElementById('g-type').value : 'MISCELANEA',
     isPrivate: isAdmin ? document.getElementById('g-private-tog').classList.contains('on') : false,
   };
@@ -4151,7 +4151,7 @@ document.querySelectorAll('.ni').forEach(n=>n.addEventListener('click',()=>showV
 // INIT
 // ════════════════════════════════════════════
 // Set today's date on gasto modal
-document.getElementById('g-date').value = new Date().toISOString().split('T')[0];
+document.getElementById('g-date').value = todayLocalISO();
 </script>
 </body>
 </html>
