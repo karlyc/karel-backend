@@ -19,6 +19,8 @@
   --sage:#4FB08F;--sage-l:#3D9678;--sage-dim:rgba(79,176,143,.15);
   /* Accent — gold #C4A76E */
   --amber:#C4A76E;--amber-dim:rgba(196,167,110,.15);
+  /* Highlight — new/unprinted order */
+  --yellow:#E0C23C;--yellow-dim:rgba(224,194,60,.18);
   /* Utility */
   --blue:#3B6FA0;--blue-dim:rgba(59,111,160,.12);
   --purple:#7059A0;--purple-dim:rgba(112,89,160,.12);
@@ -117,6 +119,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 .tbl td{padding:10px 11px;font-size:12px;border-bottom:1px solid var(--rule);vertical-align:middle;}
 .tbl tr:last-child td{border-bottom:none;}
 .tbl tr:hover td{background:rgba(255,255,255,.016);}
+.tbl tr.unprinted{background:var(--yellow-dim);}
 .tlink{color:var(--rose-l);cursor:pointer;font-weight:600;}
 .fg{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;}
 .fl{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);}
@@ -1226,7 +1229,7 @@ async function vPeds(filterStatus='', filterPayment='') {
   <thead><tr><th>#</th><th>F. Entrega</th><th>Cliente</th><th>Destinatario</th><th>Ventana</th><th>Total</th><th>Pago</th><th>Estado</th><th>Acciones</th></tr></thead>
   <tbody>
   ${data.orders.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--dim);padding:30px;">Sin pedidos</td></tr>':
-    data.orders.map(o=>`<tr>
+    data.orders.map(o=>`<tr${!o.printedAt?' class="unprinted"':''}>
       <td><span class="tlink">${o.orderNumber}</span></td>
       <td style="color:var(--mid);">${o.deliveryDate?.split('T')[0]||'—'}</td>
       <td>${o.client?.firstName||''} ${o.client?.lastNameP||''}</td>
@@ -1250,7 +1253,7 @@ async function searchOrders(q) {
   try {
     const data = await api('GET', `/api/orders?search=${encodeURIComponent(q)}`);
     const tbody = document.querySelector('.tbl tbody');
-    if (tbody) tbody.innerHTML = data.orders.map(o=>`<tr><td><span class="tlink">${o.orderNumber}</span></td><td style="color:var(--mid);">${o.deliveryDate?.split('T')[0]||'—'}</td><td>${o.client?.firstName||''} ${o.client?.lastNameP||''}</td><td>${o.recipientName||'—'}</td><td>${fmtWindow(o.deliveryWindow)}</td><td style="color:var(--sage);font-weight:700;">$${fmt(o.total)}</td><td>${payMethodBadge(o)}</td><td>${sb(o.orderStatus)}</td><td><button class="btn bg bsm" onclick="openOrderActions('${o.id}')">⋯</button></td></tr>`).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--dim);">Sin resultados</td></tr>';
+    if (tbody) tbody.innerHTML = data.orders.map(o=>`<tr${!o.printedAt?' class="unprinted"':''}><td><span class="tlink">${o.orderNumber}</span></td><td style="color:var(--mid);">${o.deliveryDate?.split('T')[0]||'—'}</td><td>${o.client?.firstName||''} ${o.client?.lastNameP||''}</td><td>${o.recipientName||'—'}</td><td>${fmtWindow(o.deliveryWindow)}</td><td style="color:var(--sage);font-weight:700;">$${fmt(o.total)}</td><td>${payMethodBadge(o)}</td><td>${sb(o.orderStatus)}</td><td><button class="btn bg bsm" onclick="openOrderActions('${o.id}')">⋯</button></td></tr>`).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--dim);">Sin resultados</td></tr>';
   } catch(e) {}
 }
 
@@ -3743,6 +3746,10 @@ async function printOrder() {
   win.document.write('<html><head><meta charset="UTF-8"><title>Recibo ' + o.orderNumber + '<\/title><style>' + css + '<\/style><\/head><body>' + html + '<\/body><\/html>');
   win.document.close();
   setTimeout(() => { win.focus(); win.print(); }, 800);
+
+  api('PATCH', `/api/orders/${o.id}/print`).then(updated => {
+    lastCreatedOrder.printedAt = updated.printedAt;
+  }).catch(()=>{});
 }
 
 async function emailOrder() {

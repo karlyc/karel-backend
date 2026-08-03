@@ -208,6 +208,7 @@ model Order {
   paymentProofUrl  String?
   paymentReviewed  Boolean       @default(false)
   paymentReviewedAt DateTime?
+  printedAt        DateTime?
   notifyVia        String?
   orderStatus      OrderStatus   @default(EN_PROCESO)
   cancelReason     String?

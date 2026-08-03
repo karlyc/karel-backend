@@ -519,6 +519,20 @@ router.patch('/:id/payment-review', requireAuth, requireOffice, async (req, res)
   }
 });
 
+// ── PATCH /api/orders/:id/print ──
+// Marks an order as printed, so the POS can stop highlighting it as new/unprinted
+router.patch('/:id/print', requireAuth, async (req, res) => {
+  try {
+    const order = await prisma.order.update({
+      where: { id: req.params.id },
+      data: { printedAt: new Date() },
+    });
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update print status' });
+  }
+});
+
 // ── DELETE /api/orders/:id ──
 // Cancel order — admin only
 // ── PATCH /api/orders/:id/proof — upload payment proof photo after order creation
