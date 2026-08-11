@@ -46,7 +46,6 @@ router.get('/:id', requireAuth, async (req, res) => {
       include: {
         orders: {
           orderBy: { createdAt: 'desc' },
-          take: 10,
           select: { id: true, orderNumber: true, deliveryDate: true, total: true, orderStatus: true },
         },
       },

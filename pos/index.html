@@ -1198,8 +1198,8 @@ ${(pending.pending||[]).length > 0 ? `
 // ════════════════════════════════════════════
 // PEDIDOS
 // ════════════════════════════════════════════
-async function vPeds(filterStatus='', filterPayment='') {
-  let url = '/api/orders?limit=100';
+async function vPeds(filterStatus='', filterPayment='', page=1) {
+  let url = `/api/orders?limit=50&page=${page}`;
   if (filterStatus)  url += `&orderStatus=${filterStatus}`;
   if (filterPayment) url += `&paymentStatus=${filterPayment}`;
   const [data, counts] = await Promise.all([
@@ -1245,6 +1245,11 @@ async function vPeds(filterStatus='', filterPayment='') {
     </tr>`).join('')}
   </tbody>
 </table>
+${data.pages>1?`<div style="display:flex;justify-content:center;align-items:center;gap:14px;padding:14px;border-top:1px solid var(--brd);">
+  <button class="btn bg bsm" ${data.page<=1?'disabled':''} onclick="vPeds('${filterStatus}','${filterPayment}',${data.page-1})">‹ Anterior</button>
+  <span style="font-size:12px;color:var(--mid);">Página ${data.page} de ${data.pages} (${data.total} pedidos)</span>
+  <button class="btn bg bsm" ${data.page>=data.pages?'disabled':''} onclick="vPeds('${filterStatus}','${filterPayment}',${data.page+1})">Siguiente ›</button>
+</div>`:''}
 </div>`;
 }
 
@@ -1781,12 +1786,12 @@ async function searchClientes(q) {
       return;
     }
     list.innerHTML = clients.map(c => `
-      <div style="border:1px solid var(--brd);padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="border:1px solid var(--brd);padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="openEditClient('${c.id}')">
         <div>
           <div style="font-weight:700;font-size:.9rem;">${[c.firstName,c.middleName,c.lastNameP,c.lastNameM].filter(Boolean).join(' ') || '—'}</div>
           <div style="font-size:.78rem;color:var(--mid);">${c.phoneCode||'+52'} ${c.phone||''} · ${c.email||'Sin correo'}</div>
         </div>
-        <button class="btn bp bsm" onclick="openEditClient('${c.id}')">Editar</button>
+        <button class="btn bp bsm" onclick="event.stopPropagation();openEditClient('${c.id}')">Editar</button>
       </div>`).join('');
   } catch(e) {
     list.innerHTML = `<div style="text-align:center;padding:40px;color:var(--mid);">Error: ${e.message}</div>`;
@@ -3331,7 +3336,17 @@ async function openClientView(id) {
           <span>Lealtad: ${loyaltyBadge(c.loyaltyTier,c.orderCount)||`<span class="badge bm">${c.loyaltyTier}</span>`}</span>
           <span>Fuente: <strong>${c.source||'—'}</strong></span>
         </div>
-        ${c.orders?.length ? `<div style="margin-top:8px;font-size:11px;color:var(--mid);">Últimos pedidos: ${c.orders.slice(0,3).map(o=>`${o.orderNumber} (${o.deliveryDate?.split('T')[0]||'—'})`).join(', ')}</div>` : ''}
+        ${c.orders?.length ? `<div style="margin-top:10px;">
+          <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);margin-bottom:6px;">Todos los pedidos (${c.orders.length})</div>
+          <div style="max-height:180px;overflow-y:auto;border:1px solid var(--brd);border-radius:6px;">
+            ${c.orders.map(o=>`<div class="tlink" style="display:flex;justify-content:space-between;gap:10px;padding:6px 10px;font-size:11.5px;border-bottom:1px solid var(--brd);cursor:pointer;" onclick="cm('m-client-view');openOrderActions('${o.id}')">
+              <span>${o.orderNumber}</span>
+              <span style="color:var(--mid);">${o.deliveryDate?.split('T')[0]||'—'}</span>
+              <span>${sb(o.orderStatus)}</span>
+              <span style="color:var(--sage);font-weight:700;">$${fmt(o.total)}</span>
+            </div>`).join('')}
+          </div>
+        </div>` : ''}
       </div>`;
     om('m-client-view');
   } catch(e) { toastErr(e.message); }
@@ -3996,8 +4011,8 @@ async function renderPagosSub() {
       <div class="fp${activeTab==='revisados'?' act':''}" onclick="switchPagosSub('revisados')">Revisados</div>
     </div>
     <div class="card"><table class="tbl">
-      <thead><tr><th>#</th><th>Cliente</th><th>Método</th><th>Total</th><th>Comprobante</th>${activeTab==='pendientes'?'<th>Recordatorio</th>':''}<th></th></tr></thead>
-      <tbody>${orders.map(o=>pagoRow(o,activeTab)).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--dim);">Sin pedidos</td></tr>`}</tbody>
+      <thead><tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Método</th><th>Total</th><th>Comprobante</th>${activeTab==='pendientes'?'<th>Recordatorio</th>':''}<th></th></tr></thead>
+      <tbody>${orders.map(o=>pagoRow(o,activeTab)).join('') || `<tr><td colspan="7" style="text-align:center;color:var(--dim);">Sin pedidos</td></tr>`}</tbody>
     </table></div>`;
 }
 
@@ -4030,6 +4045,7 @@ function pagoRow(o, activeTab) {
     : '';
   return `<tr>
     <td><span class="tlink" onclick="openOrderActions('${o.id}')">${o.orderNumber}</span></td>
+    <td style="color:var(--mid);">${o.deliveryDate?.split('T')[0]||'—'}</td>
     <td>${o.client?.firstName||''} ${o.client?.lastNameP||''}</td>
     <td>${payMethodBadge(o)}</td>
     <td style="color:var(--sage);font-weight:700;">$${fmt(o.total)}</td>
