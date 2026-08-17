@@ -16,6 +16,36 @@ router.post('/process-order', async (req, res) => {
       return res.status(500).json({ error: 'MP_ACCESS_TOKEN not configured' });
     }
 
+    const { formData, selectedPaymentMethod, amount, payer } = req.body;
+    if (!formData?.token || !formData?.payment_method_id) {
+      return res.status(400).json({ error: 'Missing card payment data' });
+    }
+
+    const totalAmount = String(formData.transaction_amount ?? amount);
+
+    // Orders API (v1/orders) needs a different envelope than the Brick's
+    // formData (which is shaped for the older Payments API) — build it here.
+    const orderBody = {
+      type: 'online',
+      processing_mode: 'automatic',
+      total_amount: totalAmount,
+      payer: {
+        email: formData.payer?.email || payer?.email,
+        ...(formData.payer?.identification ? { identification: formData.payer.identification } : {}),
+      },
+      transactions: {
+        payments: [{
+          amount: totalAmount,
+          payment_method: {
+            id: formData.payment_method_id,
+            type: selectedPaymentMethod || 'credit_card',
+            token: formData.token,
+            installments: Number(formData.installments) || 1,
+          },
+        }],
+      },
+    };
+
     const crypto = require('crypto');
     const idempotencyKey = crypto.randomUUID();
 
@@ -26,7 +56,7 @@ router.post('/process-order', async (req, res) => {
         'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}`,
         'X-Idempotency-Key': idempotencyKey,
       },
-      body: JSON.stringify(req.body),
+      body: JSON.stringify(orderBody),
     });
 
     const result = await response.json();

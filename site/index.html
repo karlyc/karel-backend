@@ -2226,7 +2226,7 @@ async function initMPBrick() {
         },
         onSubmit: ({ selectedPaymentMethod, formData }) => {
           return new Promise((resolve, reject) => {
-            processMPPayment(formData)
+            processMPPayment(formData, selectedPaymentMethod)
               .then(() => resolve())
               .catch(() => reject());
           });
@@ -2251,7 +2251,7 @@ async function initMPBrick() {
   }
 }
 
-async function processMPPayment(formData) {
+async function processMPPayment(formData, selectedPaymentMethod) {
   const errEl = document.getElementById('mp-error');
   if (errEl) errEl.textContent = '';
 
@@ -2274,8 +2274,13 @@ async function processMPPayment(formData) {
     const total     = Math.round((sub + ship + tax) * 100) / 100;
     const fullPhone = document.getElementById('o-code').value + document.getElementById('o-phone').value.trim();
 
-    // Process payment via backend — send formData directly as MP official docs show
-    const payRes = await apiPost('/api/mp/process-order', formData);
+    // Process payment via backend — backend builds the Orders API envelope from this
+    const payRes = await apiPost('/api/mp/process-order', {
+      formData,
+      selectedPaymentMethod,
+      amount: total,
+      payer: { email },
+    });
 
     if (payRes.status === 'approved') {
       // Payment approved — create order
