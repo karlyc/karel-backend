@@ -2986,7 +2986,7 @@ initAuth();
 (function() {
   const params = new URLSearchParams(window.location.search);
   const cat = params.get('categoria');
-  const page = params.get('pagina') || window.location.pathname.replace('/', '');
+  const page = params.get('pagina') || window.location.pathname.replace(/^\/|\/$/g, '');
 
   if (page === 'catalogo' || page === 'catalog') {
     showPage('catalog');
