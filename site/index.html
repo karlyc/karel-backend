@@ -916,6 +916,26 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
   </section>
 </div>
 
+<!-- ════ PAGE: CUIDADOS DE FLORES ════ -->
+<div class="page" id="page-cuidados">
+  <div class="eventos-header">
+    <span class="s-label rv">Flores felices, flores duraderas</span>
+    <h2 class="s-title rv d1">Cuidados de <em>flores</em></h2>
+    <p class="s-sub rv d2">Sigue estos consejos sencillos para que tu arreglo se mantenga fresco y hermoso por más tiempo.</p>
+  </div>
+  <div class="eventos-grid">
+    <div class="evento-card rv"><div class="evento-img">💧</div><div class="evento-title">Cambia el agua seguido</div><div class="evento-desc">Renueva el agua cada 2–3 días con agua limpia y fresca para evitar bacterias que marchitan las flores.</div></div>
+    <div class="evento-card rv d1"><div class="evento-img">✂️</div><div class="evento-title">Corta los tallos en ángulo</div><div class="evento-desc">Un corte diagonal de unos 2 cm, hecho con tijeras limpias, aumenta la superficie que absorbe agua.</div></div>
+    <div class="evento-card rv d2"><div class="evento-img">☀️</div><div class="evento-title">Evita el calor directo</div><div class="evento-desc">Aleja tu arreglo de la luz solar directa, calefacción, aire acondicionado y corrientes de aire.</div></div>
+    <div class="evento-card rv"><div class="evento-img">🍎</div><div class="evento-title">Lejos de frutas maduras</div><div class="evento-desc">El etileno que liberan las frutas acelera el marchitamiento — mantén el florero lejos del frutero.</div></div>
+    <div class="evento-card rv d1"><div class="evento-img">🌿</div><div class="evento-title">Retira hojas bajo el agua</div><div class="evento-desc">Las hojas sumergidas se pudren y contaminan el agua, acortando la vida de tus flores.</div></div>
+    <div class="evento-card rv d2"><div class="evento-img">🧴</div><div class="evento-title">Usa el sobre de alimento floral</div><div class="evento-desc">El conservante que incluimos con tu arreglo nutre e hidrata las flores por más tiempo — no lo deseches.</div></div>
+  </div>
+  <div style="text-align:center;padding:20px 6vw 60px;">
+    <button class="btn-primary" onclick="showPage('catalog')">¿Buscas flores frescas? Ordena ahora</button>
+  </div>
+</div>
+
 <!-- ════ PAGE: PERFIL ════ -->
 <div class="page" id="page-perfil">
   <div class="profile-header">
@@ -1009,6 +1029,7 @@ footer{background:#e7b1ff;color:rgba(255,255,255,.75);padding:64px 6vw 32px;}
       <li><a href="/catalogo">Catálogo</a></li>
       <li><a href="/eventos">Eventos</a></li>
       <li><a href="/contacto">Contacto</a></li>
+      <li><a href="/cuidados-de-flores">Cuidado de flores</a></li>
     </ul></div>
     <div class="footer-col"><div class="footer-col-title">Servicios</div><ul>
       <li><a href="/catalogo" onclick="openOrderModal();return false;">Ordenar en línea</a></li>
@@ -2973,6 +2994,8 @@ initAuth();
     showPage('contacto');
   } else if (page === 'eventos') {
     showPage('eventos');
+  } else if (page === 'cuidados-de-flores' || page === 'cuidados') {
+    showPage('cuidados');
   }
 
   if (cat) {
