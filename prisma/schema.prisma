@@ -28,6 +28,7 @@ model Staff {
   ordersAttended Order[]    @relation("AttendedBy")
   deliveries     Delivery[] @relation("AssignedTo")
   expenditures   Expenditure[]
+  paymentsRecorded Payment[] @relation("PaymentsRecorded")
 }
 
 enum ClientSource { 
@@ -220,6 +221,28 @@ model Order {
   items            OrderItem[]
   delivery         Delivery?
   tasks            Task[]
+  payments         Payment[]
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  orderId      String
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount       Decimal       @db.Decimal(10,2)
+  method       PaymentMethod
+  proofUrl     String?
+  reviewed     Boolean       @default(false)
+  reviewedAt   DateTime?
+  voided       Boolean       @default(false)
+  voidedAt     DateTime?
+  voidReason   String?
+  recordedById String?
+  recordedBy   Staff?        @relation("PaymentsRecorded", fields: [recordedById], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([orderId])
+  @@index([reviewed])
 }
 
 model OrderItem {
@@ -382,4 +405,20 @@ model CustomerOTP {
   used       Boolean  @default(false)
   createdAt  DateTime @default(now())
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Settings {
+  id           String   @id @default("singleton")
+  blockSundays Boolean  @default(true)
+  cutoffHour   Int      @default(13)
+  ivaRate      Float    @default(8)
+  storeName    String   @default("")
+  whatsapp     String   @default("")
+  phone        String   @default("")
+  address      String   @default("")
+  rfc          String   @default("")
+  website      String   @default("")
+  email        String   @default("")
+  logoUrl      String   @default("")
+  updatedAt    DateTime @updatedAt
 }

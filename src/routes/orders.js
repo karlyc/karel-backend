@@ -326,7 +326,7 @@ router.post('/', upload.single('paymentProof'), [
       },
     });
     if (fullOrder?.client?.email) {
-      sendOrderConfirmation(fullOrder, loadSettings().ivaRate).catch(e => console.error('[Email] Order confirmation failed:', e.message));
+      loadSettings().then(s => sendOrderConfirmation(fullOrder, s.ivaRate)).catch(e => console.error('[Email] Order confirmation failed:', e.message));
     }
     // WhatsApp notifications (fire and forget)
     if (fullOrder?.client?.phone) {
@@ -359,7 +359,9 @@ router.put('/:id', requireAuth, requireOffice, upload.single('paymentProof'), as
     messageFrom, messageText, messageAnon,
     occasion = 'OTRA',
     items, paymentMethod,
-    advance = 0,
+    // advance intentionally has no default here — the edit UI no longer sends it,
+    // so omitting it must preserve the order's existing (legacy) advance value below,
+    // not silently reset it to 0.
     needsInvoice = false, invoiceRfc, invoiceName, invoiceCfdi, invoiceEmail,
     notifyVia,
   } = bodyData;
@@ -379,10 +381,11 @@ router.put('/:id', requireAuth, requireOffice, upload.single('paymentProof'), as
 
     const { itemData, subtotal } = await resolveOrderItems(items);
 
+    const resolvedAdvance = Number(existing.advance) || 0; // never modified by the edit UI going forward
     const sentTotal = bodyData.total ? Number(bodyData.total) : null;
     const total = (sentTotal && sentTotal > subtotal)
-      ? sentTotal
-      : subtotal + Number(deliveryFee) - Number(advance);
+      ? sentTotal - resolvedAdvance
+      : subtotal + Number(deliveryFee) - resolvedAdvance;
 
     let paymentProofUrl = existing.paymentProofUrl;
     if (req.file) {
@@ -410,7 +413,7 @@ router.put('/:id', requireAuth, requireOffice, upload.single('paymentProof'), as
           messageFrom, messageText, messageAnon,
           paymentMethod,
           subtotal,
-          advance,
+          advance: resolvedAdvance,
           total,
           needsInvoice,
           invoiceRfc, invoiceName, invoiceCfdi, invoiceEmail,
@@ -597,7 +600,7 @@ router.post('/:id/send-confirmation-email', requireAuth, async (req, res) => {
     if (!order) return res.status(404).json({ error: 'Pedido no encontrado' });
     if (!order.client?.email) return res.status(400).json({ error: 'El cliente no tiene correo registrado' });
 
-    await sendOrderConfirmation(order, loadSettings().ivaRate);
+    await sendOrderConfirmation(order, (await loadSettings()).ivaRate);
     res.json({ ok: true });
   } catch(err) {
     console.error('[send-confirmation-email] Error:', err.message);
