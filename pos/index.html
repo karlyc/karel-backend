@@ -669,8 +669,8 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
       <div class="fg"><label class="fl">Precio *</label><input class="fi" id="p-price" type="number" placeholder="$0.00" oninput="updateCostSummary()"/></div>
     </div>
     <div class="fr">
-      <div class="fg"><label class="fl">Ancho (cm)</label><input class="fi" id="p-width" type="number" placeholder="Opcional"/></div>
-      <div class="fg"><label class="fl">Alto (cm)</label><input class="fi" id="p-height" type="number" placeholder="Opcional"/></div>
+      <div class="fg"><label class="fl">Ancho (pulgadas)</label><input class="fi" id="p-width" type="number" placeholder="Opcional"/></div>
+      <div class="fg"><label class="fl">Alto (pulgadas)</label><input class="fi" id="p-height" type="number" placeholder="Opcional"/></div>
     </div>
     <div class="fg"><label class="fl">Descripción (instrucciones para el florista)</label><textarea class="fta" id="p-desc" placeholder="Materiales, colores, técnica, pasos de elaboración…"></textarea></div>
     <div class="fg"><label class="fl">Notas internas</label><textarea class="fta" id="p-notes" placeholder="Cambios frecuentes, consideraciones especiales, observaciones…" style="min-height:50px;"></textarea></div>
@@ -895,7 +895,7 @@ const API_BASE = (location.hostname === 'localhost' || location.hostname === '12
 // STATE
 // ════════════════════════════════════════════
 let token = null, currentStaff = null, loginPin = '';
-let cachedProducts = [], cachedCategories = [], cachedInventory = [];
+let cachedProducts = [], cachedCategories = [], cachedInventory = [], prodFilterCat = '';
 let IVA_PERCENT = 8; // default fallback — loaded from /api/settings on login, editable in Administración > Datos
 let posSocket = null, unreadChatCount = 0;
 let orderState = { clientId:null, items:[], occasion:'CUMPLEANOS', deliveryType:'DOMICILIO_CASA' };
@@ -1438,9 +1438,9 @@ ${orders.map((o,i) => {
     <div class="ec-name">${prod?.name || 'Arreglo'}</div>
     ${prod?.width || prod?.height ? `
       <div style="display:inline-flex;align-items:center;gap:6px;background:var(--ink3);border-radius:100px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--mid);margin-bottom:8px;">
-        📐 <span style="color:var(--text);">${prod.width||'—'} cm ancho</span>
+        📐 <span style="color:var(--text);">${prod.width||'—'} pulgadas ancho</span>
         <span style="color:var(--rule2);">×</span>
-        <span style="color:var(--text);">${prod.height||'—'} cm alto</span>
+        <span style="color:var(--text);">${prod.height||'—'} pulgadas alto</span>
       </div>` : ''}
 
     <!-- Multiple items -->
@@ -1807,11 +1807,22 @@ async function vProds() {
   cachedProducts = prods; cachedCategories = cats;
   document.getElementById('vc').innerHTML = `
 <div style="display:flex;gap:9px;margin-bottom:12px;flex-wrap:wrap;">
-  <div class="sb2" style="flex:1;"><span style="color:var(--dim);">⌕</span><input placeholder="Buscar por nombre o código…" oninput="filterProds(this.value)"/></div>
+  <div class="sb2" style="flex:1;"><span style="color:var(--dim);">⌕</span><input id="prod-search" placeholder="Buscar por nombre o código…" oninput="filterProds(this.value)"/></div>
   <button class="btn bp" onclick="openProductModal()">＋ Agregar Producto</button>
 </div>
+<div id="prods-body"></div>`;
+  renderProdsBody();
+}
+
+function renderProdsBody() {
+  const body = document.getElementById('prods-body'); if (!body) return;
+  body.innerHTML = `
+<div class="fps" style="margin-bottom:12px;">
+  <div class="fp${!prodFilterCat?' act':''}" onclick="filterProdCat('')">Todos (${cachedProducts.length})</div>
+  ${cachedCategories.map(c=>`<div class="fp${prodFilterCat===c.id?' act':''}" onclick="filterProdCat('${c.id}')">${c.name} (${cachedProducts.filter(p=>p.categoryId===c.id).length})</div>`).join('')}
+</div>
 <div class="pgrid" id="prods-grid">
-${prods.map(p=>prodCard(p)).join('')}
+${applyProdFilters().map(p=>prodCard(p)).join('')}
 </div>`;
 }
 
@@ -1821,7 +1832,7 @@ function prodCard(p) {
   <div class="pc-b">
     <div class="pc-n">${p.name}</div>
     <div class="pc-c">${p.code} · ${p.category?.name||''}</div>
-    ${p.width||p.height?`<div style="font-size:10px;color:var(--mid);margin-bottom:4px;">📐 ${p.width||'?'}cm × ${p.height||'?'}cm</div>`:''}
+    ${p.width||p.height?`<div style="font-size:10px;color:var(--mid);margin-bottom:4px;">📐 ${p.width||'?'} × ${p.height||'?'} pulgadas</div>`:''}
     <div style="font-size:12px;font-weight:700;color:var(--rose);margin-bottom:6px;">$${fmt(p.price)}</div>
     ${p.notes?`<div style="font-size:10px;color:var(--amber);background:var(--amber-dim);border-radius:4px;padding:3px 7px;margin-bottom:5px;">⚠️ ${p.notes}</div>`:''}
     ${p.recipe?.length?`<div style="font-size:10px;color:var(--sage);margin-bottom:5px;">🧪 ${p.recipe.length} ingrediente${p.recipe.length>1?'s':''}</div>`:''}
@@ -1837,10 +1848,21 @@ function prodCard(p) {
 </div>`;
 }
 
+function applyProdFilters() {
+  const q = (document.getElementById('prod-search')?.value || '').trim().toLowerCase();
+  let list = prodFilterCat ? cachedProducts.filter(p=>p.categoryId===prodFilterCat) : cachedProducts;
+  if (q) list = list.filter(p=>p.name.toLowerCase().includes(q)||p.code.toLowerCase().includes(q));
+  return list;
+}
+
 function filterProds(q) {
   const grid = document.getElementById('prods-grid'); if (!grid) return;
-  const f = q ? cachedProducts.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.code.toLowerCase().includes(q.toLowerCase())) : cachedProducts;
-  grid.innerHTML = f.map(p=>prodCard(p)).join('');
+  grid.innerHTML = applyProdFilters().map(p=>prodCard(p)).join('');
+}
+
+function filterProdCat(catId) {
+  prodFilterCat = catId;
+  renderProdsBody();
 }
 
 async function toggleProductVisible(id, tog) {
