@@ -72,10 +72,26 @@ router.post('/process-order', async (req, res) => {
       return res.status(response.status).json({ error: mpMessage || 'MP Orders API error' });
     }
 
+    // The Orders API's top-level `status` is an order lifecycle state
+    // (processed/action_required/expired), not a payment result — it is
+    // NEVER "approved". The actual payment outcome is on the payment
+    // record inside transactions.payments[]. Normalize to approved/pending/
+    // rejected so callers don't need to know MP's schema quirks.
+    const payment = result.transactions?.payments?.[0];
+    const paymentDetail = payment?.status_detail || result.status_detail;
+    let normalizedStatus;
+    if (payment?.status === 'approved' || result.status_detail === 'accredited') {
+      normalizedStatus = 'approved';
+    } else if (payment?.status === 'pending' || payment?.status === 'in_process' || result.status === 'action_required') {
+      normalizedStatus = 'pending';
+    } else {
+      normalizedStatus = 'rejected';
+    }
+
     res.json({
       id:           result.id,
-      status:       result.status,
-      status_detail: result.status_detail,
+      status:       normalizedStatus,
+      status_detail: paymentDetail,
       transactions: result.transactions,
     });
   } catch(err) {
