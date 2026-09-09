@@ -23,12 +23,19 @@ router.post('/process-order', async (req, res) => {
 
     const totalAmount = String(formData.transaction_amount ?? amount);
 
+    const crypto = require('crypto');
+    const idempotencyKey = crypto.randomUUID();
+
     // Orders API (v1/orders) needs a different envelope than the Brick's
     // formData (which is shaped for the older Payments API) — build it here.
+    // external_reference is required by MP; the Karel order doesn't exist yet
+    // at this point (it's created after payment succeeds), so we reuse the
+    // idempotency key as the reference.
     const orderBody = {
       type: 'online',
       processing_mode: 'automatic',
       total_amount: totalAmount,
+      external_reference: idempotencyKey,
       payer: {
         email: formData.payer?.email || payer?.email,
         ...(formData.payer?.identification ? { identification: formData.payer.identification } : {}),
@@ -46,9 +53,6 @@ router.post('/process-order', async (req, res) => {
       },
     };
 
-    const crypto = require('crypto');
-    const idempotencyKey = crypto.randomUUID();
-
     const response = await fetch('https://api.mercadopago.com/v1/orders', {
       method: 'POST',
       headers: {
@@ -64,7 +68,8 @@ router.post('/process-order', async (req, res) => {
 
     if (!response.ok) {
       console.error('[MP] Orders API error:', JSON.stringify(result));
-      return res.status(response.status).json({ error: result.message || 'MP Orders API error' });
+      const mpMessage = result.message || result.errors?.map(e => e.message).join(', ');
+      return res.status(response.status).json({ error: mpMessage || 'MP Orders API error' });
     }
 
     res.json({
