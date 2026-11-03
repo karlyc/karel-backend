@@ -2493,10 +2493,17 @@ async function aRender(t) {
       const now=new Date();
       const [data,exp]=await Promise.all([api('GET',`/api/reports/monthly?year=${now.getFullYear()}&month=${now.getMonth()+1}`),api('GET',`/api/expenditures?month=${now.getMonth()+1}&year=${now.getFullYear()}`)]);
       const expTotal=exp.items.reduce((s,e)=>s+Number(e.amount),0);
-      el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+      el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+        <button class="btn bg bsm" onclick="sendMonthlyReportNow()">✉️ Enviar reporte del mes pasado por correo</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
         <div class="sc"><div class="sv" style="color:var(--sage);">$${fmt(data.total)}</div><div class="sl">Ventas del mes</div></div>
         <div class="sc"><div class="sv" style="color:var(--red);">$${fmt(expTotal)}</div><div class="sl">Gastos del mes</div></div>
         <div class="sc"><div class="sv" style="color:${data.total-expTotal>=0?'var(--sage)':'var(--red)'};">$${fmt(data.total-expTotal)}</div><div class="sl">Utilidad neta</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div class="sc"><div class="sv">${data.newClients?.count ?? 0}</div><div class="sl">Clientes nuevos este mes</div></div>
+        <div class="sc"><div class="sv">${(data.avgOrdersPerWeekday ?? 0).toFixed(1)}</div><div class="sl">Promedio de pedidos/día (Lun–Vie)</div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
         <div class="card"><div class="ch"><span class="ct">Por Método de Pago</span></div>
@@ -2869,6 +2876,13 @@ async function toggleStaff(id, tog) {
   const active=!tog.classList.contains('on'); tog.classList.toggle('on',active);
   try { await api('PATCH',`/api/staff/${id}/active`,{active}); toast('Estado actualizado ✓'); }
   catch(e) { tog.classList.toggle('on',!active); toastErr(e.message); }
+}
+
+async function sendMonthlyReportNow() {
+  try {
+    await api('POST', '/api/reports/monthly/email', {});
+    toast('Reporte enviado ✓');
+  } catch(e) { toastErr(e.message); }
 }
 
 async function saveHorarioSettings() {

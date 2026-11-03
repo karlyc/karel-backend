@@ -1,5 +1,6 @@
 // src/utils/email.js — Send transactional emails via Resend
 const { Resend } = require('resend');
+const { getMonthlyReport, getMonthlyExpenditures } = require('./reportBuilder');
 
 // Lazy initialization — only create client when actually sending
 // This prevents crash on startup if RESEND_API_KEY is not set locally
@@ -369,7 +370,121 @@ async function sendChatNotificationEmail({ visitorName, text }) {
   }
 }
 
-module.exports = { sendOrderConfirmation, sendDeliveryNotification, sendContactEmail, sendChatNotificationEmail };
+// ─── Send monthly report (to shop) ───────────────────────────
+const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+function buildMonthlyReportHTML({ year, month, report, exp }) {
+  const expTotal = exp.total;
+  const utilidad = report.total - expTotal;
+  const monthLabel = `${MONTH_NAMES[month - 1]} ${year}`;
+
+  const methodRows = Object.entries(report.byMethod || {}).map(([m, v]) => `
+    <tr><td style="padding:5px 0;font-size:13px;color:#888;">${m}</td><td style="padding:5px 0;font-size:13px;text-align:right;font-weight:600;">$${fmt(v)}</td></tr>
+  `).join('') || '<tr><td style="padding:5px 0;font-size:13px;color:#aaa;">Sin ventas</td></tr>';
+
+  const expCategoryRows = Object.entries(exp.byCategory || {}).map(([cat, amt]) => `
+    <tr><td style="padding:5px 0;font-size:13px;color:#888;">${cat}</td><td style="padding:5px 0;font-size:13px;text-align:right;font-weight:600;">$${fmt(amt)}</td></tr>
+  `).join('') || '<tr><td style="padding:5px 0;font-size:13px;color:#aaa;">Sin gastos</td></tr>';
+
+  const topProductRows = (report.topProducts || []).map((p, i) => `
+    <tr><td style="padding:5px 0;font-size:13px;color:#888;">#${i + 1} ${p.name}</td><td style="padding:5px 0;font-size:13px;text-align:right;font-weight:600;">${p.count}</td></tr>
+  `).join('') || '<tr><td style="padding:5px 0;font-size:13px;color:#aaa;">Sin datos</td></tr>';
+
+  const stat = (label, value, color) => `
+    <td style="padding:14px;text-align:center;">
+      <div style="font-size:18px;font-weight:800;color:${color};">${value}</div>
+      <div style="font-size:10px;color:#888;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;">${label}</div>
+    </td>`;
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Reporte mensual — ${monthLabel}</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f0ee;font-family:'Helvetica Neue',Arial,sans-serif;color:#1a1a1a;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f0ee;padding:32px 16px;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+
+  <tr><td style="background:white;padding:32px 36px 18px;text-align:center;border-bottom:2px solid #EC7FA9;">
+    <img src="https://res.cloudinary.com/dkz7mbacc/image/upload/v1773958184/000LOGO_mrylkc.png" width="180" style="display:block;margin:0 auto 14px;height:auto;max-width:100%;" alt="Florería Karel"/>
+    <div style="font-family:Georgia,serif;font-size:18px;font-weight:700;">Reporte mensual</div>
+    <div style="font-size:12px;color:#888;text-transform:capitalize;">${monthLabel}</div>
+  </td></tr>
+
+  <tr><td style="padding:8px 20px 0;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        ${stat('Ventas del mes', '$' + fmt(report.total), '#2e7d32')}
+        ${stat('Gastos del mes', '$' + fmt(expTotal), '#c0392b')}
+        ${stat('Utilidad neta', '$' + fmt(utilidad), utilidad >= 0 ? '#2e7d32' : '#c0392b')}
+      </tr>
+      <tr>
+        ${stat('Clientes nuevos', report.newClients.count, '#1a1a1a')}
+        ${stat('Pedidos/día (L–V)', report.avgOrdersPerWeekday.toFixed(1), '#1a1a1a')}
+        ${stat('Pedidos totales', report.orders.length, '#1a1a1a')}
+      </tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="padding:28px 36px;">
+
+    <div style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;margin-bottom:6px;">Por método de pago</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">${methodRows}</table>
+
+    <div style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;margin-bottom:6px;">Gastos por categoría</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">${expCategoryRows}</table>
+
+    <div style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:6px;margin-bottom:6px;">Top productos</div>
+    <table width="100%" cellpadding="0" cellspacing="0">${topProductRows}</table>
+
+  </td></tr>
+
+  <tr><td style="background:white;padding:24px 36px;text-align:center;border-top:1px solid #eee;">
+    <div style="font-size:10px;color:#aaa;line-height:1.8;">
+      Florería y Regalos Karel<br/>
+      Av. de la Raza 5262, C.P. 32369, Ciudad Juárez · WhatsApp (656) 130-3595
+    </div>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+async function sendMonthlyReportEmail(year, month) {
+  if (!process.env.RESEND_API_KEY) return { skipped: true, reason: 'RESEND_API_KEY not set' };
+  const SHOP_EMAIL = process.env.SHOP_EMAIL || 'karla@floreriakarel.com';
+
+  try {
+    const [report, exp] = await Promise.all([
+      getMonthlyReport(year, month),
+      getMonthlyExpenditures(year, month),
+    ]);
+    const html = buildMonthlyReportHTML({ year, month, report, exp });
+    const monthLabel = `${MONTH_NAMES[month - 1]} ${year}`;
+
+    const result = await getResend().emails.send({
+      from: FROM,
+      to: SHOP_EMAIL,
+      subject: `📊 Reporte mensual — ${monthLabel}`,
+      html,
+    });
+    if (result.error) {
+      console.error('[Email] Monthly report error:', result.error);
+      return { sent: false, error: result.error.message || 'Resend error' };
+    }
+    console.log(`[Email] Monthly report sent to ${SHOP_EMAIL} — ID: ${result.data?.id}`);
+    return { sent: true, id: result.data?.id };
+  } catch (err) {
+    console.error('[Email] Monthly report failed:', err.message);
+    return { sent: false, error: err.message };
+  }
+}
+
+module.exports = { sendOrderConfirmation, sendDeliveryNotification, sendContactEmail, sendChatNotificationEmail, sendMonthlyReportEmail };
 
 async function sendContactEmail({ name, phone, email, subject, message }) {
   if (!process.env.RESEND_API_KEY) return { skipped: true, reason: 'RESEND_API_KEY not set' };

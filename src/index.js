@@ -33,6 +33,7 @@ const { router: customerAuthRoutes } = require('./routes/customerAuth');
 const mpRoutes = require('./routes/mercadopago');
 const waRoutes = require('./routes/whatsapp');
 const { setupChat } = require('./utils/socket');
+const { scheduleMonthlyReportEmail } = require('./jobs/monthlyReportJob');
 
 const app = express();
 const httpServer = createServer(app);
@@ -131,6 +132,9 @@ app.use((err, _req, res, _next) => {
 
 // ── Socket.io chat ──
 setupChat(io);
+
+// ── Scheduled jobs ──
+scheduleMonthlyReportEmail();
 
 // ── Start ──
 const PORT = process.env.PORT || 3000;
