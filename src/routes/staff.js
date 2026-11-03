@@ -8,7 +8,7 @@ const { requireAuth, requireAdmin } = require('../middleware/auth');
 router.get('/', requireAuth, requireAdmin, async (_req, res) => {
   try {
     const staff = await prisma.staff.findMany({
-      select: { id: true, name: true, role: true, active: true, createdAt: true },
+      select: { id: true, username: true, name: true, role: true, active: true, createdAt: true },
       orderBy: { name: 'asc' },
     });
     res.json(staff);
@@ -30,6 +30,29 @@ router.post('/', requireAuth, requireAdmin, [
     });
     res.status(201).json(staff);
   } catch (err) { res.status(500).json({ error: 'Failed to create staff' }); }
+});
+
+// PATCH /api/staff/:id — edit name and/or reset PIN (admin override, no current-PIN check)
+router.patch('/:id', requireAuth, requireAdmin, [
+  body('name').optional().notEmpty(),
+  body('pin').optional().isLength({ min: 4, max: 4 }).isNumeric(),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  const data = {};
+  if (req.body.name !== undefined) data.name = req.body.name;
+  if (req.body.pin) data.pin = await bcrypt.hash(req.body.pin, 10);
+  if (!Object.keys(data).length) return res.status(400).json({ error: 'Nothing to update' });
+
+  try {
+    const staff = await prisma.staff.update({
+      where: { id: req.params.id },
+      data,
+      select: { id: true, username: true, name: true, role: true, active: true },
+    });
+    res.json(staff);
+  } catch (err) { res.status(500).json({ error: 'Failed to update staff' }); }
 });
 
 router.patch('/:id/active', requireAuth, requireAdmin, async (req, res) => {

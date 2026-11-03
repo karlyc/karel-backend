@@ -878,6 +878,23 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 </div>
 </div>
 
+<!-- Staff Edit Modal — permanent in DOM -->
+<div class="ov" id="m-staff">
+<div class="modal msm">
+  <div class="mh"><div class="mt">Editar Staff</div><button class="mx" onclick="cm('m-staff')">✕</button></div>
+  <div class="mb">
+    <input type="hidden" id="stf-id"/>
+    <div class="fg"><label class="fl">Nombre *</label><input class="fi" id="stf-name" placeholder="Nombre completo"/></div>
+    <div class="fg"><label class="fl">Nuevo PIN (4 dígitos)</label><input class="fi" id="stf-pin" type="password" inputmode="numeric" maxlength="4" placeholder="Dejar en blanco para no cambiar"/></div>
+    <p style="font-size:11px;color:var(--dim);line-height:1.5;">Solo llena el PIN si quieres restablecerlo. El usuario deberá usar el nuevo PIN la próxima vez que inicie sesión.</p>
+  </div>
+  <div class="mf">
+    <button class="btn bg" onclick="cm('m-staff')">Cancelar</button>
+    <button class="btn bp" onclick="saveStaffEdit()">Guardar</button>
+  </div>
+</div>
+</div>
+
 <script>
 // ════════════════════════════════════════════
 // CONFIG
@@ -2726,8 +2743,8 @@ async function aRender(t) {
     else if (t==='staff') {
       const staff=await api('GET','/api/staff');
       el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:11px;"><button class="btn bp" onclick="toast('Formulario de staff próximamente')">＋ Agregar</button></div>
-      <div class="card"><table class="tbl"><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th></th></tr></thead><tbody>
-      ${staff.map(s=>`<tr><td style="font-family:var(--fd);font-weight:700;">${s.username}</td><td>${s.name}</td><td><span class="badge ${roleColor(s.role)}">${roleLabel(s.role)}</span></td><td><span class="badge ${s.active?'bg2':'br2'}">${s.active?'Activo':'Inactivo'}</span></td><td><div class="tog${s.active?' on':''}" onclick="toggleStaff('${s.id}',this)"><div class="tk"></div></div></td></tr>`).join('')}
+      <div class="card"><table class="tbl"><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th></th><th></th></tr></thead><tbody>
+      ${staff.map(s=>`<tr><td style="font-family:var(--fd);font-weight:700;">${s.username}</td><td>${s.name}</td><td><span class="badge ${roleColor(s.role)}">${roleLabel(s.role)}</span></td><td><span class="badge ${s.active?'bg2':'br2'}">${s.active?'Activo':'Inactivo'}</span></td><td><div class="tog${s.active?' on':''}" onclick="toggleStaff('${s.id}',this)"><div class="tk"></div></div></td><td><button class="btn bg bsm" onclick="openStaffEditModal('${s.id}','${s.name.replace(/'/g,"\\'")}')">✏️ Editar</button></td></tr>`).join('')}
       </tbody></table></div>`;
     }
     else if (t==='horario') {
@@ -2876,6 +2893,27 @@ async function toggleStaff(id, tog) {
   const active=!tog.classList.contains('on'); tog.classList.toggle('on',active);
   try { await api('PATCH',`/api/staff/${id}/active`,{active}); toast('Estado actualizado ✓'); }
   catch(e) { tog.classList.toggle('on',!active); toastErr(e.message); }
+}
+
+function openStaffEditModal(id, name) {
+  document.getElementById('stf-id').value = id;
+  document.getElementById('stf-name').value = name;
+  document.getElementById('stf-pin').value = '';
+  om('m-staff');
+}
+
+async function saveStaffEdit() {
+  const id = document.getElementById('stf-id').value;
+  const name = document.getElementById('stf-name').value.trim();
+  const pin = document.getElementById('stf-pin').value.trim();
+  if (!name) { toastErr('El nombre es requerido'); return; }
+  if (pin && !/^\d{4}$/.test(pin)) { toastErr('El PIN debe ser de 4 dígitos'); return; }
+  try {
+    await api('PATCH', `/api/staff/${id}`, pin ? { name, pin } : { name });
+    cm('m-staff');
+    toast('Staff actualizado ✓');
+    aRender('staff');
+  } catch(e) { toastErr(e.message); }
 }
 
 async function sendMonthlyReportNow() {
