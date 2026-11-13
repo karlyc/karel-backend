@@ -781,6 +781,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
       <div style="font-size:2.5rem;margin-bottom:10px;">🌹</div>
       <div style="font-family:var(--fd);font-size:18px;font-weight:800;" id="done-num">KAR-0000</div>
       <div style="font-size:12px;color:var(--mid);margin-top:4px;" id="done-client">—</div>
+      <div id="done-attended" style="font-size:11px;color:var(--mid);margin-top:4px;"></div>
       <div id="done-status" style="margin-top:8px;"></div>
     </div>
     <!-- Cancellation banner (shown when the order is CANCELADA) -->
@@ -1221,6 +1222,7 @@ async function openOrderActions(id) {
     document.getElementById('done-client').textContent =
       [order.client?.firstName, order.client?.lastNameP].filter(Boolean).join(' ') +
       (order.client?.phone ? ` · ${order.client.phone}` : '');
+    document.getElementById('done-attended').textContent = order.attendedBy?.name ? `Atendido por: ${order.attendedBy.name}` : '';
     document.getElementById('done-status').innerHTML =
       `${sb(order.orderStatus)} ${pb(order.paymentStatus)}`;
     updateOrderDetailExtras(order);
@@ -3185,14 +3187,17 @@ async function searchClients(q) {
   if (q.length<2) { document.getElementById('client-results').innerHTML=''; return; }
   try {
     const data = await api('GET',`/api/clients?search=${encodeURIComponent(q)}`);
-    document.getElementById('client-results').innerHTML = data.map(c=>`
+    document.getElementById('client-results').innerHTML = data.map(c=>{
+      const fullName = [c.firstName, c.middleName, c.lastNameP, c.lastNameM].filter(Boolean).join(' ');
+      return `
       <div class="client-result" style="display:flex;align-items:center;gap:8px;">
-        <div style="flex:1;" onclick="selectClient('${c.id}','${c.firstName} ${c.lastNameP}','${c.phone}','${c.loyaltyTier}','${c.orderCount}')">
-          <div style="display:flex;justify-content:space-between;"><span style="font-weight:600;">${c.firstName} ${c.lastNameP}</span>${loyaltyBadge(c.loyaltyTier,c.orderCount)}</div>
+        <div style="flex:1;" onclick="selectClient('${c.id}','${fullName}','${c.phone}','${c.loyaltyTier}','${c.orderCount}')">
+          <div style="display:flex;justify-content:space-between;"><span style="font-weight:600;">${fullName}</span>${loyaltyBadge(c.loyaltyTier,c.orderCount)}</div>
           <div style="color:var(--mid);font-size:11px;">📱 ${c.phoneCode||'+52'} ${c.phone}</div>
         </div>
         <button class="btn bg bsm" onclick="event.stopPropagation();openClientView('${c.id}')">Ver ›</button>
-      </div>`).join('')||'<div style="padding:7px;font-size:11px;color:var(--dim);">Sin resultados</div>';
+      </div>`;
+    }).join('')||'<div style="padding:7px;font-size:11px;color:var(--dim);">Sin resultados</div>';
   } catch(e) {}
 }
 
@@ -3507,6 +3512,7 @@ async function doCreateOrder(body) {
     document.getElementById('done-client').textContent =
       [fullOrder.client?.firstName, fullOrder.client?.lastNameP].filter(Boolean).join(' ') +
       (fullOrder.client?.phone ? ` · ${fullOrder.client.phoneCode||'+52'} ${fullOrder.client.phone}` : '');
+    document.getElementById('done-attended').textContent = fullOrder.attendedBy?.name ? `Atendido por: ${fullOrder.attendedBy.name}` : '';
     document.getElementById('done-status').innerHTML = `${sb(fullOrder.orderStatus)} ${pb(fullOrder.paymentStatus)}`;
     updateOrderDetailExtras(fullOrder);
     document.getElementById('done-delivery').style.display = 'none';
@@ -3537,10 +3543,12 @@ async function doCreateOrder(body) {
 // ════════════════════════════════════════════
 // PRINT / EMAIL / WHATSAPP ORDER
 // ════════════════════════════════════════════
+// Prints 2 Letter pages. Page 1 (tienda): top half = oficina, bottom half = repartidor,
+// with cut line. Page 2 (cliente): same content as the original single-page receipt.
 async function printOrder() {
   if (!lastCreatedOrder) { toastErr('Sin pedido para imprimir'); return; }
   const o = lastCreatedOrder;
-  const win = window.open('', '_blank', 'width=660,height=900');
+  const win = window.open('', '_blank', 'width=900,height=1000');
   if (!win) { toastErr('Permite ventanas emergentes para imprimir'); return; }
 
   const settings = await api('GET', '/api/settings').catch(()=>({}));
@@ -3553,61 +3561,19 @@ async function printOrder() {
   const clientName = [o.client?.firstName, o.client?.middleName, o.client?.lastNameP, o.client?.lastNameM].filter(Boolean).join(' ') || '—';
   const clientPhone = o.client?.phone ? `${o.client.phoneCode||'+52'} ${o.client.phone}` : '';
   const isPickup = o.deliveryType === 'RECOGER_TIENDA';
+  const typeLabel = isPickup ? 'Recoger en tienda' : o.deliveryType === 'DOMICILIO_NEGOCIO' ? 'Negocio / Trabajo' : 'A domicilio';
   const deliveryAddr = isPickup
     ? 'RECOGER EN TIENDA — Av. de la Raza 5262, Villa del Norte, C.P. 32369'
     : [o.recipientAddress, o.recipientColonia, o.recipientZip].filter(Boolean).join(', ');
-  const payLabel = o.paymentStatus === 'PENDIENTE' ? 'Crédito (pendiente de pago)' : (PAY_METHOD_LABELS[o.paymentMethod] || o.paymentMethod || '—');
+  const pending = o.paymentStatus === 'PENDIENTE';
+  const payLabel = pending ? 'Crédito (pendiente de pago)' : (PAY_METHOD_LABELS[o.paymentMethod] || o.paymentMethod || '—');
+  const iva = (Number(o.subtotal)+Number(o.deliveryFee))*(IVA_PERCENT/100);
+  const business = o.businessName ? `${o.businessName}${o.businessDept?' — '+o.businessDept:''}` : '';
+  const msgFrom = o.messageAnon ? 'Anónimo' : (o.messageFrom||'');
+  const attendedBy = o.attendedBy?.name || '—';
+  const orderDate = new Date(o.createdAt).toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-  const css = [
-    '*{margin:0;padding:0;box-sizing:border-box;}',
-    'body{font-family:Helvetica Neue,Arial,sans-serif;color:#1a1a1a;background:white;padding:28px;max-width:560px;margin:0 auto;}',
-    '.hdr{text-align:center;border-bottom:2px solid #EC7FA9;padding-bottom:18px;margin-bottom:20px;}',
-    '.logo-img{max-width:220px;max-height:100px;object-fit:contain;display:block;margin:0 auto 10px;}',
-    '.logo-area{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;}',
-    '.flower{font-size:36px;line-height:1;}',
-    '.brand{font-size:20px;font-weight:900;letter-spacing:.02em;color:#1a1a1a;text-transform:uppercase;line-height:1.1;}',
-    '.brand em{color:#EC7FA9;font-style:normal;}',
-    '.sub{font-size:8.5px;letter-spacing:.22em;text-transform:uppercase;color:#EC7FA9;margin-top:3px;opacity:.8;}',
-    '.badge{display:inline-block;background:#EC7FA9;color:white;padding:10px 28px;border-radius:100px;font-size:16px;font-weight:800;letter-spacing:.06em;margin:0 0 8px;}',
-    '.odate{font-size:11px;color:#888;}',
-    '.sec{margin-bottom:16px;}',
-    '.sec-t{font-size:9px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:4px;margin-bottom:8px;}',
-    '.row{display:flex;justify-content:space-between;padding:4px 0;font-size:11.5px;border-bottom:1px solid #f5f5f5;}',
-    '.row:last-child{border:none;}',
-    '.lbl{color:#888;flex-shrink:0;padding-right:12px;min-width:90px;}',
-    '.val{font-weight:600;color:#1a1a1a;text-align:right;}',
-    '.val.datehl{color:#C96E60;text-transform:uppercase;}',
-    'table{width:100%;border-collapse:collapse;}',
-    'th{font-size:9px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:#888;text-align:left;padding:5px 6px;border-bottom:2px solid #eee;}',
-    'td{font-size:11.5px;padding:8px 6px;border-bottom:1px solid #f5f5f5;vertical-align:middle;}',
-    'tr:last-child td{border:none;}',
-    '.pimg{width:42px;height:42px;border-radius:6px;object-fit:cover;border:1px solid #eee;}',
-    '.pph{width:42px;height:42px;border-radius:6px;background:#f5f0ee;display:flex;align-items:center;justify-content:center;font-size:20px;}',
-    '.totrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0 4px;border-top:2px solid #1a1a1a;margin-top:6px;}',
-    '.totlbl{font-size:13px;font-weight:800;text-transform:uppercase;}',
-    '.totval{font-size:18px;font-weight:800;color:#EC7FA9;}',
-    '.subrow{display:flex;justify-content:space-between;font-size:11px;color:#888;padding:2px 0;}',
-    '.pbadge{display:inline-block;background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;}',
-    '.pbadge.pend{background:#fff3e0;color:#e65100;}',
-    '.delivered-box{background:#f0faf0;border:1.5px solid #a5d6a7;border-radius:8px;padding:12px;margin-bottom:16px;}',
-    '.delivered-box .sec-t{color:#2e7d32;border-bottom-color:#c8e6c9;}',
-    '.del-photo{width:80px;height:80px;border-radius:8px;object-fit:cover;border:1px solid #c8e6c9;float:right;margin-left:12px;}',
-    '.ftr-note{text-align:center;margin-top:20px;font-size:11px;color:#aaa;}',
-    '.ftr{text-align:center;margin-top:8px;padding-top:12px;border-top:1px solid #eee;font-size:10px;color:#aaa;line-height:1.8;}',
-  ].join('\n');
-
-  const rows = (label, value) => value ? `<div class="row"><span class="lbl">${label}</span><span class="val">${value}</span></div>` : '';
-
-  const productRows = (o.items||[]).map(i => {
-    const imgHTML = i.product?.photo1Url
-      ? `<img class="pimg" src="${photoSrc(i.product.photo1Url)}"/>`
-      : `<div class="pph">🌸</div>`;
-    const noteHTML = i.notes ? `<br/><small style="color:#888">${i.notes}</small>` : '';
-    return `<tr><td style="width:48px">${imgHTML}</td><td><b>${i.product?.name||i.customName||'—'}</b>${noteHTML}</td><td style="text-align:right">${i.quantity}</td><td style="text-align:right;font-weight:700">$${fmt(i.unitPrice)}</td></tr>`;
-  }).join('') || `<tr><td colspan="4" style="color:#aaa;text-align:center">Sin productos</td></tr>`;
-
-  // deliveryDate is stored as UTC midnight for the intended calendar day — read it back
-  // with UTC getters, not local ones, or it displays a day early in timezones behind UTC.
+  // deliveryDate is stored as UTC midnight — read with UTC getters.
   const deliveryDateStr = o.deliveryDate ? [
     new Date(o.deliveryDate).toLocaleDateString('es-MX',{weekday:'long', timeZone:'UTC'}),
     new Date(o.deliveryDate).getUTCDate(),
@@ -3615,67 +3581,157 @@ async function printOrder() {
     new Date(o.deliveryDate).getUTCFullYear(),
   ].join(' ').toUpperCase() : '—';
 
-  const html = [
-    '<div class="hdr">',
-      storeLogo
-        ? `<img class="logo-img" src="${storeLogo}"/>`
-        : `<div class="logo-area"><div class="flower">🌹</div><div class="brand">${storeName}</div></div>`,
-      `<div class="badge">${o.orderNumber}</div>`,
-      `<div class="odate">Fecha de orden: ${new Date(o.createdAt).toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>`,
-    '</div>',
-    '<div class="sec"><div class="sec-t">Cliente</div>',
-      rows('Nombre', clientName),
-      rows('Teléfono', clientPhone),
-      rows('Correo', o.client?.email),
-    '</div>',
-    '<div class="sec"><div class="sec-t">Entrega</div>',
-      `<div class="row"><span class="lbl">Fecha</span><span class="val datehl">${deliveryDateStr}</span></div>`,
-      rows('Horario', winLabel),
-      rows('Tipo', isPickup ? 'Recoger en tienda' : o.deliveryType === 'DOMICILIO_NEGOCIO' ? 'Negocio / Trabajo' : 'A domicilio'),
-      !isPickup ? rows('Destinatario', [o.recipientName, o.recipientPhone].filter(Boolean).join(' · ')) : '',
-      rows('Negocio', o.businessName ? `${o.businessName}${o.businessDept?' — '+o.businessDept:''}` : ''),
-      rows('Dirección', deliveryAddr),
-      rows('Notas', o.recipientNotes),
-      o.messageText ? `<div class="row"><span class="lbl">Mensaje</span><span class="val"><em>"${o.messageText}"</em><br/><small style="color:#888">— ${o.messageAnon?'Anónimo':o.messageFrom||''}</small></span></div>` : '',
-    '</div>',
-    '<div class="sec"><div class="sec-t">Productos</div>',
-      `<table><thead><tr><th></th><th>Producto</th><th style="text-align:right">Cant.</th><th style="text-align:right">Precio</th></tr></thead><tbody>${productRows}</tbody></table>`,
-      `<div class="subrow"><span>Subtotal</span><span>$${fmt(o.subtotal)}</span></div>`,
-      Number(o.deliveryFee)>0 ? `<div class="subrow"><span>Envío</span><span>$${fmt(o.deliveryFee)}</span></div>` : '',
-      `<div class="subrow"><span>IVA (${IVA_PERCENT}%)</span><span>$${fmt((Number(o.subtotal)+Number(o.deliveryFee))*(IVA_PERCENT/100))}</span></div>`,
-      Number(o.advance)>0 ? `<div class="subrow"><span>Anticipo</span><span style="color:#C96E60">− $${fmt(o.advance)}</span></div>` : '',
-      `<div class="totrow"><span class="totlbl">TOTAL</span><span class="totval">$${fmt(o.total)} MXN</span></div>`,
-    '</div>',
-    `<div class="sec"><div class="sec-t">Forma de Pago</div><div style="padding:6px 0"><span class="pbadge${o.paymentStatus==='PENDIENTE'?' pend':''}">${payLabel}</span></div></div>`,
+  const css = `
+*{margin:0;padding:0;box-sizing:border-box;}
+@page{size:letter;margin:0;}
+body{font-family:Helvetica Neue,Helvetica,Arial,sans-serif;color:#1a1a1a;background:white;}
+.page{width:8.5in;height:11in;overflow:hidden;display:flex;flex-direction:column;page-break-after:always;break-after:page;}
+.page:last-child{page-break-after:auto;break-after:auto;}
+.half{height:5.5in;padding:.32in .46in .24in;display:flex;flex-direction:column;gap:13px;overflow:hidden;}
+.cut{height:0;border-top:1.5px dashed #bbb;position:relative;}
+.cut span{position:absolute;left:50%;top:-7px;transform:translateX(-50%);background:white;padding:0 10px;font-size:14px;letter-spacing:.25em;color:#aaa;}
+.kicker{font-size:14px;font-weight:800;letter-spacing:.22em;}
+.pink{color:#EC7FA9;} .muted{color:#888;}
+.badge{display:inline-block;background:#EC7FA9;color:white;padding:8px 22px;border-radius:100px;font-size:16px;font-weight:800;letter-spacing:.06em;}
+.badge.out{background:none;color:#1a1a1a;border:2px solid #1a1a1a;padding:6px 18px;}
+.hd{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;}
+.sec-t{font-size:14px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#EC7FA9;border-bottom:1.5px solid #FFB8E0;padding-bottom:4px;margin-bottom:5px;}
+.row{display:flex;justify-content:space-between;gap:12px;padding:3px 0;font-size:14px;}
+.row .v{font-weight:600;text-align:right;}
+.datehl{color:#C96E60;font-weight:700;text-transform:uppercase;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:28px;}
+.ptab{display:grid;grid-template-columns:1fr 60px 90px;align-items:center;font-size:14px;padding:6px 0;border-bottom:1px solid #f3f3f3;}
+.ptab.h{font-size:14px;font-weight:800;letter-spacing:.15em;color:#888;padding:4px 0;border-bottom:2px solid #eee;}
+.ptab span:nth-child(n+2){text-align:right;}
+.sub{display:flex;justify-content:space-between;font-size:14px;color:#888;padding:1px 0;}
+.tot{display:flex;justify-content:space-between;align-items:center;border-top:2px solid #1a1a1a;margin-top:4px;padding-top:6px;}
+.tot b:first-child{font-size:14px;} .tot b:last-child{font-size:16px;color:#EC7FA9;}
+.pbadge{display:inline-block;background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:100px;font-size:14px;font-weight:700;}
+.pbadge.pend{background:#fff3e0;color:#e65100;}
+.collect{display:flex;justify-content:space-between;align-items:center;border:1.5px solid #a5d6a7;background:#f0faf0;color:#2e7d32;border-radius:8px;padding:8px 14px;font-weight:800;}
+.collect.pend{border-color:#ffcc80;background:#fff3e0;color:#e65100;}
+.sig{display:grid;grid-template-columns:1.4fr .8fr 1.2fr;gap:20px;margin-top:auto;}
+.sig div{border-top:1px solid #1a1a1a;padding-top:4px;font-size:14px;letter-spacing:.15em;color:#888;}
+.cust{padding:.33in .83in .3in;}
+.cust .hdr{text-align:center;border-bottom:2px solid #EC7FA9;padding-bottom:12px;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;gap:5px;}
+.cust .sec{margin-bottom:12px;flex-shrink:0;}
+.cust .row{font-size:14px;padding:4px 0;border-bottom:1px solid #f5f5f5;}
+.cust .row:last-child{border:none;}
+.logo-img{max-width:180px;max-height:70px;object-fit:contain;}
+.pimg{width:42px;height:42px;border-radius:6px;object-fit:cover;border:1px solid #eee;vertical-align:middle;margin-right:8px;}
+.del-box{background:#f0faf0;border:1.5px solid #a5d6a7;border-radius:8px;padding:12px;margin-bottom:16px;}
+.del-box .sec-t{color:#2e7d32;border-bottom-color:#c8e6c9;}
+.del-photo{width:80px;height:80px;border-radius:8px;object-fit:cover;float:right;margin-left:12px;}
+.ftr{margin-top:auto;text-align:center;}
+.ftr .n{font-size:14px;color:#999;margin-bottom:8px;}
+.ftr .a{border-top:1px solid #eee;padding-top:12px;font-size:14px;color:#999;line-height:1.8;}
+`;
 
-    // Payment proof (only shown if present)
-    ...(o.paymentProofUrl ? [
-      '<div style="margin-bottom:14px;">',
-      '<div class="sec-t">📎 Comprobante de Pago</div>',
-      `<img src="${photoSrc(o.paymentProofUrl)}" style="max-width:100%;max-height:160px;object-fit:contain;border-radius:8px;border:1px solid #eee;"/>`,
-      '</div>',
-    ] : []),
-
-    // Delivery confirmation (only shown if delivered)
-    ...(o.delivery?.deliveredAt ? [
-      '<div class="delivered-box">',
-      '<div class="sec-t">✓ Entrega Confirmada</div>',
-      o.delivery.photoUrl
-        ? `<img class="del-photo" src="${photoSrc(o.delivery.photoUrl)}" alt="Foto de entrega"/>`
-        : '',
-      rows('Recibió', o.delivery.receivedBy),
-      rows('Hora de entrega', new Date(o.delivery.deliveredAt).toLocaleString('es-MX', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})),
-      rows('Repartidor', o.delivery.assignedTo?.name),
-      '<div style="clear:both"></div>',
-      '</div>',
-    ] : []),
-
-    '<div class="ftr-note">Gracias por su preferencia</div>',
-    `<div class="ftr">${storeName}<br>${storeAddress} · WhatsApp ${storeWhatsapp}</div>`,
+  const row = (l, v, cls='') => v ? `<div class="row"><span class="muted">${l}</span><span class="v ${cls}">${v}</span></div>` : '';
+  const items = o.items || [];
+  const iname = i => i.product?.name || i.customName || '—';
+  const img = (i, n) => i.product?.photo1Url ? `<img class="pimg" style="width:${n}px;height:${n}px" src="${photoSrc(i.product.photo1Url)}"/>` : `<span class="pimg" style="width:${n}px;height:${n}px;display:inline-block;background:#f5f0ee"></span>`;
+  const priceRows = n => items.map(i => `<div class="ptab"><span><b>${img(i, n)}${iname(i)}</b>${i.notes?`<br/><small class="muted">${i.notes}</small>`:''}</span><span>${i.quantity}</span><span><b>$${fmt(i.unitPrice)}</b></span></div>`).join('')
+    || `<div class="ptab"><span class="muted">Sin productos</span></div>`;
+  const totals = [
+    `<div class="sub"><span>Subtotal</span><span>$${fmt(o.subtotal)}</span></div>`,
+    Number(o.deliveryFee)>0 ? `<div class="sub"><span>Envío</span><span>$${fmt(o.deliveryFee)}</span></div>` : '',
+    `<div class="sub"><span>IVA (${IVA_PERCENT}%)</span><span>$${fmt(iva)}</span></div>`,
+    Number(o.advance)>0 ? `<div class="sub"><span>Anticipo</span><span style="color:#C96E60">− $${fmt(o.advance)}</span></div>` : '',
+    `<div class="tot"><b>TOTAL</b><b>$${fmt(o.total)} MXN</b></div>`,
   ].join('');
+  const payBadge = `<span class="pbadge${pending?' pend':''}">${payLabel}</span>`;
+
+  // ── PAGE 1: TIENDA ──
+  const office = `
+<div class="half">
+  <div class="hd" style="border-bottom:2px solid #EC7FA9;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div class="kicker pink">COPIA OFICINA</div>
+      <div style="font-size:15px;font-weight:900;text-transform:uppercase">${storeName}</div>
+      <div style="font-size:14px" class="muted">Fecha de orden: ${orderDate}</div>
+      <div style="font-size:14px" class="muted">Atendido por: <b style="color:#1a1a1a">${attendedBy}</b></div>
+    </div>
+    <div class="badge">${o.orderNumber}</div>
+  </div>
+  <div class="grid2">
+    <div><div class="sec-t">Cliente</div>${row('Nombre', clientName)}${row('Teléfono', clientPhone)}${row('Correo', o.client?.email)}</div>
+    <div><div class="sec-t">Entrega</div>${row('Fecha', deliveryDateStr, 'datehl')}${row('Horario', winLabel)}${row('Tipo', typeLabel)}${!isPickup?row('Para', o.recipientName):''}</div>
+  </div>
+  <div><div class="ptab h"><span>PRODUCTO</span><span>CANT.</span><span>PRECIO</span></div>${priceRows(34)}</div>
+  <div style="display:grid;grid-template-columns:1fr 240px;gap:28px;align-items:end;margin-top:auto">
+    <div><div class="kicker pink" style="margin-bottom:6px">FORMA DE PAGO</div>${payBadge}${o.paymentProofUrl?' <span class="muted" style="font-size:14px">Comprobante adjunto</span>':''}</div>
+    <div>${totals}</div>
+  </div>
+</div>`;
+
+  const collect = pending
+    ? `<div class="collect pend"><span>COBRAR AL ENTREGAR</span><span>$${fmt(o.total)} MXN</span></div>`
+    : '';
+
+  const driver = `
+<div class="half" style="flex:1;height:auto">
+  <div class="hd" style="border-bottom:2px solid #1a1a1a">
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <div class="kicker">COPIA REPARTIDOR</div>
+      <div style="font-size:20px;font-weight:800;color:#C96E60">${deliveryDateStr} · ${winLabel}</div>
+    </div>
+    <div class="badge out">${o.orderNumber}</div>
+  </div>
+  <div class="grid2">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div class="kicker muted">${isPickup?'RECOGE':'ENTREGAR A'}</div>
+      <div style="font-size:17px;font-weight:800;text-transform:uppercase">${isPickup?clientName:(o.recipientName||'—')}</div>
+      <div style="font-size:15px;font-weight:600">${isPickup?clientPhone:(o.recipientPhone||'')}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div class="kicker muted">DIRECCIÓN · ${typeLabel.toUpperCase()}</div>
+      ${business?`<div style="font-size:14px;font-weight:700">${business}</div>`:''}
+      <div style="font-size:14px;font-weight:700;line-height:1.35">${deliveryAddr||'—'}</div>
+    </div>
+  </div>
+  ${o.recipientNotes?`<div style="display:flex;gap:10px;font-size:14px"><span class="kicker muted" style="padding-top:2px">NOTAS</span><b>${o.recipientNotes}</b></div>`:''}
+  ${o.messageText?`<div style="display:flex;gap:10px;font-size:14px"><span class="kicker muted" style="padding-top:2px">TARJETA</span><span><em>“${o.messageText}”</em> <span class="muted">— ${msgFrom}</span></span></div>`:''}
+  <div>
+    <div class="kicker muted" style="border-bottom:1.5px solid #eee;padding-bottom:4px">PRODUCTOS</div>
+    ${items.map(i=>`<div style="display:flex;align-items:center;gap:12px;font-size:14px;padding:5px 0;border-bottom:1px solid #f3f3f3">${img(i, 34)}<b style="min-width:28px">${i.quantity}×</b><b>${iname(i)}</b></div>`).join('')}
+  </div>
+  ${collect}
+  <div class="sig"><div>RECIBIÓ (NOMBRE)</div><div>HORA</div><div>FIRMA</div></div>
+</div>`;
+
+  const page1 = `<div class="page">${office}<div class="cut"><span>✂ CORTAR AQUÍ</span></div>${driver}</div>`;
+
+  // ── PAGE 2: CLIENTE (same info as original) ──
+  const page2 = `
+<div class="page cust">
+  <div class="hdr">
+    ${storeLogo ? `<img class="logo-img" src="${storeLogo}"/>` : ''}
+    <div style="font-size:20px;font-weight:900;text-transform:uppercase">${storeName}</div>
+    <div class="badge" style="padding:10px 28px">${o.orderNumber}</div>
+    <div style="font-size:14px" class="muted">Fecha de orden: ${orderDate}</div>
+    <div style="font-size:14px" class="muted">Atendido por: <b style="color:#1a1a1a">${attendedBy}</b></div>
+  </div>
+  <div class="sec"><div class="sec-t">Cliente</div>${row('Nombre', clientName)}${row('Teléfono', clientPhone)}${row('Correo', o.client?.email)}</div>
+  <div class="sec"><div class="sec-t">Entrega</div>
+    ${row('Fecha', deliveryDateStr, 'datehl')}${row('Horario', winLabel)}${row('Tipo', typeLabel)}
+    ${!isPickup ? row('Destinatario', [o.recipientName, o.recipientPhone].filter(Boolean).join(' · ')) : ''}
+    ${row('Negocio', business)}${row('Dirección', deliveryAddr)}${row('Notas', o.recipientNotes)}
+    ${o.messageText ? row('Mensaje', `<em>"${o.messageText}"</em><br/><small class="muted">— ${msgFrom}</small>`) : ''}
+  </div>
+  <div class="sec"><div class="sec-t">Productos</div><div class="ptab h"><span>PRODUCTO</span><span>CANT.</span><span>PRECIO</span></div>${priceRows(42)}<div style="margin-top:4px">${totals}</div></div>
+  <div class="sec grid2" style="align-items:start"><div><div class="sec-t">Forma de Pago</div>${payBadge}</div>
+  ${o.paymentProofUrl ? `<div><div class="sec-t">Comprobante de Pago</div><img src="${photoSrc(o.paymentProofUrl)}" style="max-width:100%;max-height:110px;object-fit:contain;border-radius:8px;border:1px solid #eee"/></div>` : ''}</div>
+  ${o.delivery?.deliveredAt ? `<div class="del-box"><div class="sec-t">✓ Entrega Confirmada</div>
+    ${o.delivery.photoUrl ? `<img class="del-photo" src="${photoSrc(o.delivery.photoUrl)}"/>` : ''}
+    ${row('Recibió', o.delivery.receivedBy)}
+    ${row('Hora de entrega', new Date(o.delivery.deliveredAt).toLocaleString('es-MX',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}))}
+    ${row('Repartidor', o.delivery.assignedTo?.name)}<div style="clear:both"></div></div>` : ''}
+  <div class="ftr"><div class="n">Gracias por su preferencia</div><div class="a">${storeName}<br>${storeAddress} · WhatsApp ${storeWhatsapp}</div></div>
+</div>`;
 
   win.document.open();
-  win.document.write('<html><head><meta charset="UTF-8"><title>Recibo ' + o.orderNumber + '<\/title><style>' + css + '<\/style><\/head><body>' + html + '<\/body><\/html>');
+  win.document.write('<html><head><meta charset="UTF-8"><title>Recibo ' + o.orderNumber + '<\/title><style>' + css + '<\/style><\/head><body>' + page1 + page2 + '<\/body><\/html>');
   win.document.close();
   setTimeout(() => { win.focus(); win.print(); }, 800);
 
@@ -3897,7 +3953,8 @@ async function loadOrderPayments(order) {
     <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--rule);font-size:12px;${p.voided?'opacity:.45;text-decoration:line-through;':''}">
       <div>
         <div style="font-weight:700;">$${fmt(p.amount)} <span style="color:var(--mid);font-weight:400;">· ${PAY_METHOD_LABELS[p.method]||p.method}</span></div>
-        <div style="color:var(--dim);font-size:10.5px;">${new Date(p.createdAt).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${p.reviewed?' · ✓ Revisado':''}</div>
+        <div style="color:var(--dim);font-size:10.5px;">Fecha: ${new Date(p.createdAt).toLocaleString('es-MX',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}${p.reviewed?' · ✓ Revisado':''}</div>
+        <div style="color:var(--dim);font-size:10.5px;">Recibido por: ${p.recordedBy?.name || '—'}</div>
       </div>
       <div style="display:flex;gap:6px;align-items:center;">
         ${p.proofUrl ? `<a href="${photoSrc(p.proofUrl)}" target="_blank" style="font-size:13px;">📎</a>` : ''}
