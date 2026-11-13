@@ -247,6 +247,24 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
   #print-area,#print-area *{visibility:visible;}
   #print-area{position:fixed;inset:0;background:white;color:black;padding:24px;font-family:sans-serif;font-size:12px;z-index:99999;}
 }
+
+/* ── MOBILE (phones — mainly the repartidor's own device) ── */
+@media (max-width:680px){
+  #app{flex-direction:column;}
+  #sb{width:100%;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;border-right:none;border-bottom:1px solid var(--rule);overflow-y:visible;padding:8px 10px;gap:8px;}
+  .sb-logo,.sb-user{border:none;padding:4px 6px;}
+  .sb-sec{display:none;}
+  .nav{flex-direction:row;flex-wrap:wrap;padding:0;gap:4px;}
+  .ni{padding:8px 11px;font-size:13px;}
+  .sb-foot{margin-top:0;margin-left:auto;display:flex;align-items:center;gap:8px;border-top:none;padding:0;}
+  .logout-btn{width:auto;margin-bottom:0;padding:7px 9px;}
+  .clk{padding:5px 9px;}
+  .clk-d{display:none;}
+  #main{height:auto;flex:1;min-height:0;}
+  .content{padding:14px;}
+  .repg{grid-template-columns:1fr;}
+  .card:has(.tbl){overflow-x:auto;}
+}
 </style>
 </head>
 <body>
