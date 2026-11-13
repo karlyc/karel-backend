@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Karel POS</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -34,9 +36,9 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 ::-webkit-scrollbar-thumb{background:var(--rule2);border-radius:2px;}
 
 /* ── LOGIN ── */
-#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;position:fixed;inset:0;z-index:9000;background:var(--ink);transition:opacity .3s;}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;position:fixed;inset:0;z-index:9000;background:var(--ink);transition:opacity .3s;padding:20px;box-sizing:border-box;}
 #login-screen.hidden{opacity:0;pointer-events:none;}
-.login-box{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r16);padding:36px 32px;width:360px;box-shadow:0 40px 100px rgba(0,0,0,.7);}
+.login-box{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r16);padding:36px 32px;width:100%;max-width:360px;box-shadow:0 40px 100px rgba(0,0,0,.7);}
 .login-logo{text-align:center;margin-bottom:26px;}
 .login-logo .ln{font-family:var(--fd);font-size:22px;font-weight:800;color:var(--text);}
 .login-logo .ln em{color:var(--rose);font-style:normal;}
@@ -297,6 +299,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
   <div class="nav">
     <div class="ni" data-v="elaboracion"><span class="ni-ic">🌸</span>Elaboración<span class="nb a" id="nb-e" style="display:none"></span></div>
     <div class="ni" data-v="entregas"><span class="ni-ic">🚐</span>Entregas<span class="nb g" id="nb-d" style="display:none"></span></div>
+    <div class="ni" data-v="repartidor"><span class="ni-ic">📍</span>Vista Repartidor</div>
     <div class="ni" data-v="tareas"><span class="ni-ic">✓</span>Tareas</div>
     <div class="ni" data-v="gastos"><span class="ni-ic">💸</span>Gastos</div>
   </div>
@@ -311,7 +314,6 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
   <div class="sb-sec">Admin</div>
   <div class="nav">
     <div class="ni" data-v="admin-gate"><span class="ni-ic">🔐</span>Administración</div>
-    <div class="ni" data-v="repartidor"><span class="ni-ic">📍</span>Vista Repartidor</div>
   </div>
   <div class="sb-foot">
     <button class="logout-btn" onclick="logout()">⎋ Cerrar sesión</button>
@@ -983,7 +985,7 @@ const ROLE_VIEWS = {
   ADMIN:      ['dashboard','pedidos','nuevo','elaboracion','entregas','tareas','gastos','productos','accesorios','categorias','inventario','clientes','admin-gate','repartidor'],
   OFFICE:     ['dashboard','pedidos','nuevo','elaboracion','entregas','tareas','gastos','productos','accesorios','categorias','inventario','clientes','repartidor'],
   FLORISTA:   ['elaboracion','tareas','inventario'],
-  REPARTIDOR: ['entregas','tareas','inventario'],
+  REPARTIDOR: ['repartidor','tareas','inventario'],
 };
 
 function enterApp() {
@@ -1026,15 +1028,34 @@ function enterApp() {
   if (['ADMIN','OFFICE'].includes(currentStaff.role)) {
     loadBadges();
   }
+  if (currentStaff.role === 'REPARTIDOR') {
+    startLocationReporting();
+  }
 }
 
 function logout() {
+  clearInterval(locationInterval); locationInterval = null;
   token = null; currentStaff = null; loginPin = ''; updLoginDots();
   document.getElementById('l-user').value = '';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('app').classList.remove('visible');
   document.getElementById('login-err').style.display = 'none';
+}
+
+// ════════════════════════════════════════════
+// DRIVER LOCATION REPORTING (REPARTIDOR only)
+// ════════════════════════════════════════════
+let locationInterval = null;
+function startLocationReporting() {
+  if (!('geolocation' in navigator)) return;
+  const report = () => navigator.geolocation.getCurrentPosition(
+    pos => api('PATCH', '/api/staff/me/location', { lat: pos.coords.latitude, lng: pos.coords.longitude }).catch(()=>{}),
+    () => {}, // permission denied or unavailable — just skip this report
+    { enableHighAccuracy: false, maximumAge: 30000, timeout: 10000 }
+  );
+  report();
+  locationInterval = setInterval(report, 30000);
 }
 
 // ════════════════════════════════════════════
@@ -1064,6 +1085,7 @@ const VT = {dashboard:'Dashboard',pedidos:'Pedidos',elaboracion:'Elaboración de
 async function showView(v) {
   if (v === 'nuevo') { openOrderModal(); return; }
   if (v === 'admin-gate') { askAdminPin(); return; }
+  clearInterval(repMapInterval); repMapInterval = null;
   document.querySelectorAll('.ni').forEach(n => n.classList.toggle('on', n.dataset.v === v));
   document.getElementById('vt').textContent = VT[v] || v;
   const vc = document.getElementById('vc');
@@ -1479,7 +1501,58 @@ async function vEntr() {
     ${reps.map(r=>`<tr><td>${r.name}</td><td><span class="badge ba2">${pending.filter(o=>o.delivery?.assignedToId===r.id).length}</span></td><td><span class="badge bg2">Activo</span></td></tr>`).join('')}
     </tbody></table>
   </div>
+</div>
+<div class="card" style="margin-top:12px;">
+  <div class="ch"><span class="ct">Mapa de Repartidores</span></div>
+  <div id="rep-map" style="height:320px;border-radius:var(--r10);overflow:hidden;"></div>
 </div>`;
+  initRepMap();
+}
+
+// ════════════════════════════════════════════
+// REPARTIDOR LOCATION MAP (Entregas screen, ADMIN/OFFICE)
+// ════════════════════════════════════════════
+let repMapInterval = null;
+const STALE_LOCATION_MS = 5 * 60 * 1000;
+
+function relTime(iso) {
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return 'hace un momento';
+  if (mins === 1) return 'hace 1 minuto';
+  return `hace ${mins} minutos`;
+}
+
+async function initRepMap() {
+  const el = document.getElementById('rep-map');
+  if (!el || typeof L === 'undefined') return;
+  const map = L.map('rep-map').setView([31.6904, -106.4245], 12); // Ciudad Juárez
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+  }).addTo(map);
+  const markers = {};
+
+  async function refresh() {
+    let drivers = [];
+    try { drivers = await api('GET', '/api/staff/repartidor-locations'); } catch(e) { return; }
+    const seen = new Set();
+    drivers.forEach(d => {
+      if (d.lastLat == null || d.lastLng == null) return;
+      seen.add(d.id);
+      const stale = Date.now() - new Date(d.lastLocationAt).getTime() > STALE_LOCATION_MS;
+      const popup = `<b>${d.name}</b><br/>${stale?'<span style="color:#C05050;">(desactualizado) ':''}${relTime(d.lastLocationAt)}${stale?'</span>':''}`;
+      if (markers[d.id]) {
+        markers[d.id].setLatLng([d.lastLat, d.lastLng]).setPopupContent(popup);
+        markers[d.id].setOpacity(stale ? 0.45 : 1);
+      } else {
+        markers[d.id] = L.marker([d.lastLat, d.lastLng], { opacity: stale ? 0.45 : 1 }).addTo(map).bindPopup(popup);
+      }
+    });
+    // Remove markers for drivers no longer reporting
+    Object.keys(markers).forEach(id => { if (!seen.has(id)) { map.removeLayer(markers[id]); delete markers[id]; } });
+  }
+
+  await refresh();
+  repMapInterval = setInterval(refresh, 12000);
 }
 
 async function assignDelivery(orderId, staffId) {
@@ -2991,7 +3064,7 @@ ${orders.length===0?'<div class="empty-state">Sin entregas asignadas hoy</div>':
     <div class="repg">
       <div><div class="rpl">Cliente</div><div class="rpv">${o.client?.firstName||''} ${o.client?.lastNameP||''}<br/><a href="tel:${o.client?.phone}" style="color:var(--rose-l);font-size:11px;">📱 ${o.client?.phone||''}</a></div></div>
       <div><div class="rpl">Destinatario</div><div class="rpv">${o.recipientName||'—'}<br/><a href="tel:${o.recipientPhone}" style="color:var(--rose-l);font-size:11px;">📱 ${o.recipientPhone||''}</a></div></div>
-      <div><div class="rpl">Dirección</div><div class="rpv">${o.recipientAddress||'—'} ${o.recipientColonia||''}</div></div>
+      <div><div class="rpl">Dirección</div><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([o.recipientAddress, o.recipientColonia, 'Ciudad Juárez, Chih.'].filter(Boolean).join(', '))}" target="_blank" class="rpv" style="color:inherit;text-decoration:underline;display:block;">${o.recipientAddress||'—'} ${o.recipientColonia||''} 🧭</a></div>
       <div><div class="rpl">Ventana</div><div class="rpv" style="color:var(--amber);">⏰ ${fmtWindow(o.deliveryWindow)}</div></div>
     </div>
     ${o.items?.map(item=>`<div style="background:var(--ink3);border-radius:var(--r8);padding:11px;display:flex;gap:11px;align-items:center;margin-bottom:11px;">
@@ -3889,7 +3962,8 @@ async function confirmDelivery() {
     // Update lastCreatedOrder so the receipt shows the delivery info
     lastCreatedOrder = { ...order, delivery: result.delivery || { receivedBy, deliveredAt: new Date() } };
 
-    showView('entregas');
+    const v = document.querySelector('.ni.on')?.dataset.v;
+    if (v) showView(v);
     loadBadges();
   } catch(e) { toastErr(e.message); }
   finally { if (btn) { btn.disabled = false; btn.textContent = 'Confirmar Entrega'; } }

@@ -3,7 +3,7 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
 const { prisma } = require('../db/prisma');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requireAdmin, requireOffice } = require('../middleware/auth');
 
 router.get('/', requireAuth, requireAdmin, async (_req, res) => {
   try {
@@ -13,6 +13,36 @@ router.get('/', requireAuth, requireAdmin, async (_req, res) => {
     });
     res.json(staff);
   } catch (err) { res.status(500).json({ error: 'Failed to fetch staff' }); }
+});
+
+// PATCH /api/staff/me/location — a driver reports their own current position.
+// Always writes to the authenticated caller's own record (never a staffId from the
+// request body) so a repartidor can't report a location for anyone else.
+router.patch('/me/location', requireAuth, [
+  body('lat').isFloat(),
+  body('lng').isFloat(),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  try {
+    await prisma.staff.update({
+      where: { id: req.staff.id },
+      data: { lastLat: req.body.lat, lastLng: req.body.lng, lastLocationAt: new Date() },
+    });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Failed to update location' }); }
+});
+
+// GET /api/staff/repartidor-locations — last known position of each active driver,
+// for the Entregas dispatch map. Only drivers who have reported at least once are included.
+router.get('/repartidor-locations', requireAuth, requireOffice, async (_req, res) => {
+  try {
+    const drivers = await prisma.staff.findMany({
+      where: { role: 'REPARTIDOR', active: true, lastLocationAt: { not: null } },
+      select: { id: true, name: true, lastLat: true, lastLng: true, lastLocationAt: true },
+    });
+    res.json(drivers);
+  } catch (err) { res.status(500).json({ error: 'Failed to fetch driver locations' }); }
 });
 
 router.post('/', requireAuth, requireAdmin, [

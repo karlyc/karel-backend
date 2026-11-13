@@ -23,6 +23,9 @@ model Staff {
   pin       String
   role      StaffRole @default(OFFICE)
   active    Boolean   @default(true)
+  lastLat         Float?
+  lastLng         Float?
+  lastLocationAt  DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   ordersAttended Order[]    @relation("AttendedBy")
