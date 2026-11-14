@@ -184,8 +184,8 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 .reph{padding:12px 15px;background:var(--ink3);border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;}
 .repb{padding:15px;}
 .repg{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:12px;}
-.rpl{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:2px;}
-.rpv{font-size:12px;}
+.rpl{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:2px;}
+.rpv{font-size:15px;}
 .brow{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
 .blbl{font-size:11px;color:var(--mid);width:110px;flex-shrink:0;}
 .btrack{flex:1;height:5px;background:var(--ink4);border-radius:3px;overflow:hidden;}
@@ -747,15 +747,12 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     <div class="fr">
       <div class="fg"><label class="fl">Nombre *</label><input class="fi" id="inv-name" placeholder="Ej: Base de florero grande"/></div>
       <div class="fg"><label class="fl">Categoría</label>
-        <select class="fs" id="inv-category">
-          <option value="flores">🌸 Flores</option>
-          <option value="bases">🏺 Bases</option>
-          <option value="papel_coreano">🎀 Papel Coreano</option>
-          <option value="elaboracion">✂️ Elaboración</option>
-          <option value="botella_vino">🍷 Botella de Vino</option>
-          <option value="peluches">🧸 Peluches</option>
-          <option value="otro">📦 Otro</option>
-        </select>
+        <select class="fs" id="inv-category" onchange="onInvCategoryChange()"></select>
+      </div>
+    </div>
+    <div class="fr" id="inv-subcategory-wrap" style="display:none;">
+      <div class="fg"><label class="fl">Subcategoría</label>
+        <select class="fs" id="inv-subcategory"></select>
       </div>
     </div>
     <div class="fr">
@@ -789,6 +786,24 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     <div class="fg"><label class="fl">Notas</label><input class="fi" id="inv-notes" placeholder="Opcional"/></div>
   </div>
   <div class="mf"><button class="btn bg" onclick="cm('m-inv')">Cancelar</button><button class="btn bp" onclick="saveInventoryItem()">Guardar</button></div>
+</div>
+</div>
+
+<!-- ════ MODAL: INVENTARIO — CATEGORÍAS Y SUBCATEGORÍAS ════ -->
+<div class="ov" id="m-inv-cats">
+<div class="modal mmd">
+  <div class="mh"><div class="mt">Categorías de Inventario</div><button class="mx" onclick="closeInvCatsModal()">✕</button></div>
+  <div class="mb">
+    <div class="fg" style="margin-bottom:14px;">
+      <label class="fl">Nueva categoría</label>
+      <div style="display:flex;gap:8px;">
+        <input class="fi" id="inv-cat-new-name" placeholder="Ej: Bases" onkeydown="if(event.key==='Enter')addInvCategory()"/>
+        <button class="btn bp bsm" style="flex-shrink:0;" onclick="addInvCategory()">＋ Agregar</button>
+      </div>
+    </div>
+    <div id="inv-cats-list"></div>
+  </div>
+  <div class="mf"><button class="btn bg" onclick="closeInvCatsModal()">Cerrar</button></div>
 </div>
 </div>
 
@@ -891,6 +906,12 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     <div class="fg"><label class="fl">Precio unitario *</label><input class="fi" id="qp-price" type="number" placeholder="$0.00" min="0" step="0.01"/></div>
     <div class="fg"><label class="fl">Cantidad</label><input class="fi" id="qp-qty" type="number" value="1" min="1"/></div>
     <div class="fg"><label class="fl">Notas del arreglo</label><input class="fi" id="qp-notes" placeholder="Color, tamaño, detalles…"/></div>
+    <div class="fg"><label class="fl">Foto de referencia (opcional)</label>
+      <div id="qp-photo-wrap" style="border:1.5px dashed var(--rule2);border-radius:var(--r8);padding:10px;text-align:center;cursor:pointer;color:var(--dim);font-size:12px;min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;" onclick="document.getElementById('qp-photo').click()">
+        <span id="qp-photo-lbl">📷 Click para adjuntar una foto de referencia</span>
+        <input type="file" id="qp-photo" accept="image/*" style="display:none;" onchange="previewProductPhoto(this,'qp-photo-wrap','qp-photo-lbl')"/>
+      </div>
+    </div>
   </div>
   <div class="mf">
     <button class="btn bg" onclick="cm('m-quick-product')">Cancelar</button>
@@ -1423,11 +1444,11 @@ ${orders.map((o,i) => {
     </div>
     <div style="font-size:11px;color:var(--mid);margin-bottom:10px;">📅 ${o.deliveryDate?.split('T')[0]||'—'} · ⏰ ${fmtWindow(o.deliveryWindow)}</div>
 
-    <!-- Product photo -->
-    <div class="ec-img">${prod?.photo1Url ? `<img src="${photoSrc(prod.photo1Url)}"/>` : '🌸'}</div>
+    <!-- Product photo (catalog product photo, or a quick item's reference photo) -->
+    <div class="ec-img">${prod?.photo1Url ? `<img src="${photoSrc(prod.photo1Url)}"/>` : item?.referencePhotoUrl ? `<img src="${photoSrc(item.referencePhotoUrl)}"/>` : '🌸'}</div>
 
     <!-- Product name + dimensions -->
-    <div class="ec-name">${prod?.name || 'Arreglo'}</div>
+    <div class="ec-name">${prod?.name || item?.customName || 'Arreglo'}</div>
     ${prod?.width || prod?.height ? `
       <div style="display:inline-flex;align-items:center;gap:6px;background:var(--ink3);border-radius:100px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--mid);margin-bottom:8px;">
         📐 <span style="color:var(--text);">${prod.width||'—'} pulgadas ancho</span>
@@ -1443,13 +1464,6 @@ ${orders.map((o,i) => {
       <div style="margin-bottom:3px;">🎀 Para: <strong>${o.recipientName||'Pasa a recoger'}</strong></div>
       <div style="color:var(--mid);">Ocasión: ${occLabel(o.occasion)}</div>
     </div>
-
-    <!-- Message card -->
-    ${o.messageText ? `
-      <div class="ec-note">
-        💌 <em>"${o.messageText}"</em>
-        <span style="color:var(--mid);font-size:10px;"> — ${o.messageAnon?'Anónimo':o.messageFrom||''}</span>
-      </div>` : ''}
 
     <!-- Per-item notes -->
     ${item?.notes ? `
@@ -1520,11 +1534,11 @@ async function vEntr() {
     </tbody></table>
   </div>
 </div>
-<div class="card" style="margin-top:12px;">
+${currentStaff?.role==='ADMIN'?`<div class="card" style="margin-top:12px;">
   <div class="ch"><span class="ct">Mapa de Repartidores</span></div>
   <div id="rep-map" style="height:320px;border-radius:var(--r10);overflow:hidden;"></div>
-</div>`;
-  initRepMap();
+</div>`:''}`;
+  if (currentStaff?.role === 'ADMIN') initRepMap();
 }
 
 // ════════════════════════════════════════════
@@ -2390,22 +2404,20 @@ async function toggleCatVisible(id, tog) {
 // ════════════════════════════════════════════
 // INVENTARIO
 // ════════════════════════════════════════════
+let cachedInvCategories = [];
+
 async function vInv() {
-  const items = await api('GET','/api/inventory');
+  const [items, cats] = await Promise.all([api('GET','/api/inventory'), api('GET','/api/inventory-categories')]);
   cachedInventory = items;
+  cachedInvCategories = cats;
   document.getElementById('vc').innerHTML = `
 <div style="display:flex;gap:9px;margin-bottom:12px;flex-wrap:wrap;">
   <div class="sb2" style="flex:1;"><span style="color:var(--dim);">⌕</span><input placeholder="Buscar artículo…" oninput="filterInv(this.value)"/></div>
   <select class="fs" id="inv-cat-filter" onchange="filterInv(document.querySelector('.sb2 input').value)" style="border-radius:var(--r8);padding:7px 10px;font-size:12px;">
     <option value="">Todas las categorías</option>
-    <option value="flores">🌸 Flores</option>
-    <option value="bases">🏺 Bases</option>
-    <option value="papel_coreano">🎀 Papel Coreano</option>
-    <option value="elaboracion">✂️ Elaboración</option>
-    <option value="botella_vino">🍷 Botella de Vino</option>
-    <option value="peluches">🧸 Peluches</option>
-    <option value="otro">📦 Otro</option>
+    ${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
   </select>
+  <button class="btn bg" onclick="openInvCatsModal()">⚙️ Categorías</button>
   <button class="btn bp" onclick="openInvModal()">＋ Agregar Artículo</button>
 </div>
 <div class="card" id="inv-table">
@@ -2416,7 +2428,7 @@ ${renderInvTable(items)}
 function renderInvTable(items) {
   const isAdmin = currentStaff?.role === 'ADMIN';
   if (items.length===0) return '<div class="empty-state">Sin artículos en inventario</div>';
-  const catLabel = {flores:'🌸 Flores',bases:'🏺 Bases',papel_coreano:'🎀 Papel Coreano',elaboracion:'✂️ Elaboración',botella_vino:'🍷 Vino',peluches:'🧸 Peluches',otro:'📦 Otro'};
+  const catText = i => [i.categoryRef?.name, i.subcategoryRef?.name].filter(Boolean).join(' · ') || i.category || '—';
   return `<table class="tbl"><thead><tr>
     <th>Artículo</th><th>Categoría</th><th>Cantidad</th><th>Mín.</th><th>Unidad</th>
     ${isAdmin ? '<th>Costo</th><th>Uds/compra</th><th>Costo/ud</th><th>Proveedor</th>' : ''}
@@ -2426,7 +2438,7 @@ function renderInvTable(items) {
       ${i.photoUrl?`<img src="${photoSrc(i.photoUrl)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;"/>`:''}
       <strong>${i.name}</strong>${i.notes?`<div style="font-size:10px;color:var(--dim);">${i.notes}</div>`:''}
     </td>
-    <td style="font-size:11px;color:var(--mid);">${catLabel[i.category]||i.category||'—'}</td>
+    <td style="font-size:11px;color:var(--mid);">${catText(i)}</td>
     <td class="${low?'inv-low':''}" style="font-weight:700;">${Number(i.quantity).toFixed(2)}</td>
     <td style="color:var(--dim);">${Number(i.minStock).toFixed(2)}</td>
     <td>${i.unit}</td>
@@ -2449,15 +2461,32 @@ function filterInv(q) {
   const cat = document.getElementById('inv-cat-filter')?.value || '';
   let f = cachedInventory;
   if (q) f = f.filter(i => i.name.toLowerCase().includes(q.toLowerCase()));
-  if (cat) f = f.filter(i => i.category === cat);
+  if (cat) f = f.filter(i => i.categoryId === cat);
   el.innerHTML = renderInvTable(f);
+}
+
+function populateInvCategorySelect(selectedCategoryId) {
+  const sel = document.getElementById('inv-category');
+  sel.innerHTML = cachedInvCategories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  sel.value = selectedCategoryId || cachedInvCategories[0]?.id || '';
+}
+
+function onInvCategoryChange(selectedSubcategoryId) {
+  const cat = cachedInvCategories.find(c => c.id === document.getElementById('inv-category').value);
+  const wrap = document.getElementById('inv-subcategory-wrap');
+  const sel = document.getElementById('inv-subcategory');
+  if (!cat || !cat.subcategories?.length) { wrap.style.display = 'none'; sel.innerHTML = ''; return; }
+  wrap.style.display = '';
+  sel.innerHTML = cat.subcategories.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  if (selectedSubcategoryId && cat.subcategories.some(s=>s.id===selectedSubcategoryId)) sel.value = selectedSubcategoryId;
 }
 
 function openInvModal(item=null) {
   document.getElementById('m-inv-title').textContent = item ? 'Editar Artículo' : 'Agregar Artículo';
   document.getElementById('inv-id').value = item?.id||'';
   document.getElementById('inv-name').value = item?.name||'';
-  document.getElementById('inv-category').value = item?.category||'flores';
+  populateInvCategorySelect(item?.categoryId);
+  onInvCategoryChange(item?.subcategoryId);
   document.getElementById('inv-unit').value = item?.unit||'pza';
   document.getElementById('inv-qty').value = item?.quantity||0;
   document.getElementById('inv-min').value = item?.minStock||0;
@@ -2499,7 +2528,9 @@ async function saveInventoryItem() {
 
   const fd = new FormData();
   fd.append('name', name);
-  fd.append('category', document.getElementById('inv-category').value||'otro');
+  fd.append('categoryId', document.getElementById('inv-category').value||'');
+  const subWrap = document.getElementById('inv-subcategory-wrap');
+  fd.append('subcategoryId', subWrap.style.display!=='none' ? (document.getElementById('inv-subcategory').value||'') : '');
   fd.append('unit', document.getElementById('inv-unit').value);
   fd.append('quantity', document.getElementById('inv-qty').value||0);
   fd.append('minStock', document.getElementById('inv-min').value||0);
@@ -2526,6 +2557,81 @@ async function adjustStock(id, name) {
   const delta = parseFloat(prompt(`Ajustar stock de "${name}"\n(Positivo para agregar, negativo para restar)`));
   if (isNaN(delta)) return;
   try { await api('PATCH',`/api/inventory/${id}/stock`,{delta}); toast('Stock actualizado ✓'); showView('inventario'); }
+  catch(e) { toastErr(e.message); }
+}
+
+// ════════════════════════════════════════════
+// INVENTARIO — CATEGORÍAS Y SUBCATEGORÍAS
+// ════════════════════════════════════════════
+async function openInvCatsModal() {
+  await refreshInvCatsModal();
+  om('m-inv-cats');
+}
+
+function closeInvCatsModal() {
+  cm('m-inv-cats');
+  showView('inventario');
+}
+
+async function refreshInvCatsModal() {
+  const cats = await api('GET', '/api/inventory-categories');
+  cachedInvCategories = cats;
+  document.getElementById('inv-cats-list').innerHTML = cats.map(c => `
+    <div class="card" style="margin-bottom:10px;padding:12px;">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <input class="fi" style="font-weight:700;" value="${c.name}" onchange="renameInvCategory('${c.id}',this.value)"/>
+        <button class="btn bg bsm" style="color:var(--red);flex-shrink:0;" onclick="deleteInvCategory('${c.id}','${c.name}')">✕</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+        ${c.subcategories.map(s=>`<span class="badge bm" style="display:inline-flex;align-items:center;gap:5px;">
+          <input value="${s.name}" style="background:none;border:none;color:inherit;font-size:10px;font-weight:700;width:${Math.max(s.name.length,4)}ch;" onchange="renameInvSubcategory('${s.id}',this.value)"/>
+          <span style="cursor:pointer;" onclick="deleteInvSubcategory('${s.id}','${s.name}')">✕</span>
+        </span>`).join('') || '<span style="font-size:11px;color:var(--dim);">Sin subcategorías</span>'}
+      </div>
+      <div style="display:flex;gap:6px;">
+        <input class="fi" id="inv-subcat-new-${c.id}" placeholder="Nueva subcategoría…" style="font-size:11px;padding:5px 9px;" onkeydown="if(event.key==='Enter')addInvSubcategory('${c.id}')"/>
+        <button class="btn bg bsm" style="flex-shrink:0;" onclick="addInvSubcategory('${c.id}')">＋</button>
+      </div>
+    </div>`).join('') || '<div class="empty-state">Sin categorías aún</div>';
+}
+
+async function addInvCategory() {
+  const input = document.getElementById('inv-cat-new-name');
+  const name = input.value.trim();
+  if (!name) { toastErr('Ingresa un nombre'); return; }
+  try { await api('POST', '/api/inventory-categories', { name }); input.value = ''; await refreshInvCatsModal(); toast('Categoría agregada ✓'); }
+  catch(e) { toastErr(e.message); }
+}
+
+async function renameInvCategory(id, name) {
+  if (!name.trim()) { toastErr('El nombre no puede estar vacío'); await refreshInvCatsModal(); return; }
+  try { await api('PATCH', `/api/inventory-categories/${id}`, { name }); toast('Categoría actualizada ✓'); }
+  catch(e) { toastErr(e.message); await refreshInvCatsModal(); }
+}
+
+async function deleteInvCategory(id, name) {
+  if (!confirm(`¿Eliminar la categoría "${name}"? Debe estar vacía (sin artículos).`)) return;
+  try { await api('DELETE', `/api/inventory-categories/${id}`); await refreshInvCatsModal(); toast('Categoría eliminada ✓'); }
+  catch(e) { toastErr(e.message); }
+}
+
+async function addInvSubcategory(categoryId) {
+  const input = document.getElementById(`inv-subcat-new-${categoryId}`);
+  const name = input.value.trim();
+  if (!name) { toastErr('Ingresa un nombre'); return; }
+  try { await api('POST', `/api/inventory-categories/${categoryId}/subcategories`, { name }); await refreshInvCatsModal(); toast('Subcategoría agregada ✓'); }
+  catch(e) { toastErr(e.message); }
+}
+
+async function renameInvSubcategory(id, name) {
+  if (!name.trim()) { toastErr('El nombre no puede estar vacío'); await refreshInvCatsModal(); return; }
+  try { await api('PATCH', `/api/inventory-categories/subcategories/${id}`, { name }); toast('Subcategoría actualizada ✓'); }
+  catch(e) { toastErr(e.message); await refreshInvCatsModal(); }
+}
+
+async function deleteInvSubcategory(id, name) {
+  if (!confirm(`¿Eliminar la subcategoría "${name}"? Debe estar vacía (sin artículos).`)) return;
+  try { await api('DELETE', `/api/inventory-categories/subcategories/${id}`); await refreshInvCatsModal(); toast('Subcategoría eliminada ✓'); }
   catch(e) { toastErr(e.message); }
 }
 
@@ -3077,19 +3183,19 @@ async function vRep() {
 </div>
 ${orders.length===0?'<div class="empty-state">Sin entregas asignadas hoy</div>':
   orders.map((o,i)=>`<div class="repc">
-  <div class="reph"><div><div style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);">${o.orderNumber} · Entrega ${i+1} de ${orders.length}</div><div style="font-size:14px;font-weight:800;margin-top:2px;">${o.recipientName||'—'}</div></div><span class="badge ba2">Pendiente</span></div>
+  <div class="reph"><div><div style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);">${o.orderNumber} · Entrega <span style="font-size:24px;font-weight:900;color:var(--rose);">${i+1}</span> de ${orders.length}</div><div style="font-size:18px;font-weight:800;margin-top:2px;">${o.recipientName||'—'}</div></div><span class="badge ba2">Pendiente</span></div>
   <div class="repb">
     <div class="repg">
-      <div><div class="rpl">Cliente</div><div class="rpv">${o.client?.firstName||''} ${o.client?.lastNameP||''}<br/><a href="tel:${o.client?.phone}" style="color:var(--rose-l);font-size:11px;">📱 ${o.client?.phone||''}</a></div></div>
-      <div><div class="rpl">Destinatario</div><div class="rpv">${o.recipientName||'—'}<br/><a href="tel:${o.recipientPhone}" style="color:var(--rose-l);font-size:11px;">📱 ${o.recipientPhone||''}</a></div></div>
+      <div><div class="rpl">Cliente</div><div class="rpv">${o.client?.firstName||''} ${o.client?.lastNameP||''}<br/><a href="tel:${o.client?.phone}" style="color:var(--rose-l);font-size:13px;">📱 ${o.client?.phone||''}</a></div></div>
+      <div><div class="rpl">Destinatario</div><div class="rpv">${o.recipientName||'—'}<br/><a href="tel:${o.recipientPhone}" style="color:var(--rose-l);font-size:13px;">📱 ${o.recipientPhone||''}</a></div></div>
       <div><div class="rpl">Dirección</div><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([o.recipientAddress, o.recipientColonia, 'Ciudad Juárez, Chih.'].filter(Boolean).join(', '))}" target="_blank" class="rpv" style="color:inherit;text-decoration:underline;display:block;">${o.recipientAddress||'—'} ${o.recipientColonia||''} 🧭</a></div>
       <div><div class="rpl">Ventana</div><div class="rpv" style="color:var(--amber);">⏰ ${fmtWindow(o.deliveryWindow)}</div></div>
     </div>
     ${o.items?.map(item=>`<div style="background:var(--ink3);border-radius:var(--r8);padding:11px;display:flex;gap:11px;align-items:center;margin-bottom:11px;">
       <div style="width:50px;height:50px;border-radius:var(--r8);background:var(--ink4);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">${item.product?.photo1Url?`<img src="${photoSrc(item.product.photo1Url)}" style="width:100%;height:100%;object-fit:cover;"/>`:'🌸'}</div>
-      <div><div style="font-size:12.5px;font-weight:600;">${item.product?.name||item.customName||'—'}</div>${item.notes?`<div style="font-size:11px;color:var(--mid);">${item.notes}</div>`:''}</div>
+      <div><div style="font-size:14.5px;font-weight:600;">${item.product?.name||item.customName||'—'}</div>${item.notes?`<div style="font-size:13px;color:var(--mid);">${item.notes}</div>`:''}</div>
     </div>`).join('')||''}
-    ${o.recipientNotes?`<div style="background:var(--amber-dim);border-radius:var(--r8);padding:9px;margin-bottom:11px;font-size:11.5px;color:var(--amber);">⚠️ ${o.recipientNotes}</div>`:''}
+    ${o.recipientNotes?`<div style="background:var(--amber-dim);border-radius:var(--r8);padding:9px;margin-bottom:11px;font-size:13.5px;color:var(--amber);">⚠️ ${o.recipientNotes}</div>`:''}
     <button class="btn bs blg" style="width:100%;" onclick="openDeliverModal('${o.id}')">📷 Confirmar Entrega</button>
   </div>
 </div>`).join('')}`;
@@ -3471,14 +3577,18 @@ function addQuickProduct() {
   const notes = document.getElementById('qp-notes').value.trim();
   if (!name) { toastErr('El nombre del producto es requerido'); return; }
   if (isNaN(price) || price < 0) { toastErr('Ingresa un precio válido'); return; }
+  const photoFile = document.getElementById('qp-photo').files[0] || null;
   const itemId = `oi-quick-${Date.now()}`;
   // productId null = custom/quick item; backend should accept null or a placeholder
-  orderState.items.push({ itemId, kind:'quick', productId: null, name, unitPrice: price, quantity: qty, notes });
+  orderState.items.push({ itemId, kind:'quick', productId: null, name, unitPrice: price, quantity: qty, notes, photoFile });
   // Reset form
   document.getElementById('qp-name').value  = '';
   document.getElementById('qp-price').value = '';
   document.getElementById('qp-qty').value   = '1';
   document.getElementById('qp-notes').value = '';
+  document.getElementById('qp-photo').value = '';
+  document.getElementById('qp-photo-wrap').style.background = '';
+  document.getElementById('qp-photo-lbl').style.display = '';
   cm('m-quick-product');
   renderOrderItems(); recalcTotal();
   toast(`"${name}" agregado al pedido ✓`);
@@ -3488,7 +3598,7 @@ function renderOrderItems() {
   document.getElementById('order-items').innerHTML = orderState.items.filter(i=>i.kind!=='accessory').map(item=>`
     <div class="order-item-card" id="${item.itemId}">
       <button class="remove-oi" onclick="removeOI('${item.itemId}')">✕</button>
-      <div style="font-size:12px;font-weight:600;margin-bottom:5px;">${item.name}</div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:5px;">${item.name}${item.photoFile?' <span title="Foto de referencia adjunta">📷</span>':''}</div>
       <div style="display:flex;gap:7px;margin-bottom:5px;">
         <input class="fi" type="number" value="${item.quantity}" min="1" style="width:52px;padding:3px 6px;font-size:11px;" onchange="updOI('${item.itemId}','quantity',this.value)"/>
         <span style="font-size:12px;color:var(--rose);font-weight:700;align-self:center;">$${fmt(item.unitPrice)} c/u</span>
@@ -3593,6 +3703,16 @@ async function doCreateOrder(body) {
   const btn=document.getElementById('o-submit'); btn.disabled=true; btn.textContent='Creando…';
   try {
     const order = await api('POST', '/api/orders', body);
+
+    // Upload any reference photos attached to quick items in Nuevo Pedido — order.items
+    // comes straight off the create mutation, so it lines up index-for-index with the
+    // orderState.items/body.items arrays that produced it (no separate re-fetch/reorder).
+    await Promise.all(orderState.items.map((i, idx) => {
+      if (!i.photoFile || !order.items?.[idx]) return null;
+      const fd = new FormData();
+      fd.append('photo', i.photoFile);
+      return api('PATCH', `/api/orders/${order.id}/items/${order.items[idx].id}/photo`, fd, true).catch(()=>{});
+    }));
 
     // Fetch full order with client/items/delivery
     const fullOrder = await api('GET', `/api/orders/${order.id}`);
@@ -3782,7 +3902,6 @@ body{font-family:Helvetica Neue,Helvetica,Arial,sans-serif;color:#1a1a1a;backgro
     </div>
   </div>
   ${o.recipientNotes?`<div style="display:flex;gap:10px;font-size:14px"><span class="kicker muted" style="padding-top:2px">NOTAS</span><b>${o.recipientNotes}</b></div>`:''}
-  ${o.messageText?`<div style="display:flex;gap:10px;font-size:14px"><span class="kicker muted" style="padding-top:2px">TARJETA</span><span><em>“${o.messageText}”</em> <span class="muted">— ${msgFrom}</span></span></div>`:''}
   <div>
     <div class="kicker muted" style="border-bottom:1.5px solid #eee;padding-bottom:4px">PRODUCTOS</div>
     ${items.map(i=>`<div style="display:flex;align-items:center;gap:12px;font-size:14px;padding:5px 0;border-bottom:1px solid #f3f3f3">${img(i, 34)}<b style="min-width:28px">${i.quantity}×</b><b>${iname(i)}</b></div>`).join('')}

@@ -79,6 +79,8 @@ model InventoryItem {
   id               String       @id @default(cuid())
   name             String
   category         String?
+  categoryId       String?
+  subcategoryId    String?
   unit             String       @default("pza")
   quantity         Decimal      @default(0) @db.Decimal(10,3)
   minStock         Decimal      @default(0) @db.Decimal(10,3)
@@ -90,6 +92,30 @@ model InventoryItem {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   recipeItems      RecipeItem[]
+  categoryRef      InventoryCategory?    @relation(fields: [categoryId], references: [id])
+  subcategoryRef   InventorySubcategory? @relation(fields: [subcategoryId], references: [id])
+}
+
+model InventoryCategory {
+  id            String                 @id @default(cuid())
+  name          String
+  code          String?                @unique
+  sortOrder     Int                    @default(0)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  subcategories InventorySubcategory[]
+  items         InventoryItem[]
+}
+
+model InventorySubcategory {
+  id         String             @id @default(cuid())
+  categoryId String
+  category   InventoryCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name       String
+  sortOrder  Int                @default(0)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  items      InventoryItem[]
 }
 
 model Category {
@@ -257,6 +283,7 @@ model OrderItem {
   quantity           Int      @default(1)
   unitPrice          Decimal  @db.Decimal(10,2)
   notes              String?
+  referencePhotoUrl  String?
   createdAt          DateTime @default(now())
   order              Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product            Product?          @relation(fields: [productId], references: [id])  // ← also nullable

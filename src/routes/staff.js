@@ -3,7 +3,7 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
 const { prisma } = require('../db/prisma');
-const { requireAuth, requireAdmin, requireOffice } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 router.get('/', requireAuth, requireAdmin, async (_req, res) => {
   try {
@@ -34,8 +34,8 @@ router.patch('/me/location', requireAuth, [
 });
 
 // GET /api/staff/repartidor-locations — last known position of each active driver,
-// for the Entregas dispatch map. Only drivers who have reported at least once are included.
-router.get('/repartidor-locations', requireAuth, requireOffice, async (_req, res) => {
+// for the Entregas dispatch map. Admin-only. Only drivers who have reported at least once are included.
+router.get('/repartidor-locations', requireAuth, requireAdmin, async (_req, res) => {
   try {
     const drivers = await prisma.staff.findMany({
       where: { role: 'REPARTIDOR', active: true, lastLocationAt: { not: null } },

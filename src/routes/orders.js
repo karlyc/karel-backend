@@ -572,6 +572,32 @@ router.delete('/:id/proof', requireAuth, requireOffice, async (req, res) => {
   }
 });
 
+// ── PATCH /api/orders/:id/items/:itemId/photo — optional reference photo for a
+// quick/custom item (no catalog product), shown on the Elaboración card ──
+router.patch('/:id/items/:itemId/photo', requireAuth, upload.single('photo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No photo provided' });
+  try {
+    let referencePhotoUrl;
+    if (isCloudinaryConfigured()) {
+      referencePhotoUrl = await uploadToCloudinary(req.file.buffer, 'karel/order-items');
+    } else {
+      referencePhotoUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    }
+    const existing = await prisma.orderItem.findUnique({ where: { id: req.params.itemId } });
+    if (!existing || existing.orderId !== req.params.id) {
+      return res.status(404).json({ error: 'Order item not found' });
+    }
+    const item = await prisma.orderItem.update({
+      where: { id: req.params.itemId },
+      data: { referencePhotoUrl },
+    });
+    res.json(item);
+  } catch(err) {
+    console.error('Order item photo upload error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   const reason = req.body?.reason?.trim();
   if (!reason) return res.status(400).json({ error: 'El motivo de cancelación es requerido' });
