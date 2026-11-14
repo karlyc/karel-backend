@@ -670,6 +670,15 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
       <div class="fg"><label class="fl">Ancho (pulgadas)</label><input class="fi" id="p-width" type="number" placeholder="Opcional"/></div>
       <div class="fg"><label class="fl">Alto (pulgadas)</label><input class="fi" id="p-height" type="number" placeholder="Opcional"/></div>
     </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Orientación</label>
+        <select class="fs" id="p-orientation">
+          <option value="">Seleccionar…</option>
+          <option value="REDONDO">Redondo</option>
+          <option value="UNA_VISTA">Una vista</option>
+        </select>
+      </div>
+    </div>
     <div class="fg"><label class="fl">Descripción (instrucciones para el florista)</label><textarea class="fta" id="p-desc" placeholder="Materiales, colores, técnica, pasos de elaboración…"></textarea></div>
     <div class="fg"><label class="fl">Notas internas</label><textarea class="fta" id="p-notes" placeholder="Cambios frecuentes, consideraciones especiales, observaciones…" style="min-height:50px;"></textarea></div>
     <div class="fg"><label class="fl">Fotos (máx. 2)</label>
@@ -939,6 +948,12 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
     <button class="btn bp" onclick="saveStaffEdit()">Guardar</button>
   </div>
 </div>
+</div>
+
+<!-- Photo Lightbox — permanent in DOM, reusable anywhere a photo should open bigger -->
+<div class="ov" id="m-photo-lightbox" style="padding:24px;">
+  <button class="mx" style="position:fixed;top:20px;right:20px;" onclick="cm('m-photo-lightbox')">✕</button>
+  <img id="photo-lightbox-img" src="" style="max-width:92vw;max-height:92vh;border-radius:var(--r12);object-fit:contain;"/>
 </div>
 
 <script>
@@ -1422,16 +1437,30 @@ ${orders.map((o,i) => {
   const prod = item?.product;
   const allItems = o.items || [];
 
-  // Recipe rows
-  const recipeHTML = prod?.recipe?.length ? `
+  // Recipe rows — grouped by category/subcategory (sorted by their sortOrder, so e.g.
+  // "Flores · Flores Principales" shows first if that's how categories are ordered)
+  const recipeHTML = prod?.recipe?.length ? (() => {
+    const groups = {};
+    prod.recipe.forEach(r => {
+      const cat = r.inventoryItem?.categoryRef;
+      const sub = r.inventoryItem?.subcategoryRef;
+      const key = `${cat?.id||'_'}_${sub?.id||'_'}`;
+      if (!groups[key]) groups[key] = { catName: cat?.name||'Sin categoría', subName: sub?.name||null, catSort: cat?.sortOrder ?? 999, subSort: sub?.sortOrder ?? 999, items: [] };
+      groups[key].items.push(r);
+    });
+    const sorted = Object.values(groups).sort((a,b) => a.catSort - b.catSort || a.subSort - b.subSort);
+    return `
     <div style="background:var(--sage-dim);border:1px solid rgba(107,148,105,.15);border-radius:var(--r8);padding:9px 11px;margin-bottom:8px;">
       <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);margin-bottom:7px;">🧪 Receta del producto</div>
-      ${prod.recipe.map(r => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(107,148,105,.1);font-size:11.5px;">
-          <span style="color:var(--text);">${r.inventoryItem?.name||'—'}</span>
-          <span style="font-weight:700;color:var(--sage);">${Number(r.quantity)} ${r.inventoryItem?.unit||''}</span>
-        </div>`).join('')}
-    </div>` : '';
+      ${sorted.map(g => `
+        <div style="font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sage);opacity:.75;margin-top:5px;">${g.catName}${g.subName?' · '+g.subName:''}</div>
+        ${g.items.map(r => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(107,148,105,.1);font-size:11.5px;">
+            <span style="color:var(--text);">${r.inventoryItem?.name||'—'}</span>
+            <span style="font-weight:700;color:var(--sage);">${Number(r.quantity)} ${r.inventoryItem?.unit||''}</span>
+          </div>`).join('')}`).join('')}
+    </div>`;
+  })() : '';
 
   // All order items (in case there are multiple)
   const itemsHTML = allItems.length > 1 ? `
@@ -1449,7 +1478,7 @@ ${orders.map((o,i) => {
     <div style="font-size:11px;color:var(--mid);margin-bottom:10px;">📅 ${o.deliveryDate?.split('T')[0]||'—'} · ⏰ ${fmtWindow(o.deliveryWindow)}</div>
 
     <!-- Product photo (catalog product photo, or a quick item's reference photo) -->
-    <div class="ec-img">${prod?.photo1Url ? `<img src="${photoSrc(prod.photo1Url)}"/>` : item?.referencePhotoUrl ? `<img src="${photoSrc(item.referencePhotoUrl)}"/>` : '🌸'}</div>
+    <div class="ec-img">${prod?.photo1Url ? `<img src="${photoSrc(prod.photo1Url)}" style="cursor:pointer;" onclick="openPhotoLightbox('${photoSrc(prod.photo1Url)}')"/>` : item?.referencePhotoUrl ? `<img src="${photoSrc(item.referencePhotoUrl)}" style="cursor:pointer;" onclick="openPhotoLightbox('${photoSrc(item.referencePhotoUrl)}')"/>` : '🌸'}</div>
 
     <!-- Product name + dimensions -->
     <div class="ec-name">${prod?.name || item?.customName || 'Arreglo'}</div>
@@ -1458,6 +1487,7 @@ ${orders.map((o,i) => {
         📐 <span style="color:var(--text);">${prod.width||'—'} pulgadas ancho</span>
         <span style="color:var(--rule2);">×</span>
         <span style="color:var(--text);">${prod.height||'—'} pulgadas alto</span>
+        ${prod.orientation?`<span style="color:var(--rule2);">·</span><span style="color:var(--text);">${({REDONDO:'Redondo',UNA_VISTA:'Una vista'})[prod.orientation]||prod.orientation}</span>`:''}
       </div>` : ''}
 
     <!-- Multiple items -->
@@ -1475,17 +1505,10 @@ ${orders.map((o,i) => {
         📝 Nota del pedido: ${item.notes}
       </div>` : ''}
 
-    <!-- Product instructions -->
-    ${prod?.description ? `
-      <div style="background:var(--ink3);border-radius:var(--r8);padding:9px 11px;margin-bottom:8px;">
-        <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);margin-bottom:5px;">📋 Instrucciones para el florista</div>
-        <div style="font-size:12px;color:var(--text);line-height:1.6;">${prod.description}</div>
-      </div>` : ''}
-
-    <!-- Product notes / warnings -->
+    <!-- Notas internas (product-level florist notes) -->
     ${prod?.notes ? `
       <div style="background:var(--amber-dim);border:1px solid rgba(200,152,64,.2);border-radius:var(--r8);padding:8px 11px;margin-bottom:8px;">
-        <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:4px;">⚠️ Notas del producto</div>
+        <div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:4px;">📌 Notas internas</div>
         <div style="font-size:11.5px;color:var(--text);line-height:1.5;">${prod.notes}</div>
       </div>` : ''}
 
@@ -1855,6 +1878,7 @@ async function openProductModal(product=null) {
   document.getElementById('p-price').value = product?.price||'';
   document.getElementById('p-width').value = product?.width||'';
   document.getElementById('p-height').value= product?.height||'';
+  document.getElementById('p-orientation').value = product?.orientation||'';
   document.getElementById('p-desc').value  = product?.description||'';
   document.getElementById('p-notes').value = product?.notes||'';
   document.getElementById('p-visible').classList.toggle('on', product?.visible!==false);
@@ -2017,6 +2041,7 @@ async function saveProduct() {
   fd.append('price', price);
   fd.append('width',  document.getElementById('p-width').value  || '');
   fd.append('height', document.getElementById('p-height').value || '');
+  fd.append('orientation', document.getElementById('p-orientation').value || '');
   fd.append('description', document.getElementById('p-desc').value);
   fd.append('notes', document.getElementById('p-notes').value);
   fd.append('visible', document.getElementById('p-visible').classList.contains('on') ? 'true' : 'false');
@@ -4577,6 +4602,12 @@ function or(el, cid) {
 }
 function om(id) { document.getElementById(id)?.classList.add('open'); document.body.style.overflow='hidden'; }
 function cm(id) { document.getElementById(id)?.classList.remove('open'); document.body.style.overflow=''; }
+
+function openPhotoLightbox(url) {
+  if (!url) return;
+  document.getElementById('photo-lightbox-img').src = url;
+  om('m-photo-lightbox');
+}
 document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)cm(o.id);}));
 
 // ════════════════════════════════════════════

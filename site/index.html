@@ -2480,7 +2480,11 @@ function openProductDetail(productId) {
   document.getElementById('pd-code').textContent  = 'Código: ' + p.code;
   document.getElementById('pd-price').textContent = '$' + fmt(p.price || p.priceStd);
   const dimsEl = document.getElementById('pd-dims');
-  if (p.width || p.height) { dimsEl.style.display = 'inline-flex'; dimsEl.textContent = '📐 ' + (p.width || '—') + ' cm ancho × ' + (p.height || '—') + ' cm alto'; }
+  const orientLabel = {REDONDO:'Redondo', UNA_VISTA:'Una vista'}[p.orientation] || '';
+  if (p.width || p.height || orientLabel) {
+    dimsEl.style.display = 'inline-flex';
+    dimsEl.textContent = (p.width || p.height ? '📐 ' + (p.width || '—') + ' cm ancho × ' + (p.height || '—') + ' cm alto' : '') + (orientLabel ? ((p.width||p.height)?' · ':'') + orientLabel : '');
+  }
   else { dimsEl.style.display = 'none'; }
   const descEl = document.getElementById('pd-desc');
   if (p.description) { descEl.style.display = 'block'; descEl.textContent = p.description; }

@@ -142,6 +142,7 @@ model Product {
   price       Decimal      @db.Decimal(10,2)
   width       Decimal?     @db.Decimal(6,1)
   height      Decimal?     @db.Decimal(6,1)
+  orientation String?      // "REDONDO" | "UNA_VISTA"
   visible     Boolean      @default(true)
   categoryId  String?
   createdAt   DateTime     @default(now())
