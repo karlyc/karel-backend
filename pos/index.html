@@ -4019,6 +4019,7 @@ body{font-family:Helvetica Neue,Helvetica,Arial,sans-serif;color:#1a1a1a;backgro
     <div><div class="sec-t">Cliente</div>${row('Nombre', clientName)}${row('Teléfono', clientPhone)}${row('Correo', o.client?.email)}</div>
     <div><div class="sec-t">Entrega</div>${row('Fecha', deliveryDateStr, 'datehl')}${row('Horario', winLabel)}${row('Tipo', typeLabel)}${!isPickup?row('Para', o.recipientName):''}</div>
   </div>
+  ${o.messageText?`<div style="display:flex;gap:10px;font-size:14px;margin-bottom:6px"><span class="kicker muted" style="padding-top:2px">TARJETA</span><span><em>“${o.messageText}”</em> <span class="muted">— ${msgFrom}</span></span></div>`:''}
   <div><div class="ptab h"><span>PRODUCTO</span><span>CANT.</span><span>PRECIO</span></div>${priceRows(34)}</div>
   <div style="display:grid;grid-template-columns:1fr 240px;gap:28px;align-items:end;margin-top:auto">
     <div><div class="kicker pink" style="margin-bottom:6px">FORMA DE PAGO</div>${payBadge}${o.paymentProofUrl?' <span class="muted" style="font-size:14px">Comprobante adjunto</span>':''}</div>
