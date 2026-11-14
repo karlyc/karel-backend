@@ -89,6 +89,7 @@ model InventoryItem {
   supplier         String?
   notes            String?
   photoUrl         String?
+  isStaple         Boolean      @default(false)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   recipeItems      RecipeItem[]

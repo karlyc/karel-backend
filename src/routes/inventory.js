@@ -37,7 +37,7 @@ async function resolveCategoryFields({ categoryId, subcategoryId, category }) {
 
 router.post('/', requireAuth, upload.single('photo'), async (req, res) => {
   try {
-    const { name, unit, quantity, minStock, cost, unitsPerPurchase, category, categoryId, subcategoryId, supplier, notes } = req.body;
+    const { name, unit, quantity, minStock, cost, unitsPerPurchase, category, categoryId, subcategoryId, supplier, notes, isStaple } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'El nombre es requerido' });
     const photoUrl = await handlePhoto(req.file);
     const catFields = await resolveCategoryFields({ categoryId, subcategoryId, category });
@@ -52,6 +52,7 @@ router.post('/', requireAuth, upload.single('photo'), async (req, res) => {
         supplier: supplier || null,
         notes: notes || null,
         photoUrl: photoUrl || null,
+        isStaple: isStaple === 'true',
       },
     });
     res.status(201).json(item);
@@ -60,7 +61,7 @@ router.post('/', requireAuth, upload.single('photo'), async (req, res) => {
 
 router.put('/:id', requireAuth, upload.single('photo'), async (req, res) => {
   try {
-    const { name, unit, quantity, minStock, cost, unitsPerPurchase, category, categoryId, subcategoryId, supplier, notes } = req.body;
+    const { name, unit, quantity, minStock, cost, unitsPerPurchase, category, categoryId, subcategoryId, supplier, notes, isStaple } = req.body;
     const catFields = await resolveCategoryFields({ categoryId, subcategoryId, category });
     const data = {
       name: name?.trim(), unit,
@@ -71,6 +72,7 @@ router.put('/:id', requireAuth, upload.single('photo'), async (req, res) => {
       unitsPerPurchase: unitsPerPurchase ? parseFloat(unitsPerPurchase) : null,
       supplier: supplier || null,
       notes: notes || null,
+      isStaple: isStaple !== undefined ? isStaple === 'true' : undefined,
     };
     const photoUrl = await handlePhoto(req.file);
     if (photoUrl) data.photoUrl = photoUrl;

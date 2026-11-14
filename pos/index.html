@@ -784,6 +784,10 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
       </div>
     </div>
     <div class="fg"><label class="fl">Notas</label><input class="fi" id="inv-notes" placeholder="Opcional"/></div>
+    <div class="tw" style="margin-top:4px;">
+      <div class="tog" id="inv-staple-tog" onclick="this.classList.toggle('on')"><div class="tk"></div></div>
+      <span class="tl">⭐ Mantener siempre en stock (artículo esencial)</span>
+    </div>
   </div>
   <div class="mf"><button class="btn bg" onclick="cm('m-inv')">Cancelar</button><button class="btn bp" onclick="saveInventoryItem()">Guardar</button></div>
 </div>
@@ -2412,17 +2416,42 @@ async function vInv() {
   cachedInvCategories = cats;
   document.getElementById('vc').innerHTML = `
 <div style="display:flex;gap:9px;margin-bottom:12px;flex-wrap:wrap;">
-  <div class="sb2" style="flex:1;"><span style="color:var(--dim);">⌕</span><input placeholder="Buscar artículo…" oninput="filterInv(this.value)"/></div>
-  <select class="fs" id="inv-cat-filter" onchange="filterInv(document.querySelector('.sb2 input').value)" style="border-radius:var(--r8);padding:7px 10px;font-size:12px;">
+  <div class="sb2" style="flex:1;min-width:160px;"><span style="color:var(--dim);">⌕</span><input id="inv-search" placeholder="Buscar artículo…" oninput="filterInv()"/></div>
+  <select class="fs" id="inv-cat-filter" onchange="onInvFilterCategoryChange()" style="border-radius:var(--r8);padding:7px 10px;font-size:12px;">
     <option value="">Todas las categorías</option>
     ${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
   </select>
+  <select class="fs" id="inv-subcat-filter" onchange="filterInv()" style="border-radius:var(--r8);padding:7px 10px;font-size:12px;display:none;">
+    <option value="">Todas las subcategorías</option>
+  </select>
+  <select class="fs" id="inv-status-filter" onchange="filterInv()" style="border-radius:var(--r8);padding:7px 10px;font-size:12px;">
+    <option value="">Todos los estados</option>
+    <option value="ok">OK</option>
+    <option value="bajo">Bajo</option>
+  </select>
+  <label class="tw" style="cursor:pointer;">
+    <div class="tog" id="inv-staple-filter-tog" onclick="this.classList.toggle('on');filterInv()"><div class="tk"></div></div>
+    <span class="tl">⭐ Solo esenciales</span>
+  </label>
   <button class="btn bg" onclick="openInvCatsModal()">⚙️ Categorías</button>
   <button class="btn bp" onclick="openInvModal()">＋ Agregar Artículo</button>
 </div>
 <div class="card" id="inv-table">
 ${renderInvTable(items)}
 </div>`;
+}
+
+function onInvFilterCategoryChange() {
+  const catId = document.getElementById('inv-cat-filter').value;
+  const cat = cachedInvCategories.find(c => c.id === catId);
+  const sel = document.getElementById('inv-subcat-filter');
+  if (!cat || !cat.subcategories?.length) {
+    sel.style.display = 'none'; sel.value = ''; sel.innerHTML = '<option value="">Todas las subcategorías</option>';
+  } else {
+    sel.style.display = '';
+    sel.innerHTML = '<option value="">Todas las subcategorías</option>' + cat.subcategories.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  }
+  filterInv();
 }
 
 function renderInvTable(items) {
@@ -2436,7 +2465,7 @@ function renderInvTable(items) {
   ${items.map(i=>{const low=Number(i.quantity)<=Number(i.minStock);return`<tr>
     <td>
       ${i.photoUrl?`<img src="${photoSrc(i.photoUrl)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;"/>`:''}
-      <strong>${i.name}</strong>${i.notes?`<div style="font-size:10px;color:var(--dim);">${i.notes}</div>`:''}
+      <strong>${i.isStaple?'⭐ ':''}${i.name}</strong>${i.notes?`<div style="font-size:10px;color:var(--dim);">${i.notes}</div>`:''}
     </td>
     <td style="font-size:11px;color:var(--mid);">${catText(i)}</td>
     <td class="${low?'inv-low':''}" style="font-weight:700;">${Number(i.quantity).toFixed(2)}</td>
@@ -2456,12 +2485,21 @@ function renderInvTable(items) {
   </tbody></table>`;
 }
 
-function filterInv(q) {
+function filterInv() {
   const el = document.getElementById('inv-table'); if (!el) return;
-  const cat = document.getElementById('inv-cat-filter')?.value || '';
+  const q = document.getElementById('inv-search')?.value || '';
+  const catId = document.getElementById('inv-cat-filter')?.value || '';
+  const subcatId = document.getElementById('inv-subcat-filter')?.value || '';
+  const status = document.getElementById('inv-status-filter')?.value || '';
+  const staleOnly = document.getElementById('inv-staple-filter-tog')?.classList.contains('on');
+
   let f = cachedInventory;
   if (q) f = f.filter(i => i.name.toLowerCase().includes(q.toLowerCase()));
-  if (cat) f = f.filter(i => i.categoryId === cat);
+  if (catId) f = f.filter(i => i.categoryId === catId);
+  if (subcatId) f = f.filter(i => i.subcategoryId === subcatId);
+  if (status) f = f.filter(i => (Number(i.quantity) <= Number(i.minStock)) === (status === 'bajo'));
+  if (staleOnly) f = f.filter(i => i.isStaple);
+
   el.innerHTML = renderInvTable(f);
 }
 
@@ -2481,12 +2519,12 @@ function onInvCategoryChange(selectedSubcategoryId) {
   if (selectedSubcategoryId && cat.subcategories.some(s=>s.id===selectedSubcategoryId)) sel.value = selectedSubcategoryId;
 }
 
-function openInvModal(item=null) {
+function openInvModal(item=null, presetCategoryId=null, presetSubcategoryId=null) {
   document.getElementById('m-inv-title').textContent = item ? 'Editar Artículo' : 'Agregar Artículo';
   document.getElementById('inv-id').value = item?.id||'';
   document.getElementById('inv-name').value = item?.name||'';
-  populateInvCategorySelect(item?.categoryId);
-  onInvCategoryChange(item?.subcategoryId);
+  populateInvCategorySelect(item?.categoryId || presetCategoryId);
+  onInvCategoryChange(item?.subcategoryId || presetSubcategoryId);
   document.getElementById('inv-unit').value = item?.unit||'pza';
   document.getElementById('inv-qty').value = item?.quantity||0;
   document.getElementById('inv-min').value = item?.minStock||0;
@@ -2495,6 +2533,7 @@ function openInvModal(item=null) {
   document.getElementById('inv-cost-per-unit').value = item?.cost && item?.unitsPerPurchase ? (Number(item.cost)/Number(item.unitsPerPurchase)).toFixed(2) : '';
   document.getElementById('inv-supplier').value = item?.supplier||'';
   document.getElementById('inv-notes').value = item?.notes||'';
+  document.getElementById('inv-staple-tog').classList.toggle('on', !!item?.isStaple);
   // Reset photo
   const wrap = document.getElementById('inv-photo-wrap');
   const lbl  = document.getElementById('inv-photo-lbl');
@@ -2540,6 +2579,7 @@ async function saveInventoryItem() {
     fd.append('supplier', document.getElementById('inv-supplier').value||'');
   }
   fd.append('notes', document.getElementById('inv-notes').value||'');
+  fd.append('isStaple', document.getElementById('inv-staple-tog').classList.contains('on'));
   const photo = document.getElementById('inv-photo').files[0];
   if (photo) fd.append('photo', photo);
 
