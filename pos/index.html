@@ -2415,6 +2415,10 @@ async function vInv() {
   cachedInventory = items;
   cachedInvCategories = cats;
   document.getElementById('vc').innerHTML = `
+<div style="display:flex;gap:9px;margin-bottom:10px;justify-content:flex-end;">
+  <button class="btn bg" onclick="openInvCatsModal()">⚙️ Categorías</button>
+  <button class="btn bp" onclick="openInvModal()">＋ Agregar Artículo</button>
+</div>
 <div style="display:flex;gap:9px;margin-bottom:12px;flex-wrap:wrap;">
   <div class="sb2" style="flex:1;min-width:160px;"><span style="color:var(--dim);">⌕</span><input id="inv-search" placeholder="Buscar artículo…" oninput="filterInv()"/></div>
   <select class="fs" id="inv-cat-filter" onchange="onInvFilterCategoryChange()" style="border-radius:var(--r8);padding:7px 10px;font-size:12px;">
@@ -2433,8 +2437,6 @@ async function vInv() {
     <div class="tog" id="inv-staple-filter-tog" onclick="this.classList.toggle('on');filterInv()"><div class="tk"></div></div>
     <span class="tl">⭐ Solo esenciales</span>
   </label>
-  <button class="btn bg" onclick="openInvCatsModal()">⚙️ Categorías</button>
-  <button class="btn bp" onclick="openInvModal()">＋ Agregar Artículo</button>
 </div>
 <div class="card" id="inv-table">
 ${renderInvTable(items)}
