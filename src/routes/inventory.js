@@ -82,6 +82,24 @@ router.put('/:id', requireAuth, upload.single('photo'), async (req, res) => {
   } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
 });
 
+// PATCH /api/inventory/bulk — apply category/subcategory/isStaple to many items at once.
+// Plain JSON (no file upload), unlike the single-item routes above, so isStaple here is a
+// real boolean — undefined means "leave untouched", true/false means "set it".
+router.patch('/bulk', requireAuth, async (req, res) => {
+  try {
+    const { ids, categoryId, subcategoryId, isStaple } = req.body;
+    if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: 'Selecciona al menos un artículo' });
+
+    const catFields = await resolveCategoryFields({ categoryId, subcategoryId });
+    const data = { ...catFields, isStaple: typeof isStaple === 'boolean' ? isStaple : undefined };
+    Object.keys(data).forEach(k => data[k] === undefined && delete data[k]);
+    if (!Object.keys(data).length) return res.status(400).json({ error: 'Nada que aplicar' });
+
+    const result = await prisma.inventoryItem.updateMany({ where: { id: { in: ids } }, data });
+    res.json({ updated: result.count });
+  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+});
+
 router.patch('/:id/stock', requireAuth, async (req, res) => {
   const { delta } = req.body;
   try {

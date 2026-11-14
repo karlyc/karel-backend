@@ -2409,11 +2409,13 @@ async function toggleCatVisible(id, tog) {
 // INVENTARIO
 // ════════════════════════════════════════════
 let cachedInvCategories = [];
+let selectedInvIds = new Set();
 
 async function vInv() {
   const [items, cats] = await Promise.all([api('GET','/api/inventory'), api('GET','/api/inventory-categories')]);
   cachedInventory = items;
   cachedInvCategories = cats;
+  selectedInvIds = new Set();
   document.getElementById('vc').innerHTML = `
 <div style="display:flex;gap:9px;margin-bottom:10px;justify-content:flex-end;">
   <button class="btn bg" onclick="openInvCatsModal()">⚙️ Categorías</button>
@@ -2438,6 +2440,7 @@ async function vInv() {
     <span class="tl">⭐ Solo esenciales</span>
   </label>
 </div>
+<div id="inv-bulk-bar"></div>
 <div class="card" id="inv-table">
 ${renderInvTable(items)}
 </div>`;
@@ -2460,11 +2463,14 @@ function renderInvTable(items) {
   const isAdmin = currentStaff?.role === 'ADMIN';
   if (items.length===0) return '<div class="empty-state">Sin artículos en inventario</div>';
   const catText = i => [i.categoryRef?.name, i.subcategoryRef?.name].filter(Boolean).join(' · ') || i.category || '—';
+  const allSelected = items.length>0 && items.every(i=>selectedInvIds.has(i.id));
   return `<table class="tbl"><thead><tr>
+    <th style="width:28px;"><input type="checkbox" ${allSelected?'checked':''} onchange="toggleSelectAllInv(this)"/></th>
     <th>Artículo</th><th>Categoría</th><th>Cantidad</th><th>Mín.</th><th>Unidad</th>
     ${isAdmin ? '<th>Costo</th><th>Uds/compra</th><th>Costo/ud</th><th>Proveedor</th>' : ''}
     <th>Estado</th><th></th></tr></thead><tbody>
   ${items.map(i=>{const low=Number(i.quantity)<=Number(i.minStock);return`<tr>
+    <td><input type="checkbox" class="inv-row-check" data-id="${i.id}" ${selectedInvIds.has(i.id)?'checked':''} onchange="toggleInvSelect('${i.id}',this.checked)"/></td>
     <td>
       ${i.photoUrl?`<img src="${photoSrc(i.photoUrl)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;"/>`:''}
       <strong>${i.isStaple?'⭐ ':''}${i.name}</strong>${i.notes?`<div style="font-size:10px;color:var(--dim);">${i.notes}</div>`:''}
@@ -2485,6 +2491,83 @@ function renderInvTable(items) {
     </div></td>
   </tr>`}).join('')}
   </tbody></table>`;
+}
+
+function toggleInvSelect(id, checked) {
+  if (checked) selectedInvIds.add(id); else selectedInvIds.delete(id);
+  renderInvBulkBar();
+}
+
+function toggleSelectAllInv(cb) {
+  document.querySelectorAll('.inv-row-check').forEach(el => {
+    el.checked = cb.checked;
+    if (cb.checked) selectedInvIds.add(el.dataset.id); else selectedInvIds.delete(el.dataset.id);
+  });
+  renderInvBulkBar();
+}
+
+function renderInvBulkBar() {
+  const el = document.getElementById('inv-bulk-bar'); if (!el) return;
+  const n = selectedInvIds.size;
+  if (n === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="card" style="margin-bottom:12px;border-color:var(--rose);">
+    <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">
+      <strong style="font-size:12px;white-space:nowrap;">${n} seleccionado${n!==1?'s':''}</strong>
+      <select class="fs" id="inv-bulk-category" onchange="onInvBulkCategoryChange()" style="font-size:12px;padding:6px 9px;">
+        <option value="">Categoría: no cambiar</option>
+        ${cachedInvCategories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
+      </select>
+      <select class="fs" id="inv-bulk-subcategory" style="font-size:12px;padding:6px 9px;display:none;"></select>
+      <select class="fs" id="inv-bulk-staple" style="font-size:12px;padding:6px 9px;">
+        <option value="">Esencial: no cambiar</option>
+        <option value="true">⭐ Marcar como esencial</option>
+        <option value="false">Quitar esencial</option>
+      </select>
+      <button class="btn bp bsm" onclick="applyInvBulk()">Aplicar</button>
+      <button class="btn bg bsm" onclick="cancelInvSelection()">Cancelar selección</button>
+    </div>
+  </div>`;
+}
+
+function onInvBulkCategoryChange() {
+  const catId = document.getElementById('inv-bulk-category').value;
+  const cat = cachedInvCategories.find(c => c.id === catId);
+  const sel = document.getElementById('inv-bulk-subcategory');
+  if (!catId) { sel.style.display = 'none'; sel.innerHTML = ''; return; }
+  sel.style.display = '';
+  sel.innerHTML = '<option value="">Subcategoría: no cambiar</option><option value="__none">Sin subcategoría</option>' +
+    (cat?.subcategories||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+
+async function applyInvBulk() {
+  const ids = [...selectedInvIds];
+  if (!ids.length) return;
+  const catId = document.getElementById('inv-bulk-category')?.value || '';
+  const subcatSel = document.getElementById('inv-bulk-subcategory');
+  const subcatVal = subcatSel && subcatSel.style.display !== 'none' ? subcatSel.value : '';
+  const stapleVal = document.getElementById('inv-bulk-staple')?.value || '';
+
+  const payload = { ids };
+  if (catId) {
+    payload.categoryId = catId;
+    if (subcatVal === '__none') payload.subcategoryId = null;
+    else if (subcatVal) payload.subcategoryId = subcatVal;
+  }
+  if (stapleVal) payload.isStaple = stapleVal === 'true';
+
+  if (!('categoryId' in payload) && !('isStaple' in payload)) { toastErr('Elige al menos un cambio para aplicar'); return; }
+
+  try {
+    const result = await api('PATCH', '/api/inventory/bulk', payload);
+    toast(`${result.updated} artículo${result.updated!==1?'s':''} actualizado${result.updated!==1?'s':''} ✓`);
+    selectedInvIds = new Set();
+    showView('inventario');
+  } catch(e) { toastErr(e.message); }
+}
+
+function cancelInvSelection() {
+  selectedInvIds = new Set();
+  filterInv();
 }
 
 function filterInv() {
