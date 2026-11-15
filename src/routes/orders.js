@@ -8,6 +8,7 @@ const { upload, uploadToCloudinary, isCloudinaryConfigured } = require('../utils
 const { sendOrderConfirmation } = require('../utils/email');
 const { sendOrderConfirmation: sendWAConfirmation, sendShopNewOrder } = require('../utils/whatsapp');
 const { loadSettings } = require('./settings');
+const { storeDayRangeUTC } = require('../utils/storeTime');
 
 // Resolves order line items (catalog products, catalog accessories, or quick/custom
 // items) into priced, DB-authoritative itemData — used by both create and edit so
@@ -102,9 +103,10 @@ router.get('/', requireAuth, async (req, res) => {
     }
 
     if (createdDate) {
-      const d = new Date(createdDate);
-      const next = new Date(d); next.setDate(next.getDate() + 1);
-      where.createdAt = { gte: d, lt: next };
+      // createdAt is a real timestamp, unlike deliveryDate — needs the store's actual
+      // UTC offset, not a naive date-string-to-UTC-midnight conversion, or evening orders
+      // (whose createdAt has already rolled into the next UTC day) get missed.
+      where.createdAt = storeDayRangeUTC(createdDate);
     }
 
     if (search) {

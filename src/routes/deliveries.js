@@ -4,11 +4,15 @@ const { prisma } = require('../db/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { upload, uploadToCloudinary, isCloudinaryConfigured } = require('../utils/upload');
 const { sendDeliveryNotification } = require('../utils/email');
+const { todayInStoreTZ } = require('../utils/storeTime');
 
 // GET /api/deliveries/today
 router.get('/today', requireAuth, async (req, res) => {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  // deliveryDate is stored as UTC-midnight-for-the-calendar-day, so "today" must be
+  // computed in the STORE's timezone, not the server host's (Railway runs in UTC) —
+  // otherwise evening orders fall outside this window once the UTC day rolls over.
+  const today = new Date(`${todayInStoreTZ()}T00:00:00.000Z`);
+  const tomorrow = new Date(today); tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
   try {
     const deliveries = await prisma.order.findMany({
       where: {
@@ -29,8 +33,8 @@ router.get('/today', requireAuth, async (req, res) => {
 
 // GET /api/deliveries/tomorrow
 router.get('/tomorrow', requireAuth, async (req, res) => {
-  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(0,0,0,0);
-  const dayAfter = new Date(tomorrow); dayAfter.setDate(dayAfter.getDate()+1);
+  const tomorrow = new Date(`${todayInStoreTZ()}T00:00:00.000Z`); tomorrow.setUTCDate(tomorrow.getUTCDate()+1);
+  const dayAfter = new Date(tomorrow); dayAfter.setUTCDate(dayAfter.getUTCDate()+1);
   try {
     const deliveries = await prisma.order.findMany({
       where: { deliveryDate: { gte: tomorrow, lt: dayAfter }, orderStatus: { in: ['EN_PROCESO','POR_ENTREGAR'] }, deliveryType: { not: 'RECOGER_TIENDA' } },
@@ -43,8 +47,8 @@ router.get('/tomorrow', requireAuth, async (req, res) => {
 
 // GET /api/deliveries/assigned/:staffId
 router.get('/assigned/:staffId', requireAuth, async (req, res) => {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+  const today = new Date(`${todayInStoreTZ()}T00:00:00.000Z`);
+  const tomorrow = new Date(today); tomorrow.setUTCDate(tomorrow.getUTCDate()+1);
   try {
     const orders = await prisma.order.findMany({
       where: { deliveryDate: { gte: today, lt: tomorrow }, orderStatus: 'POR_ENTREGAR', delivery: { assignedToId: req.params.staffId } },
