@@ -36,7 +36,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 ::-webkit-scrollbar-thumb{background:var(--rule2);border-radius:2px;}
 
 /* ── LOGIN ── */
-#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;position:fixed;inset:0;z-index:9000;background:var(--ink);transition:opacity .3s;padding:20px;box-sizing:border-box;}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;position:fixed;top:0;right:0;bottom:0;left:0;z-index:9000;background:var(--ink);transition:opacity .3s;padding:20px;box-sizing:border-box;}
 #login-screen.hidden{opacity:0;pointer-events:none;}
 .login-box{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r16);padding:36px 32px;width:100%;max-width:360px;box-shadow:0 40px 100px rgba(0,0,0,.7);}
 .login-logo{text-align:center;margin-bottom:26px;}
@@ -224,7 +224,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 .err-state{background:var(--red-dim);border:1px solid rgba(192,80,80,.2);border-radius:var(--r12);padding:16px;font-size:12px;color:#E07070;}
 .empty-state{text-align:center;padding:60px 20px;color:var(--dim);font-size:12px;}
 /* Modal */
-.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;padding:18px;}
+.ov{display:none;position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;padding:18px;}
 .ov.open{display:flex;}
 .modal{background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r16);width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,.7);}
 .msm{max-width:380px;}.mmd{max-width:600px;}.mlg{max-width:700px;}.mxl{max-width:1040px;}
@@ -245,7 +245,7 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
 @media print{
   body *{visibility:hidden;}
   #print-area,#print-area *{visibility:visible;}
-  #print-area{position:fixed;inset:0;background:white;color:black;padding:24px;font-family:sans-serif;font-size:12px;z-index:99999;}
+  #print-area{position:fixed;top:0;right:0;bottom:0;left:0;background:white;color:black;padding:24px;font-family:sans-serif;font-size:12px;z-index:99999;}
 }
 
 /* ── MOBILE (phones — mainly the repartidor's own device) ── */
@@ -956,7 +956,10 @@ body{font-family:var(--fb);background:var(--ink);color:var(--text);font-size:14p
   <img id="photo-lightbox-img" src="" style="max-width:92vw;max-height:92vh;border-radius:var(--r12);object-fit:contain;"/>
 </div>
 
-<script>
+<script id="pos-main">
+// NOTE: old iPads (Safari 12) can't parse this script; the loader at the end of
+// the page transpiles it with Babel. Syntax is handled automatically, but avoid
+// newer built-ins (replaceAll, .at(), Object.fromEntries, Promise.allSettled…).
 // ════════════════════════════════════════════
 // CONFIG
 // ════════════════════════════════════════════
@@ -4681,6 +4684,45 @@ document.querySelectorAll('.ni').forEach(n=>n.addEventListener('click',()=>showV
 // ════════════════════════════════════════════
 // Set today's date on gasto modal
 document.getElementById('g-date').value = todayLocalISO();
+</script>
+<script>
+// Legacy loader — written in ES5 on purpose. Browsers without optional
+// chaining (e.g. iPad mini on iOS 12) fail to parse #pos-main, so transpile it
+// with Babel and run it here. Modern browsers skip this entirely.
+(function () {
+  try { new Function('var a; return a?.b ?? 1;'); return; } catch (e) {}
+
+  var box = document.querySelector('.login-box');
+  var note = document.createElement('div');
+  note.style.cssText = 'text-align:center;font-size:12px;color:var(--dim);margin-top:12px;';
+  note.textContent = 'Cargando…';
+  if (box) box.appendChild(note);
+
+  function fail(err) {
+    console.error('[POS] legacy loader failed:', err);
+    note.style.color = '#E07070';
+    note.textContent = 'No se pudo cargar el POS en este navegador. Revisa tu conexión y recarga la página.';
+  }
+
+  var s = document.createElement('script');
+  s.src = 'https://unpkg.com/@babel/standalone@7.24.7/babel.min.js';
+  s.onerror = function () { fail('babel download failed'); };
+  s.onload = function () {
+    try {
+      var src = document.getElementById('pos-main').textContent;
+      var out = Babel.transform(src, {
+        sourceType: 'script',
+        presets: [['env', { targets: { safari: '12' }, modules: false }]],
+      }).code;
+      var run = document.createElement('script');
+      run.text = out;
+      document.body.appendChild(run);
+      if (typeof lpk !== 'function') throw new Error('transpiled script did not run');
+      note.parentNode && note.parentNode.removeChild(note);
+    } catch (err) { fail(err); }
+  };
+  document.head.appendChild(s);
+})();
 </script>
 </body>
 </html>
