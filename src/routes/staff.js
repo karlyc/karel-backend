@@ -3,9 +3,10 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
 const { prisma } = require('../db/prisma');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requireAdmin, requireOffice } = require('../middleware/auth');
 
-router.get('/', requireAuth, requireAdmin, async (_req, res) => {
+// Staff list (no PINs) — OFFICE needs it for the Entregas repartidor dropdown and task assignees
+router.get('/', requireAuth, requireOffice, async (_req, res) => {
   try {
     const staff = await prisma.staff.findMany({
       select: { id: true, username: true, name: true, role: true, active: true, createdAt: true },
